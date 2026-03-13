@@ -18,6 +18,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -55,7 +56,7 @@ func mask60Queries(queries [][2]uint64) [][2]uint64 {
 type benchConfig struct {
 	distName  string
 	keys      []uint64
-	queryFunc func(rangeLen uint64) [][2]uint64
+	queryFunc func(rangeLen uint64, seed int64) [][2]uint64
 }
 
 // tryGrafite returns nil when the requested bpk exceeds what the key universe can support.
@@ -74,7 +75,41 @@ func tryGrafite(keys []uint64, bpk float64) *grafite.GrafiteFilter {
 	return grafite.New(keys, bpk)
 }
 
+func avgFPR(keys []uint64, querySets [][][2]uint64, isEmpty func(a, b uint64) bool) float64 {
+	results := make([]float64, len(querySets))
+	var wg sync.WaitGroup
+	for i, qs := range querySets {
+		wg.Add(1)
+		go func(idx int, q [][2]uint64) {
+			defer wg.Done()
+			results[idx] = testutils.MeasureFPR(keys, q, isEmpty)
+		}(i, qs)
+	}
+	wg.Wait()
+	sum := 0.0
+	for _, v := range results {
+		sum += v
+	}
+	return sum / float64(len(results))
+}
+
+func avgFPRSeq(keys []uint64, querySets [][][2]uint64, isEmpty func(a, b uint64) bool) float64 {
+	sum := 0.0
+	for _, qs := range querySets {
+		sum += testutils.MeasureFPR(keys, qs, isEmpty)
+	}
+	return sum / float64(len(querySets))
+}
+
+type seriesPoint struct {
+	series string
+	point  testutils.Point
+	label  string
+}
+
 func runTradeoffBench(t *testing.T, cfg benchConfig) {
+	const nRuns = 3
+
 	rangeLens := []uint64{1, 16, 128, 1024}
 	bpkSweep := []float64{4, 6, 8, 10, 12, 14, 16, 18, 20}
 	epsilons := []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001}
@@ -88,7 +123,11 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 	for _, rangeLen := range rangeLens {
 		t.Run(fmt.Sprintf("L=%d", rangeLen), func(t *testing.T) {
-			queries := cfg.queryFunc(rangeLen)
+			seeds := []int64{12345, 54321, 99999}
+			querySets := make([][][2]uint64, nRuns)
+			for r := 0; r < nRuns; r++ {
+				querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
+			}
 
 			// ---- series map ----
 			allSeries := map[string]*testutils.SeriesData{
@@ -105,127 +144,104 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				"BloomARE":       {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
 			}
 
-			fmt.Printf("\n=== Industry Comparison — %s (60-bit keys, %d keys, L=%d) ===\n", cfg.distName, len(cfg.keys), rangeLen)
-			fmt.Printf("%-16s | %8s | %14s\n", "Series", "BPK", "FPR(skip)")
+			fmt.Printf("\n=== Industry Comparison — %s (60-bit keys, %d keys, L=%d, %d runs) ===\n", cfg.distName, len(cfg.keys), rangeLen, nRuns)
+			fmt.Printf("%-16s | %8s | %14s\n", "Series", "BPK", "FPR(avg)")
 			fmt.Println(strings.Repeat("-", 45))
 
-			// ---- Theoretical ----
+			// ---- Theoretical (no measurement needed) ----
 			for _, eps := range epsilons {
 				thBPK := math.Log2(float64(rangeLen) / eps)
 				allSeries["Theoretical"].Points = append(allSeries["Theoretical"].Points,
 					testutils.Point{X: thBPK, Y: eps})
 			}
 
-			// ---- ARE filters (parameterised by epsilon) ----
+			// ---- Build & measure ARE filters in parallel (pure Go, thread-safe) ----
+			type fprTask struct {
+				series  string
+				label   string
+				bpk     float64
+				isEmpty func(a, b uint64) bool
+			}
+			var goTasks []fprTask
+
 			for _, eps := range epsilons {
-				thBPK := math.Log2(float64(rangeLen) / eps)
-
-				// Adaptive (t=0)
-				fOpt, errOpt := are_optimized.NewOptimizedARE(keysBS, rangeLen, eps, 0)
-				if errOpt == nil {
-					bpk := float64(fOpt.SizeInBits()) / float64(len(cfg.keys))
-					fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-						return fOpt.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
-					})
-					allSeries["Adaptive (t=0)"].Points = append(allSeries["Adaptive (t=0)"].Points,
-						testutils.Point{X: bpk, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", "Adaptive(t=0)", bpk, fpr)
+				if f, err := are_optimized.NewOptimizedARE(keysBS, rangeLen, eps, 0); err == nil {
+					bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+					goTasks = append(goTasks, fprTask{"Adaptive (t=0)", "Adaptive(t=0)", bpk,
+						func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 				}
-
-				// SODA
-				fSoda, errSoda := are_soda_hash.NewApproximateRangeEmptinessSoda(cfg.keys, rangeLen, eps)
-				if errSoda == nil {
-					bpk := float64(fSoda.SizeInBits()) / float64(len(cfg.keys))
-					fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-						return fSoda.IsEmpty(a, b)
-					})
-					allSeries["SODA"].Points = append(allSeries["SODA"].Points,
-						testutils.Point{X: bpk, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", "SODA", bpk, fpr)
+				if f, err := are_soda_hash.NewApproximateRangeEmptinessSoda(cfg.keys, rangeLen, eps); err == nil {
+					bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+					goTasks = append(goTasks, fprTask{"SODA", "SODA", bpk,
+						func(a, b uint64) bool { return f.IsEmpty(a, b) }})
 				}
-
-				// Hybrid
-				fHybrid, errHybrid := are_hybrid.NewHybridARE(keysBS, rangeLen, eps)
-				if errHybrid == nil {
-					bpk := float64(fHybrid.SizeInBits()) / float64(len(cfg.keys))
-					fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-						return fHybrid.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
-					})
-					allSeries["Hybrid"].Points = append(allSeries["Hybrid"].Points,
-						testutils.Point{X: bpk, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", "Hybrid", bpk, fpr)
+				if f, err := are_hybrid.NewHybridARE(keysBS, rangeLen, eps); err == nil {
+					bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+					goTasks = append(goTasks, fprTask{"Hybrid", "Hybrid", bpk,
+						func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 				}
-
-				// CDF-ARE
-				fCdf, errCdf := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64)
-				if errCdf == nil {
-					bpk := float64(fCdf.TotalSizeInBits()) / float64(len(cfg.keys))
-					fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-						return fCdf.IsEmpty(a, b)
-					})
-					allSeries["CDF-ARE"].Points = append(allSeries["CDF-ARE"].Points,
-						testutils.Point{X: bpk, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", "CDF-ARE", bpk, fpr)
+				if f, err := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64); err == nil {
+					bpk := float64(f.TotalSizeInBits()) / float64(len(cfg.keys))
+					goTasks = append(goTasks, fprTask{"CDF-ARE", "CDF-ARE", bpk,
+						func(a, b uint64) bool { return f.IsEmpty(a, b) }})
 				}
-
-				// BloomARE
-				fBloom, errBloom := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps)
-				if errBloom == nil {
-					bpk := float64(fBloom.SizeInBits()) / float64(len(cfg.keys))
-					fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-						return fBloom.IsEmpty(a, b)
-					})
-					allSeries["BloomARE"].Points = append(allSeries["BloomARE"].Points,
-						testutils.Point{X: bpk, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", "BloomARE", bpk, fpr)
+				if f, err := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps); err == nil {
+					bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+					goTasks = append(goTasks, fprTask{"BloomARE", "BloomARE", bpk,
+						func(a, b uint64) bool { return f.IsEmpty(a, b) }})
 				}
-
-				_ = thBPK
 			}
 
-			// ---- Industry filters (parameterised by BPK sweep) ----
+			goResults := make([]seriesPoint, len(goTasks))
+			var wg sync.WaitGroup
+			for i, task := range goTasks {
+				i, task := i, task
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					fpr := avgFPR(cfg.keys, querySets, task.isEmpty)
+					goResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
+				}()
+			}
+			wg.Wait()
+
+			for _, sp := range goResults {
+				allSeries[sp.series].Points = append(allSeries[sp.series].Points, sp.point)
+				fmt.Printf("%-16s | %8.2f | %14.6f\n", sp.label, sp.point.X, sp.point.Y)
+			}
+
+			// ---- CGo filters: build & measure sequentially (not thread-safe) ----
 			for _, bpk := range bpkSweep {
-				// Grafite
-				fGrafite := tryGrafite(cfg.keys, bpk)
-				if fGrafite != nil {
-					actualBPK := float64(fGrafite.SizeInBits()) / float64(len(cfg.keys))
-					fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-						return fGrafite.IsEmpty(a, b)
-					})
+				if f := tryGrafite(cfg.keys, bpk); f != nil {
+					actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+					fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
 					allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
 						testutils.Point{X: actualBPK, Y: fpr})
 					fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.0f)", bpk), actualBPK, fpr)
 				}
 
-				// SNARF
-				fSnarf := snarf.New(cfg.keys, bpk)
-				actualBPKSnarf := float64(fSnarf.SizeInBits()) / float64(len(cfg.keys))
-				fprSnarf := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-					return fSnarf.IsEmpty(a, b)
-				})
+				f := snarf.New(cfg.keys, bpk)
+				actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+				fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
 				allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
-					testutils.Point{X: actualBPKSnarf, Y: fprSnarf})
-				fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPKSnarf, fprSnarf)
+					testutils.Point{X: actualBPK, Y: fpr})
+				fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
 			}
 
-			// ---- SuRF variants (single point each) ----
 			type surfVariant struct {
 				name     string
 				st       surf.SuffixType
 				hashBits int
 				realBits int
 			}
-			surfVariants := []surfVariant{
+			for _, sv := range []surfVariant{
 				{"SuRF", surf.SuffixNone, 0, 0},
 				{"SuRFHash(8)", surf.SuffixHash, 8, 0},
 				{"SuRFReal(8)", surf.SuffixReal, 0, 8},
-			}
-			for _, sv := range surfVariants {
-				fSurf := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
-				actualBPK := float64(fSurf.SizeInBits()) / float64(len(cfg.keys))
-				fpr := testutils.MeasureFPR(cfg.keys, queries, func(a, b uint64) bool {
-					return fSurf.IsEmpty(a, b)
-				})
+			} {
+				f := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
+				actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+				fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
 				allSeries[sv.name].Points = append(allSeries[sv.name].Points,
 					testutils.Point{X: actualBPK, Y: fpr})
 				fmt.Printf("%-16s | %8.2f | %14.6f\n", sv.name, actualBPK, fpr)
@@ -268,7 +284,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 func TestTradeoff_Clustered(t *testing.T) {
 	const (
 		n          = 1 << 16
-		queryCount = 200_000
+		queryCount = 1 << 18
 		nClusters  = 5
 		unifFrac   = 0.15
 	)
@@ -280,8 +296,8 @@ func TestTradeoff_Clustered(t *testing.T) {
 	runTradeoffBench(t, benchConfig{
 		distName: "clustered",
 		keys:     keys,
-		queryFunc: func(rangeLen uint64) [][2]uint64 {
-			qrng := rand.New(rand.NewSource(12345))
+		queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
+			qrng := rand.New(rand.NewSource(seed))
 			return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng))
 		},
 	})
@@ -290,7 +306,7 @@ func TestTradeoff_Clustered(t *testing.T) {
 func TestTradeoff_Uniform(t *testing.T) {
 	const (
 		n          = 1 << 16
-		queryCount = 200_000
+		queryCount = 1 << 18
 	)
 
 	rng := rand.New(rand.NewSource(42))
@@ -299,8 +315,8 @@ func TestTradeoff_Uniform(t *testing.T) {
 	runTradeoffBench(t, benchConfig{
 		distName: "uniform",
 		keys:     keys,
-		queryFunc: func(rangeLen uint64) [][2]uint64 {
-			qrng := rand.New(rand.NewSource(12345))
+		queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
+			qrng := rand.New(rand.NewSource(seed))
 			return generateUniformQueries(queryCount, rangeLen, qrng)
 		},
 	})
@@ -309,7 +325,7 @@ func TestTradeoff_Uniform(t *testing.T) {
 func TestTradeoff_Spread(t *testing.T) {
 	const (
 		n          = 1 << 16
-		queryCount = 200_000
+		queryCount = 1 << 18
 	)
 
 	keys := generateSpreadKeys(n)
@@ -317,8 +333,8 @@ func TestTradeoff_Spread(t *testing.T) {
 	runTradeoffBench(t, benchConfig{
 		distName: "spread",
 		keys:     keys,
-		queryFunc: func(rangeLen uint64) [][2]uint64 {
-			qrng := rand.New(rand.NewSource(12345))
+		queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
+			qrng := rand.New(rand.NewSource(seed))
 			return generateUniformQueries(queryCount, rangeLen, qrng)
 		},
 	})
@@ -327,7 +343,7 @@ func TestTradeoff_Spread(t *testing.T) {
 func TestTradeoff_Zipfian(t *testing.T) {
 	const (
 		n          = 1 << 16
-		queryCount = 200_000
+		queryCount = 1 << 18
 		nPrefixes  = 100
 	)
 
@@ -337,8 +353,8 @@ func TestTradeoff_Zipfian(t *testing.T) {
 	runTradeoffBench(t, benchConfig{
 		distName: "zipfian",
 		keys:     keys,
-		queryFunc: func(rangeLen uint64) [][2]uint64 {
-			qrng := rand.New(rand.NewSource(12345))
+		queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
+			qrng := rand.New(rand.NewSource(seed))
 			return generateZipfianQueries(queryCount, prefixes, rangeLen, qrng)
 		},
 	})
@@ -347,7 +363,7 @@ func TestTradeoff_Zipfian(t *testing.T) {
 func TestTradeoff_Temporal(t *testing.T) {
 	const (
 		n          = 1 << 16
-		queryCount = 200_000
+		queryCount = 1 << 18
 	)
 
 	rng := rand.New(rand.NewSource(55))
@@ -356,8 +372,8 @@ func TestTradeoff_Temporal(t *testing.T) {
 	runTradeoffBench(t, benchConfig{
 		distName: "temporal",
 		keys:     keys,
-		queryFunc: func(rangeLen uint64) [][2]uint64 {
-			qrng := rand.New(rand.NewSource(12345))
+		queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
+			qrng := rand.New(rand.NewSource(seed))
 			return generateTemporalQueries(queryCount, keys, rangeLen, qrng)
 		},
 	})
