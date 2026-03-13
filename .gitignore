@@ -4,5 +4,6 @@ snarf/ext/
 grafite/build/
 surf/build/
 snarf/build/
-bench_results/
+bench_results/plots/
+
 go.sum
