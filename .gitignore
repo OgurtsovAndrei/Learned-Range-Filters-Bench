@@ -1,0 +1,8 @@
+grafite/ext/
+surf/ext/
+snarf/ext/
+grafite/build/
+surf/build/
+snarf/build/
+bench_results/
+go.sum
