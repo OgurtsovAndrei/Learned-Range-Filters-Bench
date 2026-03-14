@@ -15,4 +15,4 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 )
 
-replace Thesis => ../Thesis
+replace Thesis => ./Thesis

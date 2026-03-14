@@ -1,0 +1,12 @@
+[submodule "grafite/ext/grafite"]
+	path = grafite/ext/grafite
+	url = https://github.com/marcocosta97/grafite
+[submodule "snarf/ext/SNARF"]
+	path = snarf/ext/SNARF
+	url = https://github.com/kapilvaidya24/SNARF
+[submodule "surf/ext/SuRF"]
+	path = surf/ext/SuRF
+	url = https://github.com/efficient/SuRF
+[submodule "Thesis"]
+	path = Thesis
+	url = https://github.com/OgurtsovAndrei/Thesis.git
