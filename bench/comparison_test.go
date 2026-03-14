@@ -566,4 +566,146 @@ func TestSanity_SNARF(t *testing.T) {
 	}
 }
 
+// --- Distribution visualization ---
+
+func normalizedCDF(keys []uint64, sampleEvery int) []testutils.Point {
+	n := len(keys)
+	minK, maxK := float64(keys[0]), float64(keys[n-1])
+	span := maxK - minK
+	if span == 0 {
+		span = 1
+	}
+	pts := make([]testutils.Point, 0, n/sampleEvery+2)
+	pts = append(pts, testutils.Point{X: 0, Y: 0})
+	for i := 0; i < n; i += sampleEvery {
+		x := (float64(keys[i]) - minK) / span
+		y := float64(i+1) / float64(n)
+		pts = append(pts, testutils.Point{X: x, Y: y})
+	}
+	pts = append(pts, testutils.Point{X: 1, Y: 1})
+	return pts
+}
+
+func histogram(keys []uint64, nBins int) []testutils.Point {
+	n := len(keys)
+	minK, maxK := float64(keys[0]), float64(keys[n-1])
+	span := maxK - minK
+	if span == 0 {
+		span = 1
+	}
+	counts := make([]int, nBins)
+	for _, k := range keys {
+		bin := int((float64(k) - minK) / span * float64(nBins))
+		if bin >= nBins {
+			bin = nBins - 1
+		}
+		counts[bin]++
+	}
+	maxCount := 0
+	for _, c := range counts {
+		if c > maxCount {
+			maxCount = c
+		}
+	}
+	pts := make([]testutils.Point, nBins)
+	for i, c := range counts {
+		pts[i] = testutils.Point{
+			X: (float64(i) + 0.5) / float64(nBins),
+			Y: float64(c) / float64(maxCount),
+		}
+	}
+	return pts
+}
+
+func TestDistributionVisualization(t *testing.T) {
+	const n = 1 << 16
+
+	type distInfo struct {
+		name  string
+		keys  []uint64
+		color string
+	}
+
+	dists := []distInfo{
+		{"clustered", func() []uint64 {
+			rng := rand.New(rand.NewSource(99))
+			raw, _ := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
+			return mask60Keys(raw)
+		}(), "#2a7fff"},
+		{"uniform", generateUniformKeys(n, rand.New(rand.NewSource(42))), "#22a06b"},
+		{"spread", generateSpreadKeys(n), "#e05d10"},
+		{"zipfian", func() []uint64 {
+			rng := rand.New(rand.NewSource(77))
+			keys, _ := generateZipfianKeys(n, 100, rng)
+			return keys
+		}(), "#9b59b6"},
+		{"temporal", generateTemporalKeys(n, rand.New(rand.NewSource(55))), "#c0392b"},
+	}
+
+	os.MkdirAll("../bench_results/plots/distributions", 0755)
+
+	// Combined CDF plot
+	var cdfSeries []testutils.SeriesData
+	for _, d := range dists {
+		cdfSeries = append(cdfSeries, testutils.SeriesData{
+			Name:   d.name,
+			Color:  d.color,
+			Marker: "none",
+			Points: normalizedCDF(d.keys, 256),
+		})
+	}
+	err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
+		Title:  fmt.Sprintf("CDF of Key Distributions (n=%d, normalized)", n),
+		XLabel: "Normalized Key Position",
+		YLabel: "Cumulative Fraction",
+	}, cdfSeries, "../bench_results/plots/distributions/cdf_all.svg")
+	if err != nil {
+		t.Errorf("CDF SVG failed: %v", err)
+	} else {
+		fmt.Println("CDF written to ../bench_results/plots/distributions/cdf_all.svg")
+	}
+
+	// Combined histogram plot
+	var histAllSeries []testutils.SeriesData
+	for _, d := range dists {
+		histAllSeries = append(histAllSeries, testutils.SeriesData{
+			Name:   d.name,
+			Color:  d.color,
+			Marker: "none",
+			Points: histogram(d.keys, 200),
+		})
+	}
+	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
+		Title:  fmt.Sprintf("Key Density — All Distributions (n=%d, 200 bins)", n),
+		XLabel: "Normalized Key Position",
+		YLabel: "Relative Density",
+	}, histAllSeries, "../bench_results/plots/distributions/hist_all.svg")
+	if err != nil {
+		t.Errorf("combined histogram SVG failed: %v", err)
+	} else {
+		fmt.Println("Combined histogram written to ../bench_results/plots/distributions/hist_all.svg")
+	}
+
+	// Individual histogram per distribution
+	for _, d := range dists {
+		histSeries := []testutils.SeriesData{{
+			Name:   d.name,
+			Color:  d.color,
+			Marker: "none",
+			Points: histogram(d.keys, 200),
+		}}
+		path := fmt.Sprintf("../bench_results/plots/distributions/hist_%s.svg", d.name)
+		err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
+			Title:  fmt.Sprintf("Key Density — %s (n=%d, 200 bins)", d.name, n),
+			XLabel: "Normalized Key Position",
+			YLabel: "Relative Density",
+		}, histSeries, path)
+		if err != nil {
+			t.Errorf("histogram SVG failed for %s: %v", d.name, err)
+		} else {
+			fmt.Printf("Histogram written to %s\n", path)
+		}
+	}
+}
+
 var _ = are.NewApproximateRangeEmptiness
