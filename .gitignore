@@ -1,8 +1,22 @@
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+go.sum
+
+# CGo build artifacts
 grafite/build/
 surf/build/
 snarf/build/
+
+# Benchmark outputs (regenerable)
 bench_results/plots/
 bench_results/data/
 
-go.sum
+# OS
+.DS_Store
+Thumbs.db
