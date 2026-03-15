@@ -17,6 +17,11 @@ snarf/build/
 bench_results/plots/
 bench_results/data/
 
+# SOSD datasets (large binary files, use bench/sosd_data/download.sh)
+bench/sosd_data/*
+!bench/sosd_data/download.sh
+!bench/sosd_data/README.md
+
 # OS
 .DS_Store
 Thumbs.db
