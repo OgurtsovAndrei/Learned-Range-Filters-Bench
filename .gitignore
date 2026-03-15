@@ -2,5 +2,6 @@ grafite/build/
 surf/build/
 snarf/build/
 bench_results/plots/
+bench_results/data/
 
 go.sum
