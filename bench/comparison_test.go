@@ -5,7 +5,7 @@ import (
 	"Thesis-bench-industry/snarf"
 	"Thesis-bench-industry/surf"
 	"Thesis/bits"
-	"Thesis/emptiness/are"
+	"Thesis/emptiness/are_trunc"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
 	"Thesis/emptiness/are_optimized"
@@ -230,7 +230,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 				for _, K := range kGrid {
 					K := K
-					if f, err := are.NewApproximateRangeEmptinessFromK(keysBS, K); err == nil {
+					if f, err := are_trunc.NewApproximateRangeEmptinessFromK(keysBS, K); err == nil {
 						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
 						goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
