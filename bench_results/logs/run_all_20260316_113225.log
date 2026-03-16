@@ -1,0 +1,607 @@
+=== Benchmark run started: Mon Mar 16 11:32:25 UTC 2026 ===
+Repo: /home/ogurcov002/ws/Thesis-Bench-industry
+
+=== Step 1: Downloading SOSD data in background ===
+SOSD download PID=21751 (log: /home/ogurcov002/ws/Thesis-Bench-industry/bench_results/logs/sosd_download.log)
+
+=== Step 2: Generate synthetic keys ===
+
+--- [GenerateSyntheticKeys] started: Mon Mar 16 11:32:25 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-2683479602/go.o /tmp/go-link-2683479602/000000.o /tmp/go-link-2683479602/000001.o /tmp/go-link-2683479602/000002.o /tmp/go-link-2683479602/000003.o /tmp/go-link-2683479602/000004.o /tmp/go-link-2683479602/000005.o /tmp/go-link-2683479602/000006.o /tmp/go-link-2683479602/000007.o /tmp/go-link-2683479602/000008.o /tmp/go-link-2683479602/000009.o /tmp/go-link-2683479602/000010.o /tmp/go-link-2683479602/000011.o /tmp/go-link-2683479602/000012.o /tmp/go-link-2683479602/000013.o /tmp/go-link-2683479602/000014.o /tmp/go-link-2683479602/000015.o /tmp/go-link-2683479602/000016.o /tmp/go-link-2683479602/000017.o /tmp/go-link-2683479602/000018.o /tmp/go-link-2683479602/000019.o /tmp/go-link-2683479602/000020.o /tmp/go-link-2683479602/000021.o /tmp/go-link-2683479602/000022.o /tmp/go-link-2683479602/000023.o /tmp/go-link-2683479602/000024.o /tmp/go-link-2683479602/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [GenerateSyntheticKeys] FAILED (exit 1): Mon Mar 16 11:32:27 UTC 2026 --- (continuing)
+
+=== Step 3: Build throughput ===
+
+--- [BuildThroughput] started: Mon Mar 16 11:32:27 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-400124098/go.o /tmp/go-link-400124098/000000.o /tmp/go-link-400124098/000001.o /tmp/go-link-400124098/000002.o /tmp/go-link-400124098/000003.o /tmp/go-link-400124098/000004.o /tmp/go-link-400124098/000005.o /tmp/go-link-400124098/000006.o /tmp/go-link-400124098/000007.o /tmp/go-link-400124098/000008.o /tmp/go-link-400124098/000009.o /tmp/go-link-400124098/000010.o /tmp/go-link-400124098/000011.o /tmp/go-link-400124098/000012.o /tmp/go-link-400124098/000013.o /tmp/go-link-400124098/000014.o /tmp/go-link-400124098/000015.o /tmp/go-link-400124098/000016.o /tmp/go-link-400124098/000017.o /tmp/go-link-400124098/000018.o /tmp/go-link-400124098/000019.o /tmp/go-link-400124098/000020.o /tmp/go-link-400124098/000021.o /tmp/go-link-400124098/000022.o /tmp/go-link-400124098/000023.o /tmp/go-link-400124098/000024.o /tmp/go-link-400124098/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [BuildThroughput] FAILED (exit 1): Mon Mar 16 11:32:28 UTC 2026 --- (continuing)
+
+=== Step 4: FPR vs BPK — synthetic distributions ===
+
+--- [Tradeoff_Clustered] started: Mon Mar 16 11:32:28 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1715150970/go.o /tmp/go-link-1715150970/000000.o /tmp/go-link-1715150970/000001.o /tmp/go-link-1715150970/000002.o /tmp/go-link-1715150970/000003.o /tmp/go-link-1715150970/000004.o /tmp/go-link-1715150970/000005.o /tmp/go-link-1715150970/000006.o /tmp/go-link-1715150970/000007.o /tmp/go-link-1715150970/000008.o /tmp/go-link-1715150970/000009.o /tmp/go-link-1715150970/000010.o /tmp/go-link-1715150970/000011.o /tmp/go-link-1715150970/000012.o /tmp/go-link-1715150970/000013.o /tmp/go-link-1715150970/000014.o /tmp/go-link-1715150970/000015.o /tmp/go-link-1715150970/000016.o /tmp/go-link-1715150970/000017.o /tmp/go-link-1715150970/000018.o /tmp/go-link-1715150970/000019.o /tmp/go-link-1715150970/000020.o /tmp/go-link-1715150970/000021.o /tmp/go-link-1715150970/000022.o /tmp/go-link-1715150970/000023.o /tmp/go-link-1715150970/000024.o /tmp/go-link-1715150970/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_Clustered] FAILED (exit 1): Mon Mar 16 11:32:28 UTC 2026 --- (continuing)
+
+--- [Tradeoff_Uniform] started: Mon Mar 16 11:32:28 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-3695713351/go.o /tmp/go-link-3695713351/000000.o /tmp/go-link-3695713351/000001.o /tmp/go-link-3695713351/000002.o /tmp/go-link-3695713351/000003.o /tmp/go-link-3695713351/000004.o /tmp/go-link-3695713351/000005.o /tmp/go-link-3695713351/000006.o /tmp/go-link-3695713351/000007.o /tmp/go-link-3695713351/000008.o /tmp/go-link-3695713351/000009.o /tmp/go-link-3695713351/000010.o /tmp/go-link-3695713351/000011.o /tmp/go-link-3695713351/000012.o /tmp/go-link-3695713351/000013.o /tmp/go-link-3695713351/000014.o /tmp/go-link-3695713351/000015.o /tmp/go-link-3695713351/000016.o /tmp/go-link-3695713351/000017.o /tmp/go-link-3695713351/000018.o /tmp/go-link-3695713351/000019.o /tmp/go-link-3695713351/000020.o /tmp/go-link-3695713351/000021.o /tmp/go-link-3695713351/000022.o /tmp/go-link-3695713351/000023.o /tmp/go-link-3695713351/000024.o /tmp/go-link-3695713351/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_Uniform] FAILED (exit 1): Mon Mar 16 11:32:28 UTC 2026 --- (continuing)
+
+--- [Tradeoff_Spread] started: Mon Mar 16 11:32:28 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-3129841164/go.o /tmp/go-link-3129841164/000000.o /tmp/go-link-3129841164/000001.o /tmp/go-link-3129841164/000002.o /tmp/go-link-3129841164/000003.o /tmp/go-link-3129841164/000004.o /tmp/go-link-3129841164/000005.o /tmp/go-link-3129841164/000006.o /tmp/go-link-3129841164/000007.o /tmp/go-link-3129841164/000008.o /tmp/go-link-3129841164/000009.o /tmp/go-link-3129841164/000010.o /tmp/go-link-3129841164/000011.o /tmp/go-link-3129841164/000012.o /tmp/go-link-3129841164/000013.o /tmp/go-link-3129841164/000014.o /tmp/go-link-3129841164/000015.o /tmp/go-link-3129841164/000016.o /tmp/go-link-3129841164/000017.o /tmp/go-link-3129841164/000018.o /tmp/go-link-3129841164/000019.o /tmp/go-link-3129841164/000020.o /tmp/go-link-3129841164/000021.o /tmp/go-link-3129841164/000022.o /tmp/go-link-3129841164/000023.o /tmp/go-link-3129841164/000024.o /tmp/go-link-3129841164/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_Spread] FAILED (exit 1): Mon Mar 16 11:32:29 UTC 2026 --- (continuing)
+
+--- [Tradeoff_Zipfian] started: Mon Mar 16 11:32:29 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1100511620/go.o /tmp/go-link-1100511620/000000.o /tmp/go-link-1100511620/000001.o /tmp/go-link-1100511620/000002.o /tmp/go-link-1100511620/000003.o /tmp/go-link-1100511620/000004.o /tmp/go-link-1100511620/000005.o /tmp/go-link-1100511620/000006.o /tmp/go-link-1100511620/000007.o /tmp/go-link-1100511620/000008.o /tmp/go-link-1100511620/000009.o /tmp/go-link-1100511620/000010.o /tmp/go-link-1100511620/000011.o /tmp/go-link-1100511620/000012.o /tmp/go-link-1100511620/000013.o /tmp/go-link-1100511620/000014.o /tmp/go-link-1100511620/000015.o /tmp/go-link-1100511620/000016.o /tmp/go-link-1100511620/000017.o /tmp/go-link-1100511620/000018.o /tmp/go-link-1100511620/000019.o /tmp/go-link-1100511620/000020.o /tmp/go-link-1100511620/000021.o /tmp/go-link-1100511620/000022.o /tmp/go-link-1100511620/000023.o /tmp/go-link-1100511620/000024.o /tmp/go-link-1100511620/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_Zipfian] FAILED (exit 1): Mon Mar 16 11:32:29 UTC 2026 --- (continuing)
+
+=== Step 7: Synthetic distribution visualization ===
+
+--- [DistributionVisualization] started: Mon Mar 16 11:32:29 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1008627572/go.o /tmp/go-link-1008627572/000000.o /tmp/go-link-1008627572/000001.o /tmp/go-link-1008627572/000002.o /tmp/go-link-1008627572/000003.o /tmp/go-link-1008627572/000004.o /tmp/go-link-1008627572/000005.o /tmp/go-link-1008627572/000006.o /tmp/go-link-1008627572/000007.o /tmp/go-link-1008627572/000008.o /tmp/go-link-1008627572/000009.o /tmp/go-link-1008627572/000010.o /tmp/go-link-1008627572/000011.o /tmp/go-link-1008627572/000012.o /tmp/go-link-1008627572/000013.o /tmp/go-link-1008627572/000014.o /tmp/go-link-1008627572/000015.o /tmp/go-link-1008627572/000016.o /tmp/go-link-1008627572/000017.o /tmp/go-link-1008627572/000018.o /tmp/go-link-1008627572/000019.o /tmp/go-link-1008627572/000020.o /tmp/go-link-1008627572/000021.o /tmp/go-link-1008627572/000022.o /tmp/go-link-1008627572/000023.o /tmp/go-link-1008627572/000024.o /tmp/go-link-1008627572/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [DistributionVisualization] FAILED (exit 1): Mon Mar 16 11:32:29 UTC 2026 --- (continuing)
+
+=== Step 8: Performance tests ===
+
+--- [BuildTimePerKey] started: Mon Mar 16 11:32:29 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-3794717896/go.o /tmp/go-link-3794717896/000000.o /tmp/go-link-3794717896/000001.o /tmp/go-link-3794717896/000002.o /tmp/go-link-3794717896/000003.o /tmp/go-link-3794717896/000004.o /tmp/go-link-3794717896/000005.o /tmp/go-link-3794717896/000006.o /tmp/go-link-3794717896/000007.o /tmp/go-link-3794717896/000008.o /tmp/go-link-3794717896/000009.o /tmp/go-link-3794717896/000010.o /tmp/go-link-3794717896/000011.o /tmp/go-link-3794717896/000012.o /tmp/go-link-3794717896/000013.o /tmp/go-link-3794717896/000014.o /tmp/go-link-3794717896/000015.o /tmp/go-link-3794717896/000016.o /tmp/go-link-3794717896/000017.o /tmp/go-link-3794717896/000018.o /tmp/go-link-3794717896/000019.o /tmp/go-link-3794717896/000020.o /tmp/go-link-3794717896/000021.o /tmp/go-link-3794717896/000022.o /tmp/go-link-3794717896/000023.o /tmp/go-link-3794717896/000024.o /tmp/go-link-3794717896/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [BuildTimePerKey] FAILED (exit 1): Mon Mar 16 11:32:30 UTC 2026 --- (continuing)
+
+--- [QueryTimeVsRangeLen] started: Mon Mar 16 11:32:30 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1096863830/go.o /tmp/go-link-1096863830/000000.o /tmp/go-link-1096863830/000001.o /tmp/go-link-1096863830/000002.o /tmp/go-link-1096863830/000003.o /tmp/go-link-1096863830/000004.o /tmp/go-link-1096863830/000005.o /tmp/go-link-1096863830/000006.o /tmp/go-link-1096863830/000007.o /tmp/go-link-1096863830/000008.o /tmp/go-link-1096863830/000009.o /tmp/go-link-1096863830/000010.o /tmp/go-link-1096863830/000011.o /tmp/go-link-1096863830/000012.o /tmp/go-link-1096863830/000013.o /tmp/go-link-1096863830/000014.o /tmp/go-link-1096863830/000015.o /tmp/go-link-1096863830/000016.o /tmp/go-link-1096863830/000017.o /tmp/go-link-1096863830/000018.o /tmp/go-link-1096863830/000019.o /tmp/go-link-1096863830/000020.o /tmp/go-link-1096863830/000021.o /tmp/go-link-1096863830/000022.o /tmp/go-link-1096863830/000023.o /tmp/go-link-1096863830/000024.o /tmp/go-link-1096863830/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [QueryTimeVsRangeLen] FAILED (exit 1): Mon Mar 16 11:32:30 UTC 2026 --- (continuing)
+
+--- [Scalability] started: Mon Mar 16 11:32:30 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1309433247/go.o /tmp/go-link-1309433247/000000.o /tmp/go-link-1309433247/000001.o /tmp/go-link-1309433247/000002.o /tmp/go-link-1309433247/000003.o /tmp/go-link-1309433247/000004.o /tmp/go-link-1309433247/000005.o /tmp/go-link-1309433247/000006.o /tmp/go-link-1309433247/000007.o /tmp/go-link-1309433247/000008.o /tmp/go-link-1309433247/000009.o /tmp/go-link-1309433247/000010.o /tmp/go-link-1309433247/000011.o /tmp/go-link-1309433247/000012.o /tmp/go-link-1309433247/000013.o /tmp/go-link-1309433247/000014.o /tmp/go-link-1309433247/000015.o /tmp/go-link-1309433247/000016.o /tmp/go-link-1309433247/000017.o /tmp/go-link-1309433247/000018.o /tmp/go-link-1309433247/000019.o /tmp/go-link-1309433247/000020.o /tmp/go-link-1309433247/000021.o /tmp/go-link-1309433247/000022.o /tmp/go-link-1309433247/000023.o /tmp/go-link-1309433247/000024.o /tmp/go-link-1309433247/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: cannot find -lc++: No such file or directory
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Scalability] FAILED (exit 1): Mon Mar 16 11:32:31 UTC 2026 --- (continuing)
+
+=== Waiting for SOSD download to complete (PID=21751) ===
+SOSD download completed successfully.
+
+=== Step 5: FPR vs BPK — SOSD real datasets ===
+
+--- [Tradeoff_SOSD_Facebook] started: Mon Mar 16 11:33:46 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1220075970/go.o /tmp/go-link-1220075970/000000.o /tmp/go-link-1220075970/000001.o /tmp/go-link-1220075970/000002.o /tmp/go-link-1220075970/000003.o /tmp/go-link-1220075970/000004.o /tmp/go-link-1220075970/000005.o /tmp/go-link-1220075970/000006.o /tmp/go-link-1220075970/000007.o /tmp/go-link-1220075970/000008.o /tmp/go-link-1220075970/000009.o /tmp/go-link-1220075970/000010.o /tmp/go-link-1220075970/000011.o /tmp/go-link-1220075970/000012.o /tmp/go-link-1220075970/000013.o /tmp/go-link-1220075970/000014.o /tmp/go-link-1220075970/000015.o /tmp/go-link-1220075970/000016.o /tmp/go-link-1220075970/000017.o /tmp/go-link-1220075970/000018.o /tmp/go-link-1220075970/000019.o /tmp/go-link-1220075970/000020.o /tmp/go-link-1220075970/000021.o /tmp/go-link-1220075970/000022.o /tmp/go-link-1220075970/000023.o /tmp/go-link-1220075970/000024.o /tmp/go-link-1220075970/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `std::random_device::~random_device()':
+wrapper.cpp:(.text._ZNSt13random_deviceD2Ev[_ZNSt13random_deviceD5Ev]+0x5): undefined reference to `std::random_device::_M_fini()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x50): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x83): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite::filter<grafite::ef_sux_vector, 2u>::filter<__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > > >(unsigned long, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >)':
+wrapper.cpp:(.text._ZN7grafite6filterINS_13ef_sux_vectorELj2EEC2IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_[_ZN7grafite6filterINS_13ef_sux_vectorELj2EEC5IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_]+0x1032): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new':
+wrapper.cpp:(.text.startup+0x82): undefined reference to `std::random_device::_M_init(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: wrapper.cpp:(.text.startup+0xc7): undefined reference to `std::random_device::_M_getval()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_fill_insert(__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, unsigned long, unsigned long const&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm[_ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm]+0x481): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_default_appendEm[_ZNSt6vectorImSaImEE17_M_default_appendEm]+0x17f): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<snarf_bitset, std::allocator<snarf_bitset> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x29e): undefined reference to `std::__throw_bad_array_new_length()'
+/usr/bin/ld: wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x2b4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<double, std::allocator<double> >::_M_fill_insert(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, unsigned long, double const&)':
+wrapper.cpp:(.text._ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd[_ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd]+0x48d): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `snarf_model<unsigned long>::generate_slope_bias_level_1(std::vector<unsigned long, std::allocator<unsigned long> >&, std::vector<double, std::allocator<double> >&)':
+wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7d3): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7e4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7f0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x86b): more undefined references to `std::__throw_length_error(char const*)' follow
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x162b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x17e0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x1a46): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x1aeb): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x3b6b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x3ea0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x3ef1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x42f4): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x4333): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x5fe1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6078): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x6507): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6598): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int)':
+wrapper.cpp:(.text+0xcb65): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0xcbde): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >& std::vector<std::vector<unsigned long, std::allocator<unsigned long> >, std::allocator<std::vector<unsigned long, std::allocator<unsigned long> > > >::emplace_back<std::vector<unsigned long, std::allocator<unsigned long> > >(std::vector<unsigned long, std::allocator<unsigned long> >&&) [clone .isra.0] [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x8): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x14): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x1c): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x30): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3c): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x47): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x5c): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x74): undefined reference to `std::__throw_out_of_range_fmt(char const*, ...)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x7e): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x86): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xa0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xac): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xb7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xcc): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xd7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xdf): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xf4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xff): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x107): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_query.cold':
+wrapper.cpp:(.text.unlikely+0x117): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x11f): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::addLevel() [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x3e2): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3ee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x456): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::buildSparse(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x466): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::create(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, bool, unsigned int, surf::SuffixType, unsigned int, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x47a): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x486): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_new.cold':
+wrapper.cpp:(.text.unlikely+0x558): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5e7): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5f3): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int const&>(unsigned int const&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned long, std::allocator<unsigned long> >::_M_realloc_append<unsigned long>(unsigned long&&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_[_ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned char, std::allocator<unsigned char> >::_M_realloc_append<unsigned char>(unsigned char&&)':
+wrapper.cpp:(.text._ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_[_ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_]+0xd6): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int>(unsigned int&&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::Iter(surf::SuRF const*)':
+wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x568): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x57e): more undefined references to `std::__throw_length_error(char const*)' follow
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_SOSD_Facebook] FAILED (exit 1): Mon Mar 16 11:33:47 UTC 2026 --- (continuing)
+
+--- [Tradeoff_SOSD_Wiki] started: Mon Mar 16 11:33:47 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-1141540301/go.o /tmp/go-link-1141540301/000000.o /tmp/go-link-1141540301/000001.o /tmp/go-link-1141540301/000002.o /tmp/go-link-1141540301/000003.o /tmp/go-link-1141540301/000004.o /tmp/go-link-1141540301/000005.o /tmp/go-link-1141540301/000006.o /tmp/go-link-1141540301/000007.o /tmp/go-link-1141540301/000008.o /tmp/go-link-1141540301/000009.o /tmp/go-link-1141540301/000010.o /tmp/go-link-1141540301/000011.o /tmp/go-link-1141540301/000012.o /tmp/go-link-1141540301/000013.o /tmp/go-link-1141540301/000014.o /tmp/go-link-1141540301/000015.o /tmp/go-link-1141540301/000016.o /tmp/go-link-1141540301/000017.o /tmp/go-link-1141540301/000018.o /tmp/go-link-1141540301/000019.o /tmp/go-link-1141540301/000020.o /tmp/go-link-1141540301/000021.o /tmp/go-link-1141540301/000022.o /tmp/go-link-1141540301/000023.o /tmp/go-link-1141540301/000024.o /tmp/go-link-1141540301/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `std::random_device::~random_device()':
+wrapper.cpp:(.text._ZNSt13random_deviceD2Ev[_ZNSt13random_deviceD5Ev]+0x5): undefined reference to `std::random_device::_M_fini()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x50): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x83): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite::filter<grafite::ef_sux_vector, 2u>::filter<__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > > >(unsigned long, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >)':
+wrapper.cpp:(.text._ZN7grafite6filterINS_13ef_sux_vectorELj2EEC2IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_[_ZN7grafite6filterINS_13ef_sux_vectorELj2EEC5IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_]+0x1032): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new':
+wrapper.cpp:(.text.startup+0x82): undefined reference to `std::random_device::_M_init(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: wrapper.cpp:(.text.startup+0xc7): undefined reference to `std::random_device::_M_getval()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_fill_insert(__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, unsigned long, unsigned long const&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm[_ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm]+0x481): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_default_appendEm[_ZNSt6vectorImSaImEE17_M_default_appendEm]+0x17f): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<snarf_bitset, std::allocator<snarf_bitset> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x29e): undefined reference to `std::__throw_bad_array_new_length()'
+/usr/bin/ld: wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x2b4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<double, std::allocator<double> >::_M_fill_insert(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, unsigned long, double const&)':
+wrapper.cpp:(.text._ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd[_ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd]+0x48d): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `snarf_model<unsigned long>::generate_slope_bias_level_1(std::vector<unsigned long, std::allocator<unsigned long> >&, std::vector<double, std::allocator<double> >&)':
+wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7d3): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7e4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7f0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x86b): more undefined references to `std::__throw_length_error(char const*)' follow
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x162b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x17e0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x1a46): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x1aeb): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x3b6b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x3ea0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x3ef1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x42f4): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x4333): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x5fe1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6078): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x6507): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6598): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int)':
+wrapper.cpp:(.text+0xcb65): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0xcbde): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >& std::vector<std::vector<unsigned long, std::allocator<unsigned long> >, std::allocator<std::vector<unsigned long, std::allocator<unsigned long> > > >::emplace_back<std::vector<unsigned long, std::allocator<unsigned long> > >(std::vector<unsigned long, std::allocator<unsigned long> >&&) [clone .isra.0] [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x8): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x14): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x1c): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x30): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3c): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x47): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x5c): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x74): undefined reference to `std::__throw_out_of_range_fmt(char const*, ...)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x7e): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x86): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xa0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xac): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xb7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xcc): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xd7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xdf): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xf4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xff): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x107): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_query.cold':
+wrapper.cpp:(.text.unlikely+0x117): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x11f): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::addLevel() [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x3e2): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3ee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x456): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::buildSparse(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x466): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::create(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, bool, unsigned int, surf::SuffixType, unsigned int, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x47a): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x486): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_new.cold':
+wrapper.cpp:(.text.unlikely+0x558): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5e7): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5f3): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int const&>(unsigned int const&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned long, std::allocator<unsigned long> >::_M_realloc_append<unsigned long>(unsigned long&&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_[_ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned char, std::allocator<unsigned char> >::_M_realloc_append<unsigned char>(unsigned char&&)':
+wrapper.cpp:(.text._ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_[_ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_]+0xd6): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int>(unsigned int&&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::Iter(surf::SuRF const*)':
+wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x568): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x57e): more undefined references to `std::__throw_length_error(char const*)' follow
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_SOSD_Wiki] FAILED (exit 1): Mon Mar 16 11:33:47 UTC 2026 --- (continuing)
+
+--- [Tradeoff_SOSD_OSM] started: Mon Mar 16 11:33:47 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-4128830788/go.o /tmp/go-link-4128830788/000000.o /tmp/go-link-4128830788/000001.o /tmp/go-link-4128830788/000002.o /tmp/go-link-4128830788/000003.o /tmp/go-link-4128830788/000004.o /tmp/go-link-4128830788/000005.o /tmp/go-link-4128830788/000006.o /tmp/go-link-4128830788/000007.o /tmp/go-link-4128830788/000008.o /tmp/go-link-4128830788/000009.o /tmp/go-link-4128830788/000010.o /tmp/go-link-4128830788/000011.o /tmp/go-link-4128830788/000012.o /tmp/go-link-4128830788/000013.o /tmp/go-link-4128830788/000014.o /tmp/go-link-4128830788/000015.o /tmp/go-link-4128830788/000016.o /tmp/go-link-4128830788/000017.o /tmp/go-link-4128830788/000018.o /tmp/go-link-4128830788/000019.o /tmp/go-link-4128830788/000020.o /tmp/go-link-4128830788/000021.o /tmp/go-link-4128830788/000022.o /tmp/go-link-4128830788/000023.o /tmp/go-link-4128830788/000024.o /tmp/go-link-4128830788/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `std::random_device::~random_device()':
+wrapper.cpp:(.text._ZNSt13random_deviceD2Ev[_ZNSt13random_deviceD5Ev]+0x5): undefined reference to `std::random_device::_M_fini()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x50): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x83): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite::filter<grafite::ef_sux_vector, 2u>::filter<__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > > >(unsigned long, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >)':
+wrapper.cpp:(.text._ZN7grafite6filterINS_13ef_sux_vectorELj2EEC2IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_[_ZN7grafite6filterINS_13ef_sux_vectorELj2EEC5IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_]+0x1032): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new':
+wrapper.cpp:(.text.startup+0x82): undefined reference to `std::random_device::_M_init(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: wrapper.cpp:(.text.startup+0xc7): undefined reference to `std::random_device::_M_getval()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_fill_insert(__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, unsigned long, unsigned long const&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm[_ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm]+0x481): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_default_appendEm[_ZNSt6vectorImSaImEE17_M_default_appendEm]+0x17f): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<snarf_bitset, std::allocator<snarf_bitset> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x29e): undefined reference to `std::__throw_bad_array_new_length()'
+/usr/bin/ld: wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x2b4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<double, std::allocator<double> >::_M_fill_insert(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, unsigned long, double const&)':
+wrapper.cpp:(.text._ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd[_ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd]+0x48d): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `snarf_model<unsigned long>::generate_slope_bias_level_1(std::vector<unsigned long, std::allocator<unsigned long> >&, std::vector<double, std::allocator<double> >&)':
+wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7d3): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7e4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7f0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x86b): more undefined references to `std::__throw_length_error(char const*)' follow
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x162b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x17e0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x1a46): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x1aeb): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x3b6b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x3ea0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x3ef1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x42f4): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x4333): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x5fe1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6078): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x6507): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6598): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int)':
+wrapper.cpp:(.text+0xcb65): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0xcbde): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >& std::vector<std::vector<unsigned long, std::allocator<unsigned long> >, std::allocator<std::vector<unsigned long, std::allocator<unsigned long> > > >::emplace_back<std::vector<unsigned long, std::allocator<unsigned long> > >(std::vector<unsigned long, std::allocator<unsigned long> >&&) [clone .isra.0] [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x8): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x14): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x1c): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x30): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3c): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x47): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x5c): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x74): undefined reference to `std::__throw_out_of_range_fmt(char const*, ...)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x7e): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x86): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xa0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xac): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xb7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xcc): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xd7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xdf): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xf4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xff): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x107): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_query.cold':
+wrapper.cpp:(.text.unlikely+0x117): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x11f): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::addLevel() [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x3e2): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3ee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x456): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::buildSparse(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x466): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::create(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, bool, unsigned int, surf::SuffixType, unsigned int, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x47a): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x486): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_new.cold':
+wrapper.cpp:(.text.unlikely+0x558): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5e7): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5f3): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int const&>(unsigned int const&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned long, std::allocator<unsigned long> >::_M_realloc_append<unsigned long>(unsigned long&&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_[_ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned char, std::allocator<unsigned char> >::_M_realloc_append<unsigned char>(unsigned char&&)':
+wrapper.cpp:(.text._ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_[_ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_]+0xd6): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int>(unsigned int&&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::Iter(surf::SuRF const*)':
+wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x568): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x57e): more undefined references to `std::__throw_length_error(char const*)' follow
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Tradeoff_SOSD_OSM] FAILED (exit 1): Mon Mar 16 11:33:47 UTC 2026 --- (continuing)
+
+=== Step 6: SOSD distribution histograms ===
+
+--- [Distribution_SOSD] started: Mon Mar 16 11:33:47 UTC 2026 ---
+# Thesis-bench-industry/bench.test
+/home/ogurcov002/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.0.linux-amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+/usr/bin/gcc -m64 -s -Wl,--build-id=0xdaed3db34739c426a9d15fd19829a4ed86540259 -o $WORK/b001/bench.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--export-dynamic-symbol=crosscall2 -Wl,--compress-debug-sections=zlib /tmp/go-link-407828654/go.o /tmp/go-link-407828654/000000.o /tmp/go-link-407828654/000001.o /tmp/go-link-407828654/000002.o /tmp/go-link-407828654/000003.o /tmp/go-link-407828654/000004.o /tmp/go-link-407828654/000005.o /tmp/go-link-407828654/000006.o /tmp/go-link-407828654/000007.o /tmp/go-link-407828654/000008.o /tmp/go-link-407828654/000009.o /tmp/go-link-407828654/000010.o /tmp/go-link-407828654/000011.o /tmp/go-link-407828654/000012.o /tmp/go-link-407828654/000013.o /tmp/go-link-407828654/000014.o /tmp/go-link-407828654/000015.o /tmp/go-link-407828654/000016.o /tmp/go-link-407828654/000017.o /tmp/go-link-407828654/000018.o /tmp/go-link-407828654/000019.o /tmp/go-link-407828654/000020.o /tmp/go-link-407828654/000021.o /tmp/go-link-407828654/000022.o /tmp/go-link-407828654/000023.o /tmp/go-link-407828654/000024.o /tmp/go-link-407828654/000025.o -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/grafite/build -lgrafite_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/snarf/build -lsnarf_wrapper -lc++ -lm -O2 -g -L/home/ogurcov002/ws/Thesis-Bench-industry/surf/build -lsurf_wrapper -lc++ -lm -O2 -g -lpthread -O2 -g -lresolv -no-pie
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `std::random_device::~random_device()':
+wrapper.cpp:(.text._ZNSt13random_deviceD2Ev[_ZNSt13random_deviceD5Ev]+0x5): undefined reference to `std::random_device::_M_fini()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x50): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new.cold':
+wrapper.cpp:(.text.unlikely+0x83): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `grafite::filter<grafite::ef_sux_vector, 2u>::filter<__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > > >(unsigned long, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, __gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >)':
+wrapper.cpp:(.text._ZN7grafite6filterINS_13ef_sux_vectorELj2EEC2IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_[_ZN7grafite6filterINS_13ef_sux_vectorELj2EEC5IN9__gnu_cxx17__normal_iteratorIPmSt6vectorImSaImEEEEEEmT_SB_]+0x1032): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/grafite/build/libgrafite_wrapper.a(wrapper.cpp.o): in function `_GLOBAL__sub_I_grafite_new':
+wrapper.cpp:(.text.startup+0x82): undefined reference to `std::random_device::_M_init(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: wrapper.cpp:(.text.startup+0xc7): undefined reference to `std::random_device::_M_getval()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_fill_insert(__gnu_cxx::__normal_iterator<unsigned long*, std::vector<unsigned long, std::allocator<unsigned long> > >, unsigned long, unsigned long const&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm[_ZNSt6vectorImSaImEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPmS1_EEmRKm]+0x481): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_default_appendEm[_ZNSt6vectorImSaImEE17_M_default_appendEm]+0x17f): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<snarf_bitset, std::allocator<snarf_bitset> >::_M_default_append(unsigned long)':
+wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x29e): undefined reference to `std::__throw_bad_array_new_length()'
+/usr/bin/ld: wrapper.cpp:(.text._ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm[_ZNSt6vectorI12snarf_bitsetSaIS0_EE17_M_default_appendEm]+0x2b4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `std::vector<double, std::allocator<double> >::_M_fill_insert(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, unsigned long, double const&)':
+wrapper.cpp:(.text._ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd[_ZNSt6vectorIdSaIdEE14_M_fill_insertEN9__gnu_cxx17__normal_iteratorIPdS1_EEmRKd]+0x48d): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o): in function `snarf_model<unsigned long>::generate_slope_bias_level_1(std::vector<unsigned long, std::allocator<unsigned long> >&, std::vector<double, std::allocator<double> >&)':
+wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7d3): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7e4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x7f0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/snarf/build/libsnarf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE[_ZN11snarf_modelImE27generate_slope_bias_level_1ERSt6vectorImSaImEERS1_IdSaIdEE]+0x86b): more undefined references to `std::__throw_length_error(char const*)' follow
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x162b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x17e0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x1a46): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x1aeb): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x3b6b): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const':
+wrapper.cpp:(.text+0x3ea0): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x3ef1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x42f4): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x4333): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const':
+wrapper.cpp:(.text+0x5fe1): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6078): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const':
+wrapper.cpp:(.text+0x6507): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0x6598): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int)':
+wrapper.cpp:(.text+0xcb65): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: wrapper.cpp:(.text+0xcbde): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `std::vector<unsigned long, std::allocator<unsigned long> >& std::vector<std::vector<unsigned long, std::allocator<unsigned long> >, std::allocator<std::vector<unsigned long, std::allocator<unsigned long> > > >::emplace_back<std::vector<unsigned long, std::allocator<unsigned long> > >(std::vector<unsigned long, std::allocator<unsigned long> >&&) [clone .isra.0] [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x8): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x14): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x1c): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsDense::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x30): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3c): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x47): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x5c): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x74): undefined reference to `std::__throw_out_of_range_fmt(char const*, ...)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x7e): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x86): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::LoudsSparse::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xa0): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xac): undefined reference to `std::__throw_logic_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xb7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKey[abi:cxx11]() const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xcc): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xd7): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xdf): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::getKeyWithSuffix[abi:cxx11](unsigned int*) const [clone .cold]':
+wrapper.cpp:(.text.unlikely+0xf4): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0xff): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x107): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_query.cold':
+wrapper.cpp:(.text.unlikely+0x117): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x11f): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::addLevel() [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x3e2): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x3ee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::insertKeyBytesToTrieUntilUnique(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x456): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRFBuilder::buildSparse(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x466): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::create(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, bool, unsigned int, surf::SuffixType, unsigned int, unsigned int) [clone .cold]':
+wrapper.cpp:(.text.unlikely+0x47a): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x486): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf_new.cold':
+wrapper.cpp:(.text.unlikely+0x558): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5e7): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: wrapper.cpp:(.text.unlikely+0x5f3): undefined reference to `std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose()'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int const&>(unsigned int const&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJRKjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned long, std::allocator<unsigned long> >::_M_realloc_append<unsigned long>(unsigned long&&)':
+wrapper.cpp:(.text._ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_[_ZNSt6vectorImSaImEE17_M_realloc_appendIJmEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned char, std::allocator<unsigned char> >::_M_realloc_append<unsigned char>(unsigned char&&)':
+wrapper.cpp:(.text._ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_[_ZNSt6vectorIhSaIhEE17_M_realloc_appendIJhEEEvDpOT_]+0xd6): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `void std::vector<unsigned int, std::allocator<unsigned int> >::_M_realloc_append<unsigned int>(unsigned int&&)':
+wrapper.cpp:(.text._ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_[_ZNSt6vectorIjSaIjEE17_M_realloc_appendIJjEEEvDpOT_]+0xee): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o): in function `surf::SuRF::Iter::Iter(surf::SuRF const*)':
+wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x568): undefined reference to `std::__throw_length_error(char const*)'
+/usr/bin/ld: /home/ogurcov002/ws/Thesis-Bench-industry/surf/build/libsurf_wrapper.a(wrapper.cpp.o):wrapper.cpp:(.text._ZN4surf4SuRF4IterC2EPKS0_[_ZN4surf4SuRF4IterC5EPKS0_]+0x57e): more undefined references to `std::__throw_length_error(char const*)' follow
+collect2: error: ld returned 1 exit status
+
+FAIL	Thesis-bench-industry/bench [build failed]
+FAIL
+--- [Distribution_SOSD] FAILED (exit 1): Mon Mar 16 11:33:48 UTC 2026 --- (continuing)
+
+=== Step 9: Committing results ===
+Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: empty ident name (for <ogurcov002@thesis-perf-test-intel.us-central1-f.c.gen-lang-client-0745226000.internal>) not allowed

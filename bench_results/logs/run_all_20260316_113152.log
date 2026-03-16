@@ -1,0 +1,97 @@
+=== Benchmark run started: Mon Mar 16 11:31:52 UTC 2026 ===
+Repo: /home/ogurcov002/ws/Thesis-Bench-industry
+
+=== Step 1: Downloading SOSD data in background ===
+SOSD download PID=21478 (log: /home/ogurcov002/ws/Thesis-Bench-industry/bench_results/logs/sosd_download.log)
+
+=== Step 2: Generate synthetic keys ===
+
+--- [GenerateSyntheticKeys] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [GenerateSyntheticKeys] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+=== Step 3: Build throughput ===
+
+--- [BuildThroughput] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [BuildThroughput] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+=== Step 4: FPR vs BPK — synthetic distributions ===
+
+--- [Tradeoff_Clustered] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [Tradeoff_Clustered] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+--- [Tradeoff_Uniform] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [Tradeoff_Uniform] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+--- [Tradeoff_Spread] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [Tradeoff_Spread] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+--- [Tradeoff_Zipfian] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [Tradeoff_Zipfian] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+=== Step 7: Synthetic distribution visualization ===
+
+--- [DistributionVisualization] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [DistributionVisualization] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+=== Step 8: Performance tests ===
+
+--- [BuildTimePerKey] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [BuildTimePerKey] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+--- [QueryTimeVsRangeLen] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [QueryTimeVsRangeLen] FAILED (exit 1): Mon Mar 16 11:31:52 UTC 2026 --- (continuing)
+
+--- [Scalability] started: Mon Mar 16 11:31:52 UTC 2026 ---
+# Thesis-bench-industry/bench
+Thesis/emptiness/are_bloom/are_bloom.go:8:2: missing go.sum entry for module providing package github.com/bits-and-blooms/bloom/v3 (imported by Thesis/emptiness/are_bloom); to add:
+	go get Thesis/emptiness/are_bloom@v0.0.0
+FAIL	Thesis-bench-industry/bench [setup failed]
+FAIL
+--- [Scalability] FAILED (exit 1): Mon Mar 16 11:31:53 UTC 2026 --- (continuing)
+
+=== Waiting for SOSD download to complete (PID=21478) ===

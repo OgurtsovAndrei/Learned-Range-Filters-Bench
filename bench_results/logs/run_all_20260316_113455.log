@@ -1,0 +1,339 @@
+=== Benchmark run started: Mon Mar 16 11:34:55 UTC 2026 ===
+Repo: /home/ogurcov002/ws/Thesis-Bench-industry
+
+=== Step 1: Downloading SOSD data in background ===
+SOSD download PID=25155 (log: /home/ogurcov002/ws/Thesis-Bench-industry/bench_results/logs/sosd_download.log)
+
+=== Step 2: Generate synthetic keys ===
+
+--- [GenerateSyntheticKeys] started: Mon Mar 16 11:34:55 UTC 2026 ---
+=== RUN   TestGenerateSyntheticKeys
+    throughput_test.go:98: skipping clustered_16M_uint64 (already exists; set REGEN=1 to regenerate)
+    throughput_test.go:98: skipping uniform_16M_uint64 (already exists; set REGEN=1 to regenerate)
+    throughput_test.go:98: skipping spread_16M_uint64 (already exists; set REGEN=1 to regenerate)
+    throughput_test.go:98: skipping zipfian_16M_uint64 (already exists; set REGEN=1 to regenerate)
+--- PASS: TestGenerateSyntheticKeys (0.00s)
+PASS
+ok  	Thesis-bench-industry/bench	0.003s
+--- [GenerateSyntheticKeys] PASSED: Mon Mar 16 11:34:56 UTC 2026 ---
+
+=== Step 3: Build throughput ===
+
+--- [BuildThroughput] started: Mon Mar 16 11:34:56 UTC 2026 ---
+=== RUN   TestBuildThroughput
+=== RUN   TestBuildThroughput/clustered
+
+=== Build Throughput — clustered (ε=0.01, L=100) ===
+Filter           | N        | Throughput       | Time      
+Adaptive(t=0)    | N=1024     | 2.58 M keys/sec | 0.4 ms
+Adaptive(t=0)    | N=4096     | 2.61 M keys/sec | 1.6 ms
+Adaptive(t=0)    | N=16384    | 2.47 M keys/sec | 6.6 ms
+Adaptive(t=0)    | N=65536    | 2.45 M keys/sec | 26.8 ms
+Adaptive(t=0)    | N=262144   | 2.22 M keys/sec | 118.3 ms
+Adaptive(t=0)    | N=1048576  | 2.05 M keys/sec | 511.3 ms
+Adaptive(t=0)    | N=4194304  | 2.69 M keys/sec | 1560.6 ms
+Adaptive(t=0)    | N=16777216 | 2.34 M keys/sec | 7166.5 ms
+SODA             | N=1024     | 3.27 M keys/sec | 0.3 ms
+SODA             | N=4096     | 3.38 M keys/sec | 1.2 ms
+SODA             | N=16384    | 3.18 M keys/sec | 5.2 ms
+SODA             | N=65536    | 3.02 M keys/sec | 21.7 ms
+SODA             | N=262144   | 2.61 M keys/sec | 100.5 ms
+SODA             | N=1048576  | 2.75 M keys/sec | 380.8 ms
+SODA             | N=4194304  | 3.69 M keys/sec | 1136.4 ms
+SODA             | N=16777216 | 2.74 M keys/sec | 6120.8 ms
+Truncation       | N=1024     | 8.23 M keys/sec | 0.1 ms
+Truncation       | N=4096     | 9.24 M keys/sec | 0.4 ms
+Truncation       | N=16384    | 9.96 M keys/sec | 1.6 ms
+Truncation       | N=65536    | 10.20 M keys/sec | 6.4 ms
+Truncation       | N=262144   | 10.13 M keys/sec | 25.9 ms
+Truncation       | N=1048576  | 13.01 M keys/sec | 80.6 ms
+Truncation       | N=4194304  | 15.88 M keys/sec | 264.2 ms
+Truncation       | N=16777216 | 12.99 M keys/sec | 1291.3 ms
+Hybrid           | N=1024     | 1.34 M keys/sec | 0.8 ms
+Hybrid           | N=4096     | 3.60 M keys/sec | 1.1 ms
+Hybrid           | N=16384    | 7.67 M keys/sec | 2.1 ms
+Hybrid           | N=65536    | 7.13 M keys/sec | 9.2 ms
+Hybrid           | N=262144   | 7.39 M keys/sec | 35.5 ms
+Hybrid           | N=1048576  | 6.20 M keys/sec | 169.2 ms
+Hybrid           | N=4194304  | 5.56 M keys/sec | 754.5 ms
+Hybrid           | N=16777216 | 4.85 M keys/sec | 3460.3 ms
+CDF-ARE          | N=1024     | 0.22 M keys/sec | 4.7 ms
+CDF-ARE          | N=4096     | 0.22 M keys/sec | 18.6 ms
+CDF-ARE          | N=16384    | 0.22 M keys/sec | 74.8 ms
+CDF-ARE          | N=65536    | 0.21 M keys/sec | 312.6 ms
+CDF-ARE          | N=262144   | 0.21 M keys/sec | 1250.2 ms
+CDF-ARE          | N=1048576  | 0.07 M keys/sec | 14326.9 ms
+BloomARE         | N=1024     | 11.56 M keys/sec | 0.1 ms
+BloomARE         | N=4096     | 13.23 M keys/sec | 0.3 ms
+BloomARE         | N=16384    | 13.21 M keys/sec | 1.2 ms
+BloomARE         | N=65536    | 11.83 M keys/sec | 5.5 ms
+BloomARE         | N=262144   | 11.88 M keys/sec | 22.1 ms
+BloomARE         | N=1048576  | 9.90 M keys/sec | 105.9 ms
+BloomARE         | N=4194304  | 8.26 M keys/sec | 507.8 ms
+BloomARE         | N=16777216 | 8.07 M keys/sec | 2078.4 ms
+Grafite          | N=1024     | 8.60 M keys/sec | 0.1 ms
+Grafite          | N=4096     | 8.71 M keys/sec | 0.5 ms
+Grafite          | N=16384    | 10.87 M keys/sec | 1.5 ms
+Grafite          | N=65536    | 10.96 M keys/sec | 6.0 ms
+Grafite          | N=262144   | 9.73 M keys/sec | 26.9 ms
+Grafite          | N=1048576  | 12.99 M keys/sec | 80.7 ms
+Grafite          | N=4194304  | 19.55 M keys/sec | 214.5 ms
+Grafite          | N=16777216 | 13.28 M keys/sec | 1263.5 ms
+SNARF            | N=1024     | 5.03 M keys/sec | 0.2 ms
+SNARF            | N=4096     | 6.54 M keys/sec | 0.6 ms
+SNARF            | N=16384    | 8.32 M keys/sec | 2.0 ms
+SNARF            | N=65536    | 7.01 M keys/sec | 9.3 ms
+SNARF            | N=262144   | 6.59 M keys/sec | 39.8 ms
+SNARF            | N=1048576  | 6.74 M keys/sec | 155.6 ms
+SNARF            | N=4194304  | 6.24 M keys/sec | 671.9 ms
+SNARF            | N=16777216 | 5.40 M keys/sec | 3106.4 ms
+SuRF             | N=1024     | 10.77 M keys/sec | 0.1 ms
+SuRF             | N=4096     | 10.02 M keys/sec | 0.4 ms
+SuRF             | N=16384    | 8.76 M keys/sec | 1.9 ms
+SuRF             | N=65536    | 5.02 M keys/sec | 13.1 ms
+SuRF             | N=262144   | 1.16 M keys/sec | 226.2 ms
+SuRF             | N=1048576  | 1.11 M keys/sec | 946.5 ms
+SuRF             | N=4194304  | 7.44 M keys/sec | 564.0 ms
+SuRF             | N=16777216 | 13.17 M keys/sec | 1273.9 ms
+SuRFHash(8)      | N=1024     | 14.96 M keys/sec | 0.1 ms
+SuRFHash(8)      | N=4096     | 15.00 M keys/sec | 0.3 ms
+SuRFHash(8)      | N=16384    | 13.43 M keys/sec | 1.2 ms
+SuRFHash(8)      | N=65536    | 4.95 M keys/sec | 13.2 ms
+SuRFHash(8)      | N=262144   | 1.16 M keys/sec | 226.0 ms
+SuRFHash(8)      | N=1048576  | 1.10 M keys/sec | 951.7 ms
+SuRFHash(8)      | N=4194304  | 12.15 M keys/sec | 345.3 ms
+SuRFHash(8)      | N=16777216 | 10.32 M keys/sec | 1626.0 ms
+SuRFReal(8)      | N=1024     | 7.32 M keys/sec | 0.1 ms
+SuRFReal(8)      | N=4096     | 6.45 M keys/sec | 0.6 ms
+SuRFReal(8)      | N=16384    | 6.88 M keys/sec | 2.4 ms
+SuRFReal(8)      | N=65536    | 4.82 M keys/sec | 13.6 ms
+SuRFReal(8)      | N=262144   | 1.13 M keys/sec | 232.9 ms
+SuRFReal(8)      | N=1048576  | 1.09 M keys/sec | 959.5 ms
+SuRFReal(8)      | N=4194304  | 12.19 M keys/sec | 344.0 ms
+SuRFReal(8)      | N=16777216 | 10.45 M keys/sec | 1604.9 ms
+
+SVG written to ../bench_results/plots/build_throughput/clustered.svg
+=== RUN   TestBuildThroughput/uniform
+
+=== Build Throughput — uniform (ε=0.01, L=100) ===
+Filter           | N        | Throughput       | Time      
+Adaptive(t=0)    | N=1024     | 2.89 M keys/sec | 0.4 ms
+Adaptive(t=0)    | N=4096     | 2.91 M keys/sec | 1.4 ms
+Adaptive(t=0)    | N=16384    | 2.56 M keys/sec | 6.4 ms
+Adaptive(t=0)    | N=65536    | 2.46 M keys/sec | 26.6 ms
+Adaptive(t=0)    | N=262144   | 2.19 M keys/sec | 119.7 ms
+Adaptive(t=0)    | N=1048576  | 1.92 M keys/sec | 545.4 ms
+Adaptive(t=0)    | N=4194304  | 1.54 M keys/sec | 2724.2 ms
+Adaptive(t=0)    | N=16777216 | 1.27 M keys/sec | 13218.2 ms
+SODA             | N=1024     | 3.68 M keys/sec | 0.3 ms
+SODA             | N=4096     | 3.59 M keys/sec | 1.1 ms
+SODA             | N=16384    | 3.35 M keys/sec | 4.9 ms
+SODA             | N=65536    | 2.51 M keys/sec | 26.1 ms
+SODA             | N=262144   | 2.59 M keys/sec | 101.2 ms
+SODA             | N=1048576  | 2.31 M keys/sec | 454.4 ms
+SODA             | N=4194304  | 1.99 M keys/sec | 2109.4 ms
+SODA             | N=16777216 | 1.53 M keys/sec | 10989.2 ms
+Truncation       | N=1024     | 8.78 M keys/sec | 0.1 ms
+Truncation       | N=4096     | 10.51 M keys/sec | 0.4 ms
+Truncation       | N=16384    | 10.69 M keys/sec | 1.5 ms
+Truncation       | N=65536    | 10.53 M keys/sec | 6.2 ms
+Truncation       | N=262144   | 10.13 M keys/sec | 25.9 ms
+Truncation       | N=1048576  | 9.75 M keys/sec | 107.5 ms
+Truncation       | N=4194304  | 9.26 M keys/sec | 453.1 ms
+Truncation       | N=16777216 | 8.50 M keys/sec | 1974.7 ms
+Hybrid           | N=1024     | 1.40 M keys/sec | 0.7 ms
+Hybrid           | N=4096     | 3.56 M keys/sec | 1.2 ms
+Hybrid           | N=16384    | 6.95 M keys/sec | 2.4 ms
+Hybrid           | N=65536    | 7.16 M keys/sec | 9.2 ms
+Hybrid           | N=262144   | 6.93 M keys/sec | 37.8 ms
+Hybrid           | N=1048576  | 6.60 M keys/sec | 158.9 ms
+Hybrid           | N=4194304  | 4.81 M keys/sec | 872.0 ms
+Hybrid           | N=16777216 | 4.79 M keys/sec | 3504.6 ms
+CDF-ARE          | N=1024     | 0.20 M keys/sec | 5.0 ms
+CDF-ARE          | N=4096     | 0.21 M keys/sec | 19.4 ms
+CDF-ARE          | N=16384    | 0.21 M keys/sec | 76.7 ms
+CDF-ARE          | N=65536    | 0.21 M keys/sec | 310.8 ms
+CDF-ARE          | N=262144   | 0.21 M keys/sec | 1256.7 ms
+CDF-ARE          | N=1048576  | 0.19 M keys/sec | 5610.6 ms
+BloomARE         | N=1024     | 12.52 M keys/sec | 0.1 ms
+BloomARE         | N=4096     | 13.10 M keys/sec | 0.3 ms
+BloomARE         | N=16384    | 13.37 M keys/sec | 1.2 ms
+BloomARE         | N=65536    | 11.73 M keys/sec | 5.6 ms
+BloomARE         | N=262144   | 11.93 M keys/sec | 22.0 ms
+BloomARE         | N=1048576  | 9.93 M keys/sec | 105.6 ms
+BloomARE         | N=4194304  | 8.56 M keys/sec | 489.9 ms
+BloomARE         | N=16777216 | 8.12 M keys/sec | 2067.3 ms
+Grafite          | N=1024     | 10.45 M keys/sec | 0.1 ms
+Grafite          | N=4096     | 12.44 M keys/sec | 0.3 ms
+Grafite          | N=16384    | 11.61 M keys/sec | 1.4 ms
+Grafite          | N=65536    | 10.65 M keys/sec | 6.2 ms
+Grafite          | N=262144   | 10.18 M keys/sec | 25.8 ms
+Grafite          | N=1048576  | 9.46 M keys/sec | 110.8 ms
+Grafite          | N=4194304  | 9.20 M keys/sec | 455.7 ms
+Grafite          | N=16777216 | 8.60 M keys/sec | 1951.5 ms
+SNARF            | N=1024     | 4.84 M keys/sec | 0.2 ms
+SNARF            | N=4096     | 4.38 M keys/sec | 0.9 ms
+SNARF            | N=16384    | 8.42 M keys/sec | 1.9 ms
+SNARF            | N=65536    | 6.83 M keys/sec | 9.6 ms
+SNARF            | N=262144   | 6.58 M keys/sec | 39.9 ms
+SNARF            | N=1048576  | 6.73 M keys/sec | 155.8 ms
+SNARF            | N=4194304  | 6.10 M keys/sec | 687.3 ms
+SNARF            | N=16777216 | 5.41 M keys/sec | 3099.0 ms
+SuRF             | N=1024     | 10.84 M keys/sec | 0.1 ms
+SuRF             | N=4096     | 10.93 M keys/sec | 0.4 ms
+SuRF             | N=16384    | 6.81 M keys/sec | 2.4 ms
+SuRF             | N=65536    | 4.26 M keys/sec | 15.4 ms
+SuRF             | N=262144   | 0.93 M keys/sec | 281.5 ms
+SuRF             | N=1048576  | 3.54 M keys/sec | 296.1 ms
+SuRF             | N=4194304  | 3.77 M keys/sec | 1111.4 ms
+SuRF             | N=16777216 | 13.77 M keys/sec | 1218.0 ms
+SuRFHash(8)      | N=1024     | 9.89 M keys/sec | 0.1 ms
+SuRFHash(8)      | N=4096     | 10.67 M keys/sec | 0.4 ms
+SuRFHash(8)      | N=16384    | 7.16 M keys/sec | 2.3 ms
+SuRFHash(8)      | N=65536    | 4.25 M keys/sec | 15.4 ms
+SuRFHash(8)      | N=262144   | 17.15 M keys/sec | 15.3 ms
+SuRFHash(8)      | N=1048576  | 15.77 M keys/sec | 66.5 ms
+SuRFHash(8)      | N=4194304  | 8.99 M keys/sec | 466.5 ms
+SuRFHash(8)      | N=16777216 | 9.96 M keys/sec | 1684.4 ms
+SuRFReal(8)      | N=1024     | 14.87 M keys/sec | 0.1 ms
+SuRFReal(8)      | N=4096     | 18.40 M keys/sec | 0.2 ms
+SuRFReal(8)      | N=16384    | 15.11 M keys/sec | 1.1 ms
+SuRFReal(8)      | N=65536    | 4.41 M keys/sec | 14.8 ms
+SuRFReal(8)      | N=262144   | 19.15 M keys/sec | 13.7 ms
+SuRFReal(8)      | N=1048576  | 16.37 M keys/sec | 64.1 ms
+SuRFReal(8)      | N=4194304  | 9.16 M keys/sec | 457.8 ms
+SuRFReal(8)      | N=16777216 | 10.20 M keys/sec | 1645.4 ms
+
+SVG written to ../bench_results/plots/build_throughput/uniform.svg
+=== RUN   TestBuildThroughput/spread
+
+=== Build Throughput — spread (ε=0.01, L=100) ===
+Filter           | N        | Throughput       | Time      
+Adaptive(t=0)    | N=1024     | 9.09 M keys/sec | 0.1 ms
+Adaptive(t=0)    | N=4096     | 9.93 M keys/sec | 0.4 ms
+Adaptive(t=0)    | N=16384    | 10.78 M keys/sec | 1.5 ms
+Adaptive(t=0)    | N=65536    | 9.90 M keys/sec | 6.6 ms
+Adaptive(t=0)    | N=262144   | 8.74 M keys/sec | 30.0 ms
+Adaptive(t=0)    | N=1048576  | 9.15 M keys/sec | 114.6 ms
+Adaptive(t=0)    | N=4194304  | 8.73 M keys/sec | 480.3 ms
+Adaptive(t=0)    | N=16777216 | 6.90 M keys/sec | 2430.8 ms
+SODA             | N=1024     | 19.73 M keys/sec | 0.1 ms
+SODA             | N=4096     | 27.42 M keys/sec | 0.1 ms
+SODA             | N=16384    | 34.06 M keys/sec | 0.5 ms
+SODA             | N=65536    | 34.44 M keys/sec | 1.9 ms
+SODA             | N=262144   | 33.36 M keys/sec | 7.9 ms
+SODA             | N=1048576  | 33.42 M keys/sec | 31.4 ms
+SODA             | N=4194304  | 29.44 M keys/sec | 142.5 ms
+SODA             | N=16777216 | 16.04 M keys/sec | 1045.7 ms
+Truncation       | N=1024     | 8.58 M keys/sec | 0.1 ms
+Truncation       | N=4096     | 9.99 M keys/sec | 0.4 ms
+Truncation       | N=16384    | 10.58 M keys/sec | 1.5 ms
+Truncation       | N=65536    | 10.59 M keys/sec | 6.2 ms
+Truncation       | N=262144   | 10.35 M keys/sec | 25.3 ms
+Truncation       | N=1048576  | 9.58 M keys/sec | 109.4 ms
+Truncation       | N=4194304  | 8.46 M keys/sec | 496.0 ms
+Truncation       | N=16777216 | 8.56 M keys/sec | 1960.4 ms
+Hybrid           | N=1024     | 3.49 M keys/sec | 0.3 ms
+Hybrid           | N=4096     | 6.94 M keys/sec | 0.6 ms
+Hybrid           | N=16384    | 7.24 M keys/sec | 2.3 ms
+Hybrid           | N=65536    | 7.09 M keys/sec | 9.2 ms
+Hybrid           | N=262144   | 6.59 M keys/sec | 39.8 ms
+Hybrid           | N=1048576  | 6.19 M keys/sec | 169.4 ms
+Hybrid           | N=4194304  | 4.48 M keys/sec | 935.2 ms
+Hybrid           | N=16777216 | 4.81 M keys/sec | 3486.9 ms
+CDF-ARE          | N=1024     | 0.66 M keys/sec | 1.5 ms
+CDF-ARE          | N=4096     | 0.64 M keys/sec | 6.4 ms
+CDF-ARE          | N=16384    | 0.64 M keys/sec | 25.6 ms
+CDF-ARE          | N=65536    | 0.64 M keys/sec | 102.2 ms
+CDF-ARE          | N=262144   | 0.63 M keys/sec | 416.1 ms
+CDF-ARE          | N=1048576  | 0.57 M keys/sec | 1826.7 ms
+BloomARE         | N=1024     | 12.47 M keys/sec | 0.1 ms
+BloomARE         | N=4096     | 13.11 M keys/sec | 0.3 ms
+BloomARE         | N=16384    | 13.40 M keys/sec | 1.2 ms
+BloomARE         | N=65536    | 12.55 M keys/sec | 5.2 ms
+BloomARE         | N=262144   | 8.72 M keys/sec | 30.1 ms
+BloomARE         | N=1048576  | 9.88 M keys/sec | 106.1 ms
+BloomARE         | N=4194304  | 8.38 M keys/sec | 500.3 ms
+BloomARE         | N=16777216 | 8.05 M keys/sec | 2084.9 ms
+Grafite          | N=1024     | 16.19 M keys/sec | 0.1 ms
+Grafite          | N=4096     | 12.37 M keys/sec | 0.3 ms
+Grafite          | N=16384    | 12.83 M keys/sec | 1.3 ms
+Grafite          | N=65536    | 13.52 M keys/sec | 4.8 ms
+Grafite          | N=262144   | 12.26 M keys/sec | 21.4 ms
+Grafite          | N=1048576  | 11.60 M keys/sec | 90.4 ms
+Grafite          | N=4194304  | 10.75 M keys/sec | 390.3 ms
+Grafite          | N=16777216 | 9.78 M keys/sec | 1715.7 ms
+SNARF            | N=1024     | 4.99 M keys/sec | 0.2 ms
+SNARF            | N=4096     | 9.12 M keys/sec | 0.4 ms
+SNARF            | N=16384    | 13.06 M keys/sec | 1.3 ms
+SNARF            | N=65536    | 8.68 M keys/sec | 7.5 ms
+SNARF            | N=262144   | 8.05 M keys/sec | 32.6 ms
+SNARF            | N=1048576  | 8.16 M keys/sec | 128.6 ms
+SNARF            | N=4194304  | 7.09 M keys/sec | 591.5 ms
+SNARF            | N=16777216 | 6.23 M keys/sec | 2691.1 ms
+SuRF             | N=1024     | 14.04 M keys/sec | 0.1 ms
+SuRF             | N=4096     | 19.92 M keys/sec | 0.2 ms
+SuRF             | N=16384    | 15.64 M keys/sec | 1.0 ms
+SuRF             | N=65536    | 4.60 M keys/sec | 14.3 ms
+SuRF             | N=262144   | 0.97 M keys/sec | 268.9 ms
+SuRF             | N=1048576  | 24.68 M keys/sec | 42.5 ms
+SuRF             | N=4194304  | 21.65 M keys/sec | 193.8 ms
+SuRF             | N=16777216 | 23.02 M keys/sec | 728.9 ms
+SuRFHash(8)      | N=1024     | 10.84 M keys/sec | 0.1 ms
+SuRFHash(8)      | N=4096     | 11.34 M keys/sec | 0.4 ms
+SuRFHash(8)      | N=16384    | 7.20 M keys/sec | 2.3 ms
+SuRFHash(8)      | N=65536    | 4.33 M keys/sec | 15.1 ms
+SuRFHash(8)      | N=262144   | 19.21 M keys/sec | 13.6 ms
+SuRFHash(8)      | N=1048576  | 20.08 M keys/sec | 52.2 ms
+SuRFHash(8)      | N=4194304  | 19.63 M keys/sec | 213.7 ms
+SuRFHash(8)      | N=16777216 | 19.54 M keys/sec | 858.8 ms
+SuRFReal(8)      | N=1024     | 13.12 M keys/sec | 0.1 ms
+SuRFReal(8)      | N=4096     | 19.10 M keys/sec | 0.2 ms
+SuRFReal(8)      | N=16384    | 15.65 M keys/sec | 1.0 ms
+SuRFReal(8)      | N=65536    | 4.63 M keys/sec | 14.2 ms
+SuRFReal(8)      | N=262144   | 22.65 M keys/sec | 11.6 ms
+SuRFReal(8)      | N=1048576  | 20.96 M keys/sec | 50.0 ms
+SuRFReal(8)      | N=4194304  | 20.48 M keys/sec | 204.8 ms
+SuRFReal(8)      | N=16777216 | 20.11 M keys/sec | 834.2 ms
+
+SVG written to ../bench_results/plots/build_throughput/spread.svg
+=== RUN   TestBuildThroughput/zipfian
+
+=== Build Throughput — zipfian (ε=0.01, L=100) ===
+Filter           | N        | Throughput       | Time      
+Adaptive(t=0)    | N=1024     | 5.82 M keys/sec | 0.2 ms
+Adaptive(t=0)    | N=4096     | 7.01 M keys/sec | 0.6 ms
+Adaptive(t=0)    | N=16384    | 7.53 M keys/sec | 2.2 ms
+Adaptive(t=0)    | N=65536    | 6.90 M keys/sec | 9.5 ms
+Adaptive(t=0)    | N=262144   | 6.25 M keys/sec | 41.9 ms
+Adaptive(t=0)    | N=1048576  | 3.44 M keys/sec | 304.4 ms
+Adaptive(t=0)    | N=4194304  | 3.10 M keys/sec | 1352.8 ms
+Adaptive(t=0)    | N=16777216 | 2.62 M keys/sec | 6402.8 ms
+SODA             | N=1024     | 10.97 M keys/sec | 0.1 ms
+SODA             | N=4096     | 13.63 M keys/sec | 0.3 ms
+SODA             | N=16384    | 14.83 M keys/sec | 1.1 ms
+SODA             | N=65536    | 14.15 M keys/sec | 4.6 ms
+SODA             | N=262144   | 13.48 M keys/sec | 19.4 ms
+SODA             | N=1048576  | 4.23 M keys/sec | 248.1 ms
+SODA             | N=4194304  | 3.83 M keys/sec | 1093.7 ms
+SODA             | N=16777216 | 3.26 M keys/sec | 5147.3 ms
+Truncation       | N=1024     | 8.12 M keys/sec | 0.1 ms
+Truncation       | N=4096     | 8.97 M keys/sec | 0.5 ms
+Truncation       | N=16384    | 9.22 M keys/sec | 1.8 ms
+Truncation       | N=65536    | 8.37 M keys/sec | 7.8 ms
+Truncation       | N=262144   | 18.39 M keys/sec | 14.3 ms
+Truncation       | N=1048576  | 17.69 M keys/sec | 59.3 ms
+Truncation       | N=4194304  | 16.89 M keys/sec | 248.4 ms
+Truncation       | N=16777216 | 14.59 M keys/sec | 1149.6 ms
+Hybrid           | N=1024     | 1.75 M keys/sec | 0.6 ms
+Hybrid           | N=4096     | 4.95 M keys/sec | 0.8 ms
+Hybrid           | N=16384    | 7.43 M keys/sec | 2.2 ms
+Hybrid           | N=65536    | 6.97 M keys/sec | 9.4 ms
+Hybrid           | N=262144   | 10.16 M keys/sec | 25.8 ms
+Hybrid           | N=1048576  | 9.14 M keys/sec | 114.8 ms
+Hybrid           | N=4194304  | 5.83 M keys/sec | 719.4 ms
+Hybrid           | N=16777216 | 7.15 M keys/sec | 2347.9 ms
+CDF-ARE          | N=1024     | 0.09 M keys/sec | 11.3 ms
+CDF-ARE          | N=4096     | 0.03 M keys/sec | 147.9 ms
+CDF-ARE          | N=16384    | 0.01 M keys/sec | 3219.0 ms
+CDF-ARE          | N=65536    | 0.00 M keys/sec | 15087.8 ms
