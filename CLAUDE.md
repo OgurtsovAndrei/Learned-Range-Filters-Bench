@@ -61,7 +61,7 @@ Six ARE (Approximate Range Emptiness) packages, each implementing a different ap
 | Package | Key type | Constructor | Notes |
 |---|---|---|---|
 | `are_trunc` | `bits.BitString` | `NewApproximateRangeEmptiness(keys, eps)` | Prefix truncation, no rangeLen param |
-| `are_optimized` | `bits.BitString` | `NewOptimizedARE(keys, rangeLen, eps, threshold)` | Adaptive with threshold parameter |
+| `are_adaptive` | `bits.BitString` | `NewAdaptiveARE(keys, rangeLen, eps, threshold)` | Adaptive with threshold parameter |
 | `are_hybrid` | `bits.BitString` | `NewHybridARE(keys, rangeLen, eps)` | Cluster detection + per-segment ARE |
 | `are_soda_hash` | `uint64` | `NewApproximateRangeEmptinessSoda(keys, rangeLen, eps)` | 2-universal hashing, FPR is distribution-independent |
 | `are_pgm` | `uint64` | `NewPGMApproximateRangeEmptiness(keys, rangeLen, eps, pgmEps)` | CDF-based with PGM index, O(n²) build — guarded at N>1M |

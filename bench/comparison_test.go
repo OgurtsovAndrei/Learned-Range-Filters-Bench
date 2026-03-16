@@ -8,7 +8,7 @@ import (
 	"Thesis/emptiness/are_trunc"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
-	"Thesis/emptiness/are_optimized"
+	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
 	"Thesis/testutils"
@@ -235,7 +235,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 					}
-					if f, err := are_optimized.NewOptimizedAREFromK(keysBS, rangeLen, K, 0); err == nil {
+					if f, err := are_adaptive.NewAdaptiveAREFromK(keysBS, rangeLen, K, 0); err == nil {
 						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
 						goTasks = append(goTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})

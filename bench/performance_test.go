@@ -6,7 +6,7 @@ import (
 	"Thesis/bits"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
-	"Thesis/emptiness/are_optimized"
+	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
 	"Thesis/emptiness/are_trunc"
@@ -42,7 +42,7 @@ func TestBuildTimePerKey(t *testing.T) {
 
 	filters := []filterDef{
 		{"Adaptive(t=0)", "#2a7fff", "square", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
-			_, err := are_optimized.NewOptimizedARE(bs, rangeLen, eps, 0)
+			_, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
 			return err
 		}},
 		{"SODA", "#22a06b", "diamond", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
@@ -176,7 +176,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 
 	filters := []filterDef{
 		{"Adaptive(t=0)", "#2a7fff", "square", false, func(L uint64) (func(a, b uint64) bool, error) {
-			f, err := are_optimized.NewOptimizedARE(keysBS, L, eps, 0)
+			f, err := are_adaptive.NewAdaptiveARE(keysBS, L, eps, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -324,7 +324,7 @@ func TestScalability(t *testing.T) {
 
 	filters := []filterEntry{
 		{"Adaptive(t=0)", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
-			f, err := are_optimized.NewOptimizedARE(bs, rangeLen, eps, 0)
+			f, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
 			if err != nil {
 				return nil, 0, "", err
 			}
@@ -546,8 +546,8 @@ func TestTradeoff_Full(t *testing.T) {
 		fmt.Fprintf(csvF, "%f,Theoretical,%f,%f\n", eps, thBPK, eps)
 		fmt.Printf("%-6.3f | %-20s | %8.2f | %12.6f\n", eps, "Theoretical", thBPK, eps)
 
-		fOptU, errOptU := are_optimized.NewOptimizedARE(unifBS, rangeLen, eps, 0)
-		fOptS, errOptS := are_optimized.NewOptimizedARE(seqBS, rangeLen, eps, 0)
+		fOptU, errOptU := are_adaptive.NewAdaptiveARE(unifBS, rangeLen, eps, 0)
+		fOptS, errOptS := are_adaptive.NewAdaptiveARE(seqBS, rangeLen, eps, 0)
 		fSodaU, errSodaU := are_soda_hash.NewApproximateRangeEmptinessSoda(unifU64, rangeLen, eps)
 		fSodaS, errSodaS := are_soda_hash.NewApproximateRangeEmptinessSoda(seqU64, rangeLen, eps)
 		fTruncU, errTruncU := are_trunc.NewApproximateRangeEmptiness(unifBS, eps)
@@ -633,7 +633,7 @@ func TestTradeoff_Full(t *testing.T) {
 }
 
 // Safe size helpers for TestTradeoff_Full (prefixed to avoid conflict with comparison_test.go)
-func perfSafeSize(f *are_optimized.OptimizedApproximateRangeEmptiness) uint64 {
+func perfSafeSize(f *are_adaptive.AdaptiveApproximateRangeEmptiness) uint64 {
 	if f == nil {
 		return 0
 	}

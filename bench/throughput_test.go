@@ -6,7 +6,7 @@ import (
 	"Thesis/bits"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
-	"Thesis/emptiness/are_optimized"
+	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
 	"Thesis/emptiness/are_trunc"
@@ -148,7 +148,7 @@ func TestBuildThroughput(t *testing.T) {
 				for i, v := range keys {
 					bs[i] = testutils.TrieBS(v)
 				}
-				_, err := are_optimized.NewOptimizedARE(bs, rangeLen, eps, 0)
+				_, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
 				return err
 			},
 		},
