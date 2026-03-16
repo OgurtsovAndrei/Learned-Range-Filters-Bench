@@ -22,6 +22,9 @@ bench/sosd_data/*
 !bench/sosd_data/download.sh
 !bench/sosd_data/README.md
 
+# Synthetic datasets (regenerable via TestGenerateSyntheticKeys)
+bench/synthetic_data/
+
 # OS
 .DS_Store
 Thumbs.db
