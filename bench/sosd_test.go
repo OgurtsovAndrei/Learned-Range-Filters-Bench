@@ -71,7 +71,7 @@ func TestTradeoff_SOSD_Facebook(t *testing.T) {
 	const queryCount = 1 << 20
 	path := sosdPath("fb_200M_uint64")
 
-	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
+	for _, n := range []int{1 << 16, 1 << 18, 1 << 20, 1 << 24} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
 			keys, err := loadSOSDUint64(path, n)
 			if err != nil {
@@ -95,7 +95,7 @@ func TestTradeoff_SOSD_Wiki(t *testing.T) {
 	const queryCount = 1 << 18
 	path := sosdPath("wiki_ts_200M_uint64")
 
-	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
+	for _, n := range []int{1 << 16, 1 << 18, 1 << 20, 1 << 24} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
 			keys, err := loadSOSDUint64(path, n)
 			if err != nil {
@@ -119,7 +119,7 @@ func TestTradeoff_SOSD_OSM(t *testing.T) {
 	const queryCount = 1 << 18
 	path := sosdPath("osm_cellids_800M_uint64")
 
-	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
+	for _, n := range []int{1 << 16, 1 << 18, 1 << 20, 1 << 24} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
 			keys, err := loadSOSDUint64(path, n)
 			if err != nil {
