@@ -67,6 +67,107 @@ func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.R
 	return queries
 }
 
+// Smart query mix weights (fractions must sum to 1.0).
+const (
+	queryWeightNearKey = 0.50 // query offset from a random key
+	queryWeightInGap   = 0.30 // query placed inside a random gap
+	queryWeightUniform = 0.20 // uniform random across span
+)
+
+// generateSmartQueries generates a mix of query types that follow the data
+// distribution. Every returned query is guaranteed to be empty (contains no
+// keys from the set). If a candidate query contains a key, it is truncated
+// to [a, firstKey-1]. Invalid queries (zero length) are re-rolled.
+func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
+	n := len(keys)
+	minK, maxK := keys[0], keys[n-1]
+	span := maxK - minK
+	if span == 0 {
+		return nil
+	}
+
+	nNear := int(float64(count) * queryWeightNearKey)
+	nGap := int(float64(count) * queryWeightInGap)
+	nUnif := count - nNear - nGap
+
+	// Pre-compute gaps for gap-sampling.
+	type gap struct{ lo, hi uint64 }
+	gaps := make([]gap, 0, n-1)
+	for i := 0; i < n-1; i++ {
+		if keys[i+1]-keys[i] > 1 {
+			gaps = append(gaps, gap{keys[i] + 1, keys[i+1] - 1})
+		}
+	}
+
+	queries := make([][2]uint64, 0, count)
+
+	tryAdd := func(a, b uint64) {
+		if b < a || a == 0 && b == 0 {
+			return
+		}
+		// Clamp to key range.
+		if a < minK && minK > rangeLen {
+			a = minK - rangeLen
+		}
+		if b > maxK+rangeLen {
+			b = maxK + rangeLen
+		}
+		// Find first key >= a.
+		idx := sort.Search(n, func(i int) bool { return keys[i] >= a })
+		if idx < n && keys[idx] <= b {
+			// Query contains key[idx] — truncate to [a, key[idx]-1].
+			if keys[idx] == 0 || keys[idx]-1 < a {
+				return // can't truncate, skip
+			}
+			b = keys[idx] - 1
+		}
+		if b >= a {
+			queries = append(queries, [2]uint64{a, b})
+		}
+	}
+
+	// Near-key queries: pick a random key, offset by [-5*rangeLen, +5*rangeLen].
+	for i := 0; i < nNear*2 && len(queries) < nNear; i++ {
+		key := keys[rng.Intn(n)]
+		offset := rng.Int63n(int64(rangeLen) * 10)
+		offset -= int64(rangeLen) * 5
+		a := int64(key) + offset
+		if a < 0 {
+			a = 0
+		}
+		tryAdd(uint64(a), uint64(a)+rangeLen-1)
+	}
+
+	// In-gap queries: pick a random gap, place query inside.
+	target := nNear + nGap
+	if len(gaps) > 0 {
+		for i := 0; i < nGap*2 && len(queries) < target; i++ {
+			g := gaps[rng.Intn(len(gaps))]
+			gapLen := g.hi - g.lo + 1
+			if gapLen == 0 {
+				continue
+			}
+			a := g.lo + uint64(rng.Int63n(int64(gapLen)))
+			b := a + rangeLen - 1
+			if b > g.hi {
+				b = g.hi
+			}
+			if b >= a {
+				queries = append(queries, [2]uint64{a, b}) // guaranteed empty (inside gap)
+			}
+		}
+	}
+
+	// Uniform queries: random across span.
+	target = count
+	for i := 0; i < nUnif*2 && len(queries) < target; i++ {
+		a := minK + uint64(rng.Int63n(int64(span)))
+		tryAdd(a, a+rangeLen-1)
+	}
+
+	return queries
+}
+
 func TestTradeoff_SOSD_Books(t *testing.T) {
 	const queryCount = 1 << 18
 	path := sosdPath("books_200M_uint32")
@@ -84,7 +185,7 @@ func TestTradeoff_SOSD_Books(t *testing.T) {
 				n:        n,
 				keys:     keys,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
-					return generateRangeQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
 			})
 		})
@@ -108,7 +209,7 @@ func TestTradeoff_SOSD_Facebook(t *testing.T) {
 				n:        n,
 				keys:     keys,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
-					return generateRangeQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
 			})
 		})
@@ -132,7 +233,7 @@ func TestTradeoff_SOSD_Wiki(t *testing.T) {
 				n:        n,
 				keys:     keys,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
-					return generateRangeQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
 			})
 		})
@@ -156,7 +257,7 @@ func TestTradeoff_SOSD_OSM(t *testing.T) {
 				n:        n,
 				keys:     keys,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
-					return generateRangeQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
 			})
 		})
