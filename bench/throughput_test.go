@@ -6,6 +6,7 @@ import (
 	"Thesis/bits"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
+	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
@@ -182,6 +183,17 @@ func TestBuildThroughput(t *testing.T) {
 			},
 		},
 		{
+			name: "Scan-ARE", color: "#06b6d4", marker: "star", dashed: false,
+			build: func(keys []uint64) error {
+				bs := make([]bits.BitString, len(keys))
+				for i, v := range keys {
+					bs[i] = testutils.TrieBS(v)
+				}
+				_, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
+				return err
+			},
+		},
+		{
 			name: "CDF-ARE", color: "#ff922b", marker: "circle", dashed: false,
 			build: func(keys []uint64) error {
 				_, err := are_pgm.NewPGMApproximateRangeEmptiness(keys, rangeLen, eps, 64)
@@ -254,6 +266,7 @@ func TestBuildThroughput(t *testing.T) {
 				"SODA":          {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
 				"Truncation":    {Name: "Truncation", Color: "#9b59b6", Marker: "triangle"},
 				"Hybrid":        {Name: "Hybrid", Color: "#ff6b6b", Marker: "star"},
+				"Scan-ARE":      {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
 				"CDF-ARE":       {Name: "CDF-ARE", Color: "#ff922b", Marker: "circle"},
 				"BloomARE":      {Name: "BloomARE", Color: "#888888", Marker: "circle", Dashed: true},
 				"Grafite":       {Name: "Grafite", Color: "#1a6b3c", Marker: "diamond"},
@@ -311,6 +324,7 @@ func TestBuildThroughput(t *testing.T) {
 				*allSeries["SODA"],
 				*allSeries["Truncation"],
 				*allSeries["Hybrid"],
+				*allSeries["Scan-ARE"],
 				*allSeries["CDF-ARE"],
 				*allSeries["BloomARE"],
 				*allSeries["Grafite"],

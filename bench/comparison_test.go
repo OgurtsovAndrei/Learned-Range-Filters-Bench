@@ -8,6 +8,7 @@ import (
 	"Thesis/emptiness/are_trunc"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
+	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
@@ -184,6 +185,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				"Adaptive (t=0)": {Name: "Adaptive (t=0)", Color: "#2a7fff", Marker: "square"},
 				"SODA":           {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
 				"Hybrid":         {Name: "Hybrid", Color: "#ff6b6b", Marker: "star"},
+				"Scan-ARE":       {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
 				"CDF-ARE":        {Name: "CDF-ARE", Color: "#ff922b", Marker: "circle"},
 				"BloomARE":       {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
 			}
@@ -248,6 +250,11 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					if f, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
 						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
 						goTasks = append(goTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
+							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+					}
+					if f, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
+						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+						goTasks = append(goTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 					}
 				}
@@ -338,6 +345,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				*allSeries["Truncation"],
 				*allSeries["SODA"],
 				*allSeries["Hybrid"],
+				*allSeries["Scan-ARE"],
 				*allSeries["CDF-ARE"],
 				*allSeries["BloomARE"],
 			}

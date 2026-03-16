@@ -6,6 +6,7 @@ import (
 	"Thesis/bits"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
+	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
@@ -55,6 +56,10 @@ func TestBuildTimePerKey(t *testing.T) {
 		}},
 		{"Hybrid", "#9b59b6", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
 			_, err := are_hybrid.NewHybridARE(bs, rangeLen, eps)
+			return err
+		}},
+		{"Scan-ARE", "#06b6d4", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
+			_, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
 			return err
 		}},
 		{"CDF-ARE", "#e05d10", "circle", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
@@ -203,6 +208,13 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
 		}},
+		{"Scan-ARE", "#06b6d4", "star", false, func(L uint64) (func(a, b uint64) bool, error) {
+			f, err := are_hybrid_scan.NewHybridScanARE(keysBS, L, eps)
+			if err != nil {
+				return nil, err
+			}
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
+		}},
 		{"CDF-ARE", "#e05d10", "circle", false, func(L uint64) (func(a, b uint64) bool, error) {
 			f, err := are_pgm.NewPGMApproximateRangeEmptiness(keysU64, L, eps, 64)
 			if err != nil {
@@ -346,6 +358,15 @@ func TestScalability(t *testing.T) {
 		}},
 		{"Hybrid", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
 			f, err := are_hybrid.NewHybridARE(bs, rangeLen, eps)
+			if err != nil {
+				return nil, 0, "", err
+			}
+			nc, nf, nt := f.Stats()
+			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), info, nil
+		}},
+		{"Scan-ARE", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+			f, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
 			if err != nil {
 				return nil, 0, "", err
 			}
@@ -525,6 +546,8 @@ func TestTradeoff_Full(t *testing.T) {
 		"Truncation (Seq)":  {Name: "Truncation (Seq)", Color: "#e6a800", Dashed: true, Marker: "triangle"},
 		"Hybrid (Unif)":     {Name: "Hybrid (Unif)", Color: "#9b59b6", Marker: "star"},
 		"Hybrid (Seq)":      {Name: "Hybrid (Seq)", Color: "#9b59b6", Dashed: true, Marker: "star"},
+		"Scan-ARE (Unif)":   {Name: "Scan-ARE (Unif)", Color: "#06b6d4", Marker: "star"},
+		"Scan-ARE (Seq)":    {Name: "Scan-ARE (Seq)", Color: "#06b6d4", Dashed: true, Marker: "star"},
 		"CDF-ARE (Unif)":    {Name: "CDF-ARE (Unif)", Color: "#e05d10", Marker: "circle"},
 		"CDF-ARE (Seq)":     {Name: "CDF-ARE (Seq)", Color: "#e05d10", Dashed: true, Marker: "circle"},
 		"Bloom V3 (Unif)":   {Name: "Bloom V3 (Unif)", Color: "#888888", Marker: "circle"},
@@ -554,6 +577,8 @@ func TestTradeoff_Full(t *testing.T) {
 		fTruncS, errTruncS := are_trunc.NewApproximateRangeEmptiness(seqBS, eps)
 		fHybridU, errHybridU := are_hybrid.NewHybridARE(unifBS, rangeLen, eps)
 		fHybridS, errHybridS := are_hybrid.NewHybridARE(seqBS, rangeLen, eps)
+		fScanU, errScanU := are_hybrid_scan.NewHybridScanARE(unifBS, rangeLen, eps)
+		fScanS, errScanS := are_hybrid_scan.NewHybridScanARE(seqBS, rangeLen, eps)
 		fCdfU, errCdfU := are_pgm.NewPGMApproximateRangeEmptiness(unifU64, rangeLen, eps, 64)
 		fCdfS, errCdfS := are_pgm.NewPGMApproximateRangeEmptiness(seqU64, rangeLen, eps, 64)
 		fBloomU, errBloomU := are_bloom.NewBloomARE(unifU64, rangeLen, eps)
@@ -585,6 +610,8 @@ func TestTradeoff_Full(t *testing.T) {
 		add("Truncation (Seq)", errTruncS, perfSafeSizeTrunc(fTruncS), seqU64, seqQueries, func(a, b uint64) bool { return fTruncS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
 		add("Hybrid (Unif)", errHybridU, perfSafeSizeHybrid(fHybridU), unifU64, queries, func(a, b uint64) bool { return fHybridU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
 		add("Hybrid (Seq)", errHybridS, perfSafeSizeHybrid(fHybridS), seqU64, seqQueries, func(a, b uint64) bool { return fHybridS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
+		add("Scan-ARE (Unif)", errScanU, perfSafeSizeScan(fScanU), unifU64, queries, func(a, b uint64) bool { return fScanU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
+		add("Scan-ARE (Seq)", errScanS, perfSafeSizeScan(fScanS), seqU64, seqQueries, func(a, b uint64) bool { return fScanS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
 		add("CDF-ARE (Unif)", errCdfU, perfSafeSizeCdf(fCdfU), unifU64, queries, func(a, b uint64) bool { return fCdfU.IsEmpty(a, b) })
 		add("CDF-ARE (Seq)", errCdfS, perfSafeSizeCdf(fCdfS), seqU64, seqQueries, func(a, b uint64) bool { return fCdfS.IsEmpty(a, b) })
 		add("Bloom V3 (Unif)", errBloomU, perfSafeSizeBloom(fBloomU), unifU64, queries, func(a, b uint64) bool { return fBloomU.IsEmpty(a, b) })
@@ -612,6 +639,8 @@ func TestTradeoff_Full(t *testing.T) {
 		*allSeries["Truncation (Seq)"],
 		*allSeries["Hybrid (Unif)"],
 		*allSeries["Hybrid (Seq)"],
+		*allSeries["Scan-ARE (Unif)"],
+		*allSeries["Scan-ARE (Seq)"],
 		*allSeries["CDF-ARE (Unif)"],
 		*allSeries["CDF-ARE (Seq)"],
 		*allSeries["Bloom V3 (Unif)"],
@@ -669,6 +698,13 @@ func perfSafeSizeCdf(f *are_pgm.PGMApproximateRangeEmptiness) uint64 {
 }
 
 func perfSafeSizeBloom(f *are_bloom.BloomARE) uint64 {
+	if f == nil {
+		return 0
+	}
+	return f.SizeInBits()
+}
+
+func perfSafeSizeScan(f *are_hybrid_scan.HybridScanARE) uint64 {
 	if f == nil {
 		return 0
 	}
