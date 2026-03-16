@@ -118,7 +118,17 @@ func saveSeriesData(path string, series map[string]*testutils.SeriesData) error 
 	var out []savedSeries
 	for _, s := range series {
 		if len(s.Points) > 0 {
-			out = append(out, savedSeries{Name: s.Name, Points: s.Points})
+			pts := make([]testutils.Point, len(s.Points))
+			copy(pts, s.Points)
+			sort.Slice(pts, func(i, j int) bool { return pts[i].X < pts[j].X })
+			// Deduplicate by X (keep first occurrence)
+			deduped := pts[:1]
+			for _, p := range pts[1:] {
+				if p.X != deduped[len(deduped)-1].X {
+					deduped = append(deduped, p)
+				}
+			}
+			out = append(out, savedSeries{Name: s.Name, Points: deduped})
 		}
 	}
 	data, err := json.MarshalIndent(out, "", "  ")
@@ -149,8 +159,9 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 	const nRuns = 3
 
 	rangeLens := []uint64{1, 16, 128, 1024}
+	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32}
 	bpkSweep := []float64{4, 6, 8, 10, 12, 14, 16, 18, 20}
-	epsilons := []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001}
+	epsilons := []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001}
 
 	keysBS := make([]bits.BitString, len(cfg.keys))
 	for i, v := range cfg.keys {
@@ -169,6 +180,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				"SuRF":           {Name: "SuRF", Color: "#111111", Marker: "square"},
 				"SuRFHash(8)":    {Name: "SuRFHash(8)", Color: "#111111", Marker: "triangle"},
 				"SuRFReal(8)":    {Name: "SuRFReal(8)", Color: "#111111", Marker: "diamond"},
+				"Truncation":     {Name: "Truncation", Color: "#9b59b6", Marker: "triangle"},
 				"Adaptive (t=0)": {Name: "Adaptive (t=0)", Color: "#2a7fff", Marker: "square"},
 				"SODA":           {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
 				"Hybrid":         {Name: "Hybrid", Color: "#ff6b6b", Marker: "star"},
@@ -198,11 +210,13 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				fmt.Printf("%-16s | %8s | %14s\n", "Series", "BPK", "FPR(avg)")
 				fmt.Println(strings.Repeat("-", 45))
 
-				// ---- Theoretical (no measurement needed) ----
-				for _, eps := range epsilons {
-					thBPK := math.Log2(float64(rangeLen) / eps)
-					allSeries["Theoretical"].Points = append(allSeries["Theoretical"].Points,
-						testutils.Point{X: thBPK, Y: eps})
+				// ---- Theoretical (derived from K-grid) ----
+				for _, K := range kGrid {
+					thEps := float64(rangeLen) / math.Exp2(float64(K))
+					if thEps > 0 && thEps <= 1 {
+						allSeries["Theoretical"].Points = append(allSeries["Theoretical"].Points,
+							testutils.Point{X: float64(K), Y: thEps})
+					}
 				}
 
 				// ---- Build & measure ARE filters in parallel (pure Go, thread-safe) ----
@@ -214,22 +228,31 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				}
 				var goTasks []fprTask
 
-				for _, eps := range epsilons {
-					if f, err := are_optimized.NewOptimizedARE(keysBS, rangeLen, eps, 0); err == nil {
+				for _, K := range kGrid {
+					K := K
+					if f, err := are.NewApproximateRangeEmptinessFromK(keysBS, K); err == nil {
 						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"Adaptive (t=0)", "Adaptive(t=0)", bpk,
+						goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 					}
-					if f, err := are_soda_hash.NewApproximateRangeEmptinessSoda(cfg.keys, rangeLen, eps); err == nil {
+					if f, err := are_optimized.NewOptimizedAREFromK(keysBS, rangeLen, K, 0); err == nil {
 						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"SODA", "SODA", bpk,
+						goTasks = append(goTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
+							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+					}
+					if f, err := are_soda_hash.NewApproximateRangeEmptinessSodaFromK(cfg.keys, rangeLen, K); err == nil {
+						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+						goTasks = append(goTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(a, b) }})
 					}
-					if f, err := are_hybrid.NewHybridARE(keysBS, rangeLen, eps); err == nil {
+					if f, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
 						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"Hybrid", "Hybrid", bpk,
+						goTasks = append(goTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
 							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 					}
+				}
+
+				for _, eps := range epsilons {
 					if f, err := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64); err == nil {
 						bpk := float64(f.TotalSizeInBits()) / float64(len(cfg.keys))
 						goTasks = append(goTasks, fprTask{"CDF-ARE", "CDF-ARE", bpk,
@@ -312,6 +335,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				*allSeries["SuRFHash(8)"],
 				*allSeries["SuRFReal(8)"],
 				*allSeries["Adaptive (t=0)"],
+				*allSeries["Truncation"],
 				*allSeries["SODA"],
 				*allSeries["Hybrid"],
 				*allSeries["CDF-ARE"],
@@ -768,4 +792,3 @@ func TestDistributionVisualization(t *testing.T) {
 	}
 }
 
-var _ = are.NewApproximateRangeEmptiness
