@@ -67,6 +67,30 @@ func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.R
 	return queries
 }
 
+func TestTradeoff_SOSD_Books(t *testing.T) {
+	const queryCount = 1 << 18
+	path := sosdPath("books_200M_uint32")
+
+	for _, n := range []int{1 << 16, 1 << 18, 1 << 20, 1 << 24} {
+		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
+			keys, err := loadSOSDUint32(path, n)
+			if err != nil {
+				t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
+			}
+			t.Logf("loaded %d keys from books_200M, range [%d, %d]", len(keys), keys[0], keys[len(keys)-1])
+
+			runTradeoffBench(t, benchConfig{
+				distName: "sosd_books",
+				n:        n,
+				keys:     keys,
+				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
+					return generateRangeQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+				},
+			})
+		})
+	}
+}
+
 func TestTradeoff_SOSD_Facebook(t *testing.T) {
 	const queryCount = 1 << 20
 	path := sosdPath("fb_200M_uint64")
