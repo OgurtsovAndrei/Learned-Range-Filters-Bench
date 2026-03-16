@@ -3,6 +3,7 @@ package bench_test
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -61,7 +62,16 @@ func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.R
 	span := maxK - minK
 	queries := make([][2]uint64, count)
 	for i := range queries {
-		a := minK + uint64(rng.Int63n(int64(span)))
+		var offset uint64
+		if span <= math.MaxInt64 {
+			offset = uint64(rng.Int63n(int64(span)))
+		} else {
+			offset = uint64(rng.Int63n(math.MaxInt64)) + uint64(rng.Intn(2))*uint64(math.MaxInt64)
+			if offset > span {
+				offset = offset % span
+			}
+		}
+		a := minK + offset
 		queries[i] = [2]uint64{a, a + rangeLen - 1}
 	}
 	return queries
