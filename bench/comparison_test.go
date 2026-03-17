@@ -132,30 +132,33 @@ func tryGrafite(keys []uint64, bpk float64) *grafite.GrafiteFilter {
 	return grafite.New(keys, bpk)
 }
 
-func avgFPR(keys []uint64, querySets [][][2]uint64, isEmpty func(a, b uint64) bool) float64 {
-	results := make([]float64, len(querySets))
+func avgFPRParallel(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, rangeLen uint64, seeds []int64, isEmpty func(a, b uint64) bool) float64 {
+	results := make([]float64, len(seeds))
 	var wg sync.WaitGroup
-	for i, qs := range querySets {
+	for i, seed := range seeds {
+		i, seed := i, seed
 		wg.Add(1)
-		go func(idx int, q [][2]uint64) {
+		go func() {
 			defer wg.Done()
-			results[idx] = testutils.MeasureFPR(keys, q, isEmpty)
-		}(i, qs)
+			qs := queryFunc(rangeLen, seed)
+			results[i] = testutils.MeasureFPR(keys, qs, isEmpty)
+		}()
 	}
 	wg.Wait()
 	sum := 0.0
 	for _, v := range results {
 		sum += v
 	}
-	return sum / float64(len(results))
+	return sum / float64(len(seeds))
 }
 
-func avgFPRSeq(keys []uint64, querySets [][][2]uint64, isEmpty func(a, b uint64) bool) float64 {
+func avgFPRSeq(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, rangeLen uint64, seeds []int64, isEmpty func(a, b uint64) bool) float64 {
 	sum := 0.0
-	for _, qs := range querySets {
+	for _, seed := range seeds {
+		qs := queryFunc(rangeLen, seed)
 		sum += testutils.MeasureFPR(keys, qs, isEmpty)
 	}
-	return sum / float64(len(querySets))
+	return sum / float64(len(seeds))
 }
 
 type seriesPoint struct {
@@ -562,11 +565,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				rebuildKGrid := len(rebuildKGridSeries) > 0
 
 				if rebuildKGrid {
-					querySets := make([][][2]uint64, nRuns)
-					for r := 0; r < nRuns; r++ {
-						querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
-					}
-
 					// Clear points for series that need rebuilding.
 					for name := range rebuildKGridSeries {
 						allSeries[name].Points = nil
@@ -618,7 +616,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						wg.Add(1)
 						go func() {
 							defer wg.Done()
-							fpr := avgFPR(cfg.keys, querySets, task.isEmpty)
+							fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
 							goResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
 						}()
 					}
@@ -639,11 +637,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				}
 
 				if len(rebuildEpsilonSeries) > 0 {
-					querySets := make([][][2]uint64, nRuns)
-					for r := 0; r < nRuns; r++ {
-						querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
-					}
-
 					for name := range rebuildEpsilonSeries {
 						allSeries[name].Points = nil
 					}
@@ -673,7 +666,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						wg.Add(1)
 						go func() {
 							defer wg.Done()
-							fpr := avgFPR(cfg.keys, querySets, task.isEmpty)
+							fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
 							epsilonResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
 						}()
 					}
@@ -696,11 +689,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				}
 
 				if len(rebuildCGoSeries) > 0 {
-					querySets := make([][][2]uint64, nRuns)
-					for r := 0; r < nRuns; r++ {
-						querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
-					}
-
 					for name := range rebuildCGoSeries {
 						allSeries[name].Points = nil
 					}
@@ -709,7 +697,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						if rebuildCGoSeries["Grafite"] {
 							if f := tryGrafite(cfg.keys, bpk); f != nil {
 								actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-								fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+								fpr := avgFPRSeq(cfg.keys, cfg.queryFunc, rangeLen, seeds, func(a, b uint64) bool { return f.IsEmpty(a, b) })
 								allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
 									testutils.Point{X: actualBPK, Y: fpr})
 								fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.0f)", bpk), actualBPK, fpr)
@@ -719,7 +707,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						if rebuildCGoSeries["SNARF"] {
 							f := snarf.New(cfg.keys, bpk)
 							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-							fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+							fpr := avgFPRSeq(cfg.keys, cfg.queryFunc, rangeLen, seeds, func(a, b uint64) bool { return f.IsEmpty(a, b) })
 							allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
 								testutils.Point{X: actualBPK, Y: fpr})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
@@ -740,7 +728,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						if rebuildCGoSeries[sv.name] {
 							f := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
 							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-							fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+							fpr := avgFPRSeq(cfg.keys, cfg.queryFunc, rangeLen, seeds, func(a, b uint64) bool { return f.IsEmpty(a, b) })
 							allSeries[sv.name].Points = append(allSeries[sv.name].Points,
 								testutils.Point{X: actualBPK, Y: fpr})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", sv.name, actualBPK, fpr)
