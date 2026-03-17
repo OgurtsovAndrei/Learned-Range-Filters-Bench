@@ -181,9 +181,10 @@ func TestTradeoff_SOSD_Books(t *testing.T) {
 			t.Logf("loaded %d keys from books_200M, range [%d, %d]", len(keys), keys[0], keys[len(keys)-1])
 
 			runTradeoffBench(t, benchConfig{
-				distName: "sosd_books",
-				n:        n,
-				keys:     keys,
+				distName:   "sosd_books",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
@@ -205,9 +206,10 @@ func TestTradeoff_SOSD_Facebook(t *testing.T) {
 			t.Logf("loaded %d keys from fb_200M, range [%d, %d]", len(keys), keys[0], keys[len(keys)-1])
 
 			runTradeoffBench(t, benchConfig{
-				distName: "sosd_fb",
-				n:        n,
-				keys:     keys,
+				distName:   "sosd_fb",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
@@ -229,9 +231,10 @@ func TestTradeoff_SOSD_Wiki(t *testing.T) {
 			t.Logf("loaded %d keys from wiki_ts, range [%d, %d]", len(keys), keys[0], keys[len(keys)-1])
 
 			runTradeoffBench(t, benchConfig{
-				distName: "sosd_wiki",
-				n:        n,
-				keys:     keys,
+				distName:   "sosd_wiki",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
@@ -253,9 +256,10 @@ func TestTradeoff_SOSD_OSM(t *testing.T) {
 			t.Logf("loaded %d keys from osm_cellids, range [%d, %d]", len(keys), keys[0], keys[len(keys)-1])
 
 			runTradeoffBench(t, benchConfig{
-				distName: "sosd_osm",
-				n:        n,
-				keys:     keys,
+				distName:   "sosd_osm",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},

@@ -56,10 +56,11 @@ func mask60Queries(queries [][2]uint64) [][2]uint64 {
 
 // benchConfig parameterises a single distribution benchmark.
 type benchConfig struct {
-	distName  string
-	n         int
-	keys      []uint64
-	queryFunc func(rangeLen uint64, seed int64) [][2]uint64
+	distName   string
+	n          int
+	keys       []uint64
+	queryCount int
+	queryFunc  func(rangeLen uint64, seed int64) [][2]uint64
 }
 
 // tryGrafite returns nil when the requested bpk exceeds what the key universe can support.
@@ -111,8 +112,173 @@ type seriesPoint struct {
 }
 
 type savedSeries struct {
-	Name   string           `json:"name"`
+	Name   string            `json:"name"`
 	Points []testutils.Point `json:"points"`
+	Params json.RawMessage   `json:"params,omitempty"`
+}
+
+// seriesParamsKGrid holds hyperparameters for K-grid filters.
+type seriesParamsKGrid struct {
+	Type        string   `json:"type"`
+	KGrid       []uint32 `json:"kGrid"`
+	RangeLen    uint64   `json:"rangeLen"`
+	NKeys       int      `json:"nKeys"`
+	QuerySeeds  []int64  `json:"querySeeds"`
+	QueryCount  int      `json:"queryCount"`
+	NRuns       int      `json:"nRuns"`
+}
+
+// seriesParamsEpsilon holds hyperparameters for epsilon-loop filters.
+type seriesParamsEpsilon struct {
+	Type       string    `json:"type"`
+	Epsilons   []float64 `json:"epsilons"`
+	RangeLen   uint64    `json:"rangeLen"`
+	NKeys      int       `json:"nKeys"`
+	QuerySeeds []int64   `json:"querySeeds"`
+	QueryCount int       `json:"queryCount"`
+	NRuns      int       `json:"nRuns"`
+}
+
+// seriesParamsBPKSweep holds hyperparameters for BPK-sweep CGo filters.
+type seriesParamsBPKSweep struct {
+	Type       string    `json:"type"`
+	BPKSweep   []float64 `json:"bpkSweep"`
+	RangeLen   uint64    `json:"rangeLen"`
+	NKeys      int       `json:"nKeys"`
+	QuerySeeds []int64   `json:"querySeeds"`
+	QueryCount int       `json:"queryCount"`
+	NRuns      int       `json:"nRuns"`
+}
+
+// seriesParamsTheoretical holds hyperparameters for the Theoretical series.
+type seriesParamsTheoretical struct {
+	Type     string   `json:"type"`
+	KGrid    []uint32 `json:"kGrid"`
+	RangeLen uint64   `json:"rangeLen"`
+}
+
+func buildParamsKGrid(kGrid []uint32, rangeLen uint64, nKeys, queryCount int, seeds []int64, nRuns int) json.RawMessage {
+	p := seriesParamsKGrid{
+		Type:       "kgrid",
+		KGrid:      kGrid,
+		RangeLen:   rangeLen,
+		NKeys:      nKeys,
+		QuerySeeds: seeds,
+		QueryCount: queryCount,
+		NRuns:      nRuns,
+	}
+	b, _ := json.Marshal(p)
+	return b
+}
+
+func buildParamsEpsilon(epsilons []float64, rangeLen uint64, nKeys, queryCount int, seeds []int64, nRuns int) json.RawMessage {
+	p := seriesParamsEpsilon{
+		Type:       "epsilon",
+		Epsilons:   epsilons,
+		RangeLen:   rangeLen,
+		NKeys:      nKeys,
+		QuerySeeds: seeds,
+		QueryCount: queryCount,
+		NRuns:      nRuns,
+	}
+	b, _ := json.Marshal(p)
+	return b
+}
+
+func buildParamsBPKSweep(bpkSweep []float64, rangeLen uint64, nKeys, queryCount int, seeds []int64, nRuns int) json.RawMessage {
+	p := seriesParamsBPKSweep{
+		Type:       "bpksweep",
+		BPKSweep:   bpkSweep,
+		RangeLen:   rangeLen,
+		NKeys:      nKeys,
+		QuerySeeds: seeds,
+		QueryCount: queryCount,
+		NRuns:      nRuns,
+	}
+	b, _ := json.Marshal(p)
+	return b
+}
+
+func buildParamsTheoretical(kGrid []uint32, rangeLen uint64) json.RawMessage {
+	p := seriesParamsTheoretical{
+		Type:     "theoretical",
+		KGrid:    kGrid,
+		RangeLen: rangeLen,
+	}
+	b, _ := json.Marshal(p)
+	return b
+}
+
+// loadCachedSeries loads all saved series from the JSON file, keyed by name.
+// Returns an empty map (not an error) when the file does not exist.
+func loadCachedSeries(path string) map[string]savedSeries {
+	result := make(map[string]savedSeries)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return result
+	}
+	var saved []savedSeries
+	if err := json.Unmarshal(data, &saved); err != nil {
+		return result
+	}
+	for _, s := range saved {
+		result[s.Name] = s
+	}
+	return result
+}
+
+// mergePoints merges newPoints into existing points (dedup by X, keep newest value).
+// Old points whose X is not in newPoints are preserved unchanged.
+func mergePoints(existing, newPoints []testutils.Point) []testutils.Point {
+	byX := make(map[float64]float64, len(existing))
+	// Start with existing points.
+	for _, p := range existing {
+		byX[p.X] = p.Y
+	}
+	// New points overwrite existing ones at the same X.
+	for _, p := range newPoints {
+		byX[p.X] = p.Y
+	}
+	merged := make([]testutils.Point, 0, len(byX))
+	for x, y := range byX {
+		merged = append(merged, testutils.Point{X: x, Y: y})
+	}
+	sort.Slice(merged, func(i, j int) bool { return merged[i].X < merged[j].X })
+	return merged
+}
+
+// saveSeriesDataWithCache merges new series data into existing cached data and writes to disk.
+// For each series in newSeries: if it has points, merge them with existing cached points.
+// Cached series that are not in newSeries are preserved as-is.
+// The params field is set to the provided params map (keyed by series name).
+func saveSeriesDataWithCache(path string, cached map[string]savedSeries, newSeries map[string]*testutils.SeriesData, newParams map[string]json.RawMessage) error {
+	// Build output: start from cached, overlay new data.
+	out := make(map[string]savedSeries, len(cached))
+	for name, s := range cached {
+		out[name] = s
+	}
+	for name, s := range newSeries {
+		existing := out[name]
+		merged := mergePoints(existing.Points, s.Points)
+		params := existing.Params
+		if p, ok := newParams[name]; ok {
+			params = p
+		}
+		out[name] = savedSeries{Name: name, Points: merged, Params: params}
+	}
+
+	// Emit as a sorted slice for stable output.
+	result := make([]savedSeries, 0, len(out))
+	for _, s := range out {
+		result = append(result, s)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
+
+	data, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
 }
 
 func saveSeriesData(path string, series map[string]*testutils.SeriesData) error {
@@ -156,6 +322,53 @@ func loadSeriesData(path string, series map[string]*testutils.SeriesData) error 
 	return nil
 }
 
+// parseEnvSet parses a comma-separated env var into a set of names.
+// Returns nil if the env var is empty.
+func parseEnvSet(envVar string) map[string]bool {
+	val := os.Getenv(envVar)
+	if val == "" {
+		return nil
+	}
+	set := make(map[string]bool)
+	for _, name := range strings.Split(val, ",") {
+		name = strings.TrimSpace(name)
+		if name != "" {
+			set[name] = true
+		}
+	}
+	return set
+}
+
+// paramsEqual returns true if two json.RawMessage values encode the same JSON
+// (byte-for-byte identical after marshalling — only valid since we always
+// marshal from the same struct types in the same field order).
+func paramsEqual(a, b json.RawMessage) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	return string(a) == string(b)
+}
+
+// shouldSkipSeries decides whether a series should be skipped (use cache).
+// Returns (skip bool, reason string).
+func shouldSkipSeries(name string, onlySet, skipSet map[string]bool, cached map[string]savedSeries, currentParams json.RawMessage) (bool, string) {
+	// SKIP env var takes priority.
+	if skipSet != nil && skipSet[name] {
+		return true, "SKIP env var"
+	}
+	// ONLY env var: skip everything not in the set.
+	if onlySet != nil && !onlySet[name] {
+		return true, "ONLY env var"
+	}
+	// Params-based: skip if cached params match current params.
+	if cs, ok := cached[name]; ok && len(cs.Points) > 0 {
+		if paramsEqual(cs.Params, currentParams) {
+			return true, fmt.Sprintf("params match, %d points", len(cs.Points))
+		}
+	}
+	return false, ""
+}
+
 func runTradeoffBench(t *testing.T, cfg benchConfig) {
 	const nRuns = 3
 
@@ -170,6 +383,10 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 	}
 
 	os.MkdirAll(fmt.Sprintf("../bench_results/plots/N%d/%s", cfg.n, cfg.distName), 0755)
+
+	// Parse ONLY/SKIP env vars once (shared across all range lengths).
+	onlySet := parseEnvSet("ONLY")
+	skipSet := parseEnvSet("SKIP")
 
 	for _, rangeLen := range rangeLens {
 		t.Run(fmt.Sprintf("L=%d", rangeLen), func(t *testing.T) {
@@ -203,21 +420,72 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				fmt.Printf("\n=== Plot-only mode — %s L=%d (loaded from %s) ===\n", cfg.distName, rangeLen, dataPath)
 			} else {
 				seeds := []int64{12345, 54321, 99999}
-				querySets := make([][][2]uint64, nRuns)
-				for r := 0; r < nRuns; r++ {
-					querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
+
+				// Load existing cache for per-series skip logic.
+				cached := loadCachedSeries(dataPath)
+
+				// Pre-compute current params for each series group.
+				paramsKGrid := buildParamsKGrid(kGrid, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
+				paramsEpsilon := buildParamsEpsilon(epsilons, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
+				paramsBPKSweep := buildParamsBPKSweep(bpkSweep, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
+				paramsTheoretical := buildParamsTheoretical(kGrid, rangeLen)
+
+				// Determine per-series params mapping (used for saving).
+				seriesParams := map[string]json.RawMessage{
+					"Theoretical":    paramsTheoretical,
+					"Truncation":     paramsKGrid,
+					"Adaptive (t=0)": paramsKGrid,
+					"SODA":           paramsKGrid,
+					"Hybrid":         paramsKGrid,
+					"Scan-ARE":       paramsKGrid,
+					"CDF-ARE":        paramsEpsilon,
+					"BloomARE":       paramsEpsilon,
+					"Grafite":        paramsBPKSweep,
+					"SNARF":          paramsBPKSweep,
+					"SuRF":           paramsBPKSweep,
+					"SuRFHash(8)":    paramsBPKSweep,
+					"SuRFReal(8)":    paramsBPKSweep,
+				}
+
+				// newSeriesParams tracks which params to record for rebuilt series.
+				newParams := make(map[string]json.RawMessage)
+
+				// Restore cached points for all series upfront (will be overwritten if rebuilt).
+				for name, cs := range cached {
+					if sd, ok := allSeries[name]; ok {
+						sd.Points = cs.Points
+					}
 				}
 
 				fmt.Printf("\n=== Industry Comparison — %s (60-bit keys, %d keys, L=%d, %d runs) ===\n", cfg.distName, len(cfg.keys), rangeLen, nRuns)
 				fmt.Printf("%-16s | %8s | %14s\n", "Series", "BPK", "FPR(avg)")
 				fmt.Println(strings.Repeat("-", 45))
 
+				// Helper: decide skip and log.
+				type skipDecision struct {
+					skip   bool
+					reason string
+				}
+				decideSkip := func(name string, params json.RawMessage) skipDecision {
+					skip, reason := shouldSkipSeries(name, onlySet, skipSet, cached, params)
+					if skip {
+						fmt.Printf("[CACHED] %-16s (%s)\n", name, reason)
+					} else {
+						fmt.Printf("[BUILD]  %-16s (params changed)\n", name)
+						newParams[name] = seriesParams[name]
+					}
+					return skipDecision{skip, reason}
+				}
+
 				// ---- Theoretical (derived from K-grid) ----
-				for _, K := range kGrid {
-					thEps := float64(rangeLen) / math.Exp2(float64(K))
-					if thEps > 0 && thEps <= 1 {
-						allSeries["Theoretical"].Points = append(allSeries["Theoretical"].Points,
-							testutils.Point{X: float64(K), Y: thEps})
+				if d := decideSkip("Theoretical", paramsTheoretical); !d.skip {
+					allSeries["Theoretical"].Points = nil
+					for _, K := range kGrid {
+						thEps := float64(rangeLen) / math.Exp2(float64(K))
+						if thEps > 0 && thEps <= 1 {
+							allSeries["Theoretical"].Points = append(allSeries["Theoretical"].Points,
+								testutils.Point{X: float64(K), Y: thEps})
+						}
 					}
 				}
 
@@ -230,107 +498,221 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				}
 				var goTasks []fprTask
 
-				for _, K := range kGrid {
-					K := K
-					if f, err := are_trunc.NewApproximateRangeEmptinessFromK(keysBS, K); err == nil {
-						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
-							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+				// Determine which K-grid series to rebuild (logs [CACHED]/[BUILD] once per series).
+				kgridSeriesNames := []string{"Truncation", "Adaptive (t=0)", "SODA", "Hybrid", "Scan-ARE"}
+				rebuildKGridSeries := make(map[string]bool)
+				for _, name := range kgridSeriesNames {
+					if d := decideSkip(name, paramsKGrid); !d.skip {
+						rebuildKGridSeries[name] = true
 					}
-					if f, err := are_adaptive.NewAdaptiveAREFromK(keysBS, rangeLen, K, 0); err == nil {
-						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
-							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+				}
+				rebuildKGrid := len(rebuildKGridSeries) > 0
+
+				if rebuildKGrid {
+					querySets := make([][][2]uint64, nRuns)
+					for r := 0; r < nRuns; r++ {
+						querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
 					}
-					if f, err := are_soda_hash.NewApproximateRangeEmptinessSodaFromK(cfg.keys, rangeLen, K); err == nil {
-						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
-							func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+
+					// Clear points for series that need rebuilding.
+					for name := range rebuildKGridSeries {
+						allSeries[name].Points = nil
 					}
-					if f, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
-						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
-							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+
+					for _, K := range kGrid {
+						K := K
+						if rebuildKGridSeries["Truncation"] {
+							if f, err := are_trunc.NewApproximateRangeEmptinessFromK(keysBS, K); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+							}
+						}
+						if rebuildKGridSeries["Adaptive (t=0)"] {
+							if f, err := are_adaptive.NewAdaptiveAREFromK(keysBS, rangeLen, K, 0); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								goTasks = append(goTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+							}
+						}
+						if rebuildKGridSeries["SODA"] {
+							if f, err := are_soda_hash.NewApproximateRangeEmptinessSodaFromK(cfg.keys, rangeLen, K); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								goTasks = append(goTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
+									func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+							}
+						}
+						if rebuildKGridSeries["Hybrid"] {
+							if f, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								goTasks = append(goTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+							}
+						}
+						if rebuildKGridSeries["Scan-ARE"] {
+							if f, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								goTasks = append(goTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+							}
+						}
 					}
-					if f, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
-						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
-							func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+
+					goResults := make([]seriesPoint, len(goTasks))
+					var wg sync.WaitGroup
+					for i, task := range goTasks {
+						i, task := i, task
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							fpr := avgFPR(cfg.keys, querySets, task.isEmpty)
+							goResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
+						}()
+					}
+					wg.Wait()
+
+					for _, sp := range goResults {
+						allSeries[sp.series].Points = append(allSeries[sp.series].Points, sp.point)
+						fmt.Printf("%-16s | %8.2f | %14.6f\n", sp.label, sp.point.X, sp.point.Y)
 					}
 				}
 
-				for _, eps := range epsilons {
-					if f, err := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64); err == nil {
-						bpk := float64(f.TotalSizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"CDF-ARE", "CDF-ARE", bpk,
-							func(a, b uint64) bool { return f.IsEmpty(a, b) }})
-					}
-					if f, err := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps); err == nil {
-						bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						goTasks = append(goTasks, fprTask{"BloomARE", "BloomARE", bpk,
-							func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+				// ---- Epsilon-loop filters (CDF-ARE, BloomARE) ----
+				rebuildEpsilonSeries := make(map[string]bool)
+				for _, name := range []string{"CDF-ARE", "BloomARE"} {
+					if d := decideSkip(name, paramsEpsilon); !d.skip {
+						rebuildEpsilonSeries[name] = true
 					}
 				}
 
-				goResults := make([]seriesPoint, len(goTasks))
-				var wg sync.WaitGroup
-				for i, task := range goTasks {
-					i, task := i, task
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						fpr := avgFPR(cfg.keys, querySets, task.isEmpty)
-						goResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
-					}()
-				}
-				wg.Wait()
+				if len(rebuildEpsilonSeries) > 0 {
+					querySets := make([][][2]uint64, nRuns)
+					for r := 0; r < nRuns; r++ {
+						querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
+					}
 
-				for _, sp := range goResults {
-					allSeries[sp.series].Points = append(allSeries[sp.series].Points, sp.point)
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", sp.label, sp.point.X, sp.point.Y)
+					for name := range rebuildEpsilonSeries {
+						allSeries[name].Points = nil
+					}
+
+					var epsilonTasks []fprTask
+					for _, eps := range epsilons {
+						if rebuildEpsilonSeries["CDF-ARE"] {
+							if f, err := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64); err == nil {
+								bpk := float64(f.TotalSizeInBits()) / float64(len(cfg.keys))
+								epsilonTasks = append(epsilonTasks, fprTask{"CDF-ARE", "CDF-ARE", bpk,
+									func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+							}
+						}
+						if rebuildEpsilonSeries["BloomARE"] {
+							if f, err := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								epsilonTasks = append(epsilonTasks, fprTask{"BloomARE", "BloomARE", bpk,
+									func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+							}
+						}
+					}
+
+					epsilonResults := make([]seriesPoint, len(epsilonTasks))
+					var wg sync.WaitGroup
+					for i, task := range epsilonTasks {
+						i, task := i, task
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							fpr := avgFPR(cfg.keys, querySets, task.isEmpty)
+							epsilonResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
+						}()
+					}
+					wg.Wait()
+
+					for _, sp := range epsilonResults {
+						allSeries[sp.series].Points = append(allSeries[sp.series].Points, sp.point)
+						fmt.Printf("%-16s | %8.2f | %14.6f\n", sp.label, sp.point.X, sp.point.Y)
+					}
 				}
 
 				// ---- CGo filters: build & measure sequentially (not thread-safe) ----
-				for _, bpk := range bpkSweep {
-					if f := tryGrafite(cfg.keys, bpk); f != nil {
-						actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-						fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
-						allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
-							testutils.Point{X: actualBPK, Y: fpr})
-						fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.0f)", bpk), actualBPK, fpr)
+				// Determine which CGo series to rebuild.
+				cgoSeries := []string{"Grafite", "SNARF", "SuRF", "SuRFHash(8)", "SuRFReal(8)"}
+				rebuildCGoSeries := make(map[string]bool)
+				for _, name := range cgoSeries {
+					if d := decideSkip(name, paramsBPKSweep); !d.skip {
+						rebuildCGoSeries[name] = true
+					}
+				}
+
+				if len(rebuildCGoSeries) > 0 {
+					querySets := make([][][2]uint64, nRuns)
+					for r := 0; r < nRuns; r++ {
+						querySets[r] = cfg.queryFunc(rangeLen, seeds[r])
 					}
 
-					f := snarf.New(cfg.keys, bpk)
-					actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-					fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
-					allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
-						testutils.Point{X: actualBPK, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
+					for name := range rebuildCGoSeries {
+						allSeries[name].Points = nil
+					}
+
+					for _, bpk := range bpkSweep {
+						if rebuildCGoSeries["Grafite"] {
+							if f := tryGrafite(cfg.keys, bpk); f != nil {
+								actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+								allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
+									testutils.Point{X: actualBPK, Y: fpr})
+								fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.0f)", bpk), actualBPK, fpr)
+							}
+						}
+
+						if rebuildCGoSeries["SNARF"] {
+							f := snarf.New(cfg.keys, bpk)
+							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+							fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+							allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
+								testutils.Point{X: actualBPK, Y: fpr})
+							fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
+						}
+					}
+
+					type surfVariant struct {
+						name     string
+						st       surf.SuffixType
+						hashBits int
+						realBits int
+					}
+					for _, sv := range []surfVariant{
+						{"SuRF", surf.SuffixNone, 0, 0},
+						{"SuRFHash(8)", surf.SuffixHash, 8, 0},
+						{"SuRFReal(8)", surf.SuffixReal, 0, 8},
+					} {
+						if rebuildCGoSeries[sv.name] {
+							f := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
+							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+							fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+							allSeries[sv.name].Points = append(allSeries[sv.name].Points,
+								testutils.Point{X: actualBPK, Y: fpr})
+							fmt.Printf("%-16s | %8.2f | %14.6f\n", sv.name, actualBPK, fpr)
+						}
+					}
 				}
 
-				type surfVariant struct {
-					name     string
-					st       surf.SuffixType
-					hashBits int
-					realBits int
+				// Save: merge new data into cache, keep all old points.
+				// Build a map of only the series that were rebuilt (new points).
+				rebuiltSeries := make(map[string]*testutils.SeriesData)
+				for name := range newParams {
+					rebuiltSeries[name] = allSeries[name]
 				}
-				for _, sv := range []surfVariant{
-					{"SuRF", surf.SuffixNone, 0, 0},
-					{"SuRFHash(8)", surf.SuffixHash, 8, 0},
-					{"SuRFReal(8)", surf.SuffixReal, 0, 8},
-				} {
-					f := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
-					actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-					fpr := avgFPRSeq(cfg.keys, querySets, func(a, b uint64) bool { return f.IsEmpty(a, b) })
-					allSeries[sv.name].Points = append(allSeries[sv.name].Points,
-						testutils.Point{X: actualBPK, Y: fpr})
-					fmt.Printf("%-16s | %8.2f | %14.6f\n", sv.name, actualBPK, fpr)
-				}
-
-				// Save measured data
-				if err := saveSeriesData(dataPath, allSeries); err != nil {
+				if err := saveSeriesDataWithCache(dataPath, cached, rebuiltSeries, newParams); err != nil {
 					t.Logf("warning: failed to save data: %v", err)
+				} else {
+					// Reload cache so allSeries reflects the merged state for plotting.
+					merged := loadCachedSeries(dataPath)
+					for name, cs := range merged {
+						if sd, ok := allSeries[name]; ok {
+							sd.Points = cs.Points
+						}
+					}
 				}
+
 			}
 
 			// ---- Generate SVG ----
@@ -381,9 +763,10 @@ func TestTradeoff_Clustered(t *testing.T) {
 			rawKeys, clusters := testutils.GenerateClusterDistribution(n, nClusters, unifFrac, rng)
 			keys := mask60Keys(rawKeys)
 			runTradeoffBench(t, benchConfig{
-				distName: "clustered",
-				n:        n,
-				keys:     keys,
+				distName:   "clustered",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					qrng := rand.New(rand.NewSource(seed))
 					return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng))
@@ -400,9 +783,10 @@ func TestTradeoff_Uniform(t *testing.T) {
 			rng := rand.New(rand.NewSource(42))
 			keys := generateUniformKeys(n, rng)
 			runTradeoffBench(t, benchConfig{
-				distName: "uniform",
-				n:        n,
-				keys:     keys,
+				distName:   "uniform",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateUniformQueries(queryCount, rangeLen, qrng)
@@ -418,9 +802,10 @@ func TestTradeoff_Spread(t *testing.T) {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
 			keys := generateSpreadKeys(n)
 			runTradeoffBench(t, benchConfig{
-				distName: "spread",
-				n:        n,
-				keys:     keys,
+				distName:   "spread",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateUniformQueries(queryCount, rangeLen, qrng)
@@ -440,9 +825,10 @@ func TestTradeoff_Zipfian(t *testing.T) {
 			rng := rand.New(rand.NewSource(77))
 			keys, prefixes := generateZipfianKeys(n, nPrefixes, rng)
 			runTradeoffBench(t, benchConfig{
-				distName: "zipfian",
-				n:        n,
-				keys:     keys,
+				distName:   "zipfian",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateZipfianQueries(queryCount, prefixes, rangeLen, qrng)
@@ -459,9 +845,10 @@ func TestTradeoff_Temporal(t *testing.T) {
 			rng := rand.New(rand.NewSource(55))
 			keys := generateTemporalKeys(n, rng)
 			runTradeoffBench(t, benchConfig{
-				distName: "temporal",
-				n:        n,
-				keys:     keys,
+				distName:   "temporal",
+				n:          n,
+				keys:       keys,
+				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateTemporalQueries(queryCount, keys, rangeLen, qrng)
