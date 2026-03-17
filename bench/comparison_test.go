@@ -13,6 +13,7 @@ import (
 	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
 	"Thesis/testutils"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -52,6 +53,58 @@ func mask60Queries(queries [][2]uint64) [][2]uint64 {
 		out[i] = [2]uint64{a, b}
 	}
 	return out
+}
+
+// saveSyntheticKeys saves keys in SOSD binary format: [uint64 count LE][count × uint64 keys LE].
+func saveSyntheticKeys(path string, keys []uint64) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if err := binary.Write(f, binary.LittleEndian, uint64(len(keys))); err != nil {
+		return err
+	}
+	return binary.Write(f, binary.LittleEndian, keys)
+}
+
+// loadSyntheticKeys loads keys from SOSD binary format. Returns error if file doesn't exist.
+func loadSyntheticKeys(path string) ([]uint64, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var count uint64
+	if err := binary.Read(f, binary.LittleEndian, &count); err != nil {
+		return nil, fmt.Errorf("read count: %w", err)
+	}
+	keys := make([]uint64, count)
+	if err := binary.Read(f, binary.LittleEndian, keys); err != nil {
+		return nil, fmt.Errorf("read keys: %w", err)
+	}
+	return keys, nil
+}
+
+// cacheOrGenerate tries to load keys from a cache file. If not found, calls generate(),
+// saves to cache, and returns the keys. Cache path: {cacheDir}/{distName}_{n}.bin.
+func cacheOrGenerate(cacheDir, distName string, n int, generate func() []uint64) []uint64 {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		fmt.Printf("[GEN KEYS] %s n=%d (mkdir failed: %v, generating...)\n", distName, n, err)
+		return generate()
+	}
+	path := fmt.Sprintf("%s/%s_%d.bin", cacheDir, distName, n)
+	if keys, err := loadSyntheticKeys(path); err == nil {
+		fmt.Printf("[CACHED KEYS] %s n=%d (loaded from %s)\n", distName, n, path)
+		return keys
+	}
+	keys := generate()
+	if err := saveSyntheticKeys(path, keys); err != nil {
+		fmt.Printf("[GEN KEYS] %s n=%d (save failed: %v)\n", distName, n, err)
+	} else {
+		fmt.Printf("[GEN KEYS] %s n=%d (saved to %s)\n", distName, n, path)
+	}
+	return keys
 }
 
 // benchConfig parameterises a single distribution benchmark.
@@ -751,17 +804,67 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 // --- Distribution-specific tests ---
 
+// clusterMeta is the JSON-serialisable form of []testutils.ClusterInfo.
+type clusterMeta struct {
+	Center uint64  `json:"center"`
+	Stddev float64 `json:"stddev"`
+}
+
 func TestTradeoff_Clustered(t *testing.T) {
 	const (
 		queryCount = 1 << 18
 		nClusters  = 5
 		unifFrac   = 0.15
+		cacheDir   = "../bench/synthetic_data"
 	)
 	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
-			rng := rand.New(rand.NewSource(99))
-			rawKeys, clusters := testutils.GenerateClusterDistribution(n, nClusters, unifFrac, rng)
-			keys := mask60Keys(rawKeys)
+			keysPath := fmt.Sprintf("%s/clustered_%d.bin", cacheDir, n)
+			metaPath := fmt.Sprintf("%s/clustered_%d_meta.json", cacheDir, n)
+
+			os.MkdirAll(cacheDir, 0755)
+
+			var keys []uint64
+			var clusters []testutils.ClusterInfo
+
+			cachedKeys, keyErr := loadSyntheticKeys(keysPath)
+			metaBytes, metaErr := os.ReadFile(metaPath)
+
+			if keyErr == nil && metaErr == nil {
+				var meta []clusterMeta
+				if json.Unmarshal(metaBytes, &meta) == nil {
+					clusters = make([]testutils.ClusterInfo, len(meta))
+					for i, m := range meta {
+						clusters[i] = testutils.ClusterInfo{Center: m.Center, Stddev: m.Stddev}
+					}
+					keys = cachedKeys
+					fmt.Printf("[CACHED KEYS] clustered n=%d (loaded from %s)\n", n, keysPath)
+				}
+			}
+
+			if keys == nil {
+				rng := rand.New(rand.NewSource(99))
+				rawKeys, cls := testutils.GenerateClusterDistribution(n, nClusters, unifFrac, rng)
+				keys = mask60Keys(rawKeys)
+				clusters = cls
+
+				if err := saveSyntheticKeys(keysPath, keys); err != nil {
+					fmt.Printf("[GEN KEYS] clustered n=%d (key save failed: %v)\n", n, err)
+				} else {
+					meta := make([]clusterMeta, len(clusters))
+					for i, c := range clusters {
+						meta[i] = clusterMeta{Center: c.Center, Stddev: c.Stddev}
+					}
+					if b, err := json.MarshalIndent(meta, "", "  "); err == nil {
+						if err := os.WriteFile(metaPath, b, 0644); err != nil {
+							fmt.Printf("[GEN KEYS] clustered n=%d (meta save failed: %v)\n", n, err)
+						} else {
+							fmt.Printf("[GEN KEYS] clustered n=%d (saved to %s)\n", n, keysPath)
+						}
+					}
+				}
+			}
+
 			runTradeoffBench(t, benchConfig{
 				distName:   "clustered",
 				n:          n,
@@ -780,8 +883,10 @@ func TestTradeoff_Uniform(t *testing.T) {
 	const queryCount = 1 << 18
 	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
-			rng := rand.New(rand.NewSource(42))
-			keys := generateUniformKeys(n, rng)
+			keys := cacheOrGenerate("../bench/synthetic_data", "uniform", n, func() []uint64 {
+				rng := rand.New(rand.NewSource(42))
+				return generateUniformKeys(n, rng)
+			})
 			runTradeoffBench(t, benchConfig{
 				distName:   "uniform",
 				n:          n,
@@ -800,7 +905,9 @@ func TestTradeoff_Spread(t *testing.T) {
 	const queryCount = 1 << 18
 	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
-			keys := generateSpreadKeys(n)
+			keys := cacheOrGenerate("../bench/synthetic_data", "spread", n, func() []uint64 {
+				return generateSpreadKeys(n)
+			})
 			runTradeoffBench(t, benchConfig{
 				distName:   "spread",
 				n:          n,
@@ -819,11 +926,38 @@ func TestTradeoff_Zipfian(t *testing.T) {
 	const (
 		queryCount = 1 << 18
 		nPrefixes  = 100
+		cacheDir   = "../bench/synthetic_data"
 	)
 	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
-			rng := rand.New(rand.NewSource(77))
-			keys, prefixes := generateZipfianKeys(n, nPrefixes, rng)
+			keysPath := fmt.Sprintf("%s/zipfian_%d.bin", cacheDir, n)
+			prefixesPath := fmt.Sprintf("%s/zipfian_%d_prefixes.bin", cacheDir, n)
+
+			os.MkdirAll(cacheDir, 0755)
+
+			var keys, prefixes []uint64
+
+			cachedKeys, keyErr := loadSyntheticKeys(keysPath)
+			cachedPrefixes, prefixErr := loadSyntheticKeys(prefixesPath)
+
+			if keyErr == nil && prefixErr == nil {
+				keys = cachedKeys
+				prefixes = cachedPrefixes
+				fmt.Printf("[CACHED KEYS] zipfian n=%d (loaded from %s)\n", n, keysPath)
+			} else {
+				rng := rand.New(rand.NewSource(77))
+				keys, prefixes = generateZipfianKeys(n, nPrefixes, rng)
+
+				saveErr := saveSyntheticKeys(keysPath, keys)
+				if saveErr != nil {
+					fmt.Printf("[GEN KEYS] zipfian n=%d (key save failed: %v)\n", n, saveErr)
+				} else if err := saveSyntheticKeys(prefixesPath, prefixes); err != nil {
+					fmt.Printf("[GEN KEYS] zipfian n=%d (prefix save failed: %v)\n", n, err)
+				} else {
+					fmt.Printf("[GEN KEYS] zipfian n=%d (saved to %s)\n", n, keysPath)
+				}
+			}
+
 			runTradeoffBench(t, benchConfig{
 				distName:   "zipfian",
 				n:          n,
@@ -842,8 +976,10 @@ func TestTradeoff_Temporal(t *testing.T) {
 	const queryCount = 1 << 18
 	for _, n := range []int{1 << 16, 1 << 18, 1 << 20} {
 		t.Run(fmt.Sprintf("N=%d", n), func(t *testing.T) {
-			rng := rand.New(rand.NewSource(55))
-			keys := generateTemporalKeys(n, rng)
+			keys := cacheOrGenerate("../bench/synthetic_data", "temporal", n, func() []uint64 {
+				rng := rand.New(rand.NewSource(55))
+				return generateTemporalKeys(n, rng)
+			})
 			runTradeoffBench(t, benchConfig{
 				distName:   "temporal",
 				n:          n,
