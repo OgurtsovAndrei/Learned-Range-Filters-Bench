@@ -16,6 +16,7 @@ snarf/build/
 # Benchmark outputs (regenerable)
 bench_results/plots/
 bench_results/data/
+bench_results/from-vm/
 
 # SOSD datasets (large binary files, use bench/sosd_data/download.sh)
 bench/sosd_data/*
