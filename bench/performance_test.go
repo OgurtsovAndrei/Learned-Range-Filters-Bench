@@ -47,11 +47,11 @@ func TestBuildTimePerKey(t *testing.T) {
 			return err
 		}},
 		{"SODA", "#22a06b", "diamond", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
-			_, err := are_soda_hash.NewApproximateRangeEmptinessSoda(u64, rangeLen, eps)
+			_, err := are_soda_hash.NewSodaARE(u64, rangeLen, eps)
 			return err
 		}},
 		{"Truncation", "#e6a800", "triangle", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
-			_, err := are_trunc.NewApproximateRangeEmptiness(bs, eps)
+			_, err := are_trunc.NewTruncARE(bs, eps)
 			return err
 		}},
 		{"Hybrid", "#9b59b6", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
@@ -188,14 +188,14 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
 		}},
 		{"SODA", "#22a06b", "diamond", false, func(L uint64) (func(a, b uint64) bool, error) {
-			f, err := are_soda_hash.NewApproximateRangeEmptinessSoda(keysU64, L, eps)
+			f, err := are_soda_hash.NewSodaARE(keysU64, L, eps)
 			if err != nil {
 				return nil, err
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
 		}},
 		{"Truncation", "#e6a800", "triangle", false, func(_ uint64) (func(a, b uint64) bool, error) {
-			f, err := are_trunc.NewApproximateRangeEmptiness(keysBS, eps)
+			f, err := are_trunc.NewTruncARE(keysBS, eps)
 			if err != nil {
 				return nil, err
 			}
@@ -343,14 +343,14 @@ func TestScalability(t *testing.T) {
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), "-", nil
 		}},
 		{"SODA", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
-			f, err := are_soda_hash.NewApproximateRangeEmptinessSoda(u64, rangeLen, eps)
+			f, err := are_soda_hash.NewSodaARE(u64, rangeLen, eps)
 			if err != nil {
 				return nil, 0, "", err
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
 		}},
 		{"Truncation", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
-			f, err := are_trunc.NewApproximateRangeEmptiness(bs, eps)
+			f, err := are_trunc.NewTruncARE(bs, eps)
 			if err != nil {
 				return nil, 0, "", err
 			}
@@ -571,10 +571,10 @@ func TestTradeoff_Full(t *testing.T) {
 
 		fOptU, errOptU := are_adaptive.NewAdaptiveARE(unifBS, rangeLen, eps, 0)
 		fOptS, errOptS := are_adaptive.NewAdaptiveARE(seqBS, rangeLen, eps, 0)
-		fSodaU, errSodaU := are_soda_hash.NewApproximateRangeEmptinessSoda(unifU64, rangeLen, eps)
-		fSodaS, errSodaS := are_soda_hash.NewApproximateRangeEmptinessSoda(seqU64, rangeLen, eps)
-		fTruncU, errTruncU := are_trunc.NewApproximateRangeEmptiness(unifBS, eps)
-		fTruncS, errTruncS := are_trunc.NewApproximateRangeEmptiness(seqBS, eps)
+		fSodaU, errSodaU := are_soda_hash.NewSodaARE(unifU64, rangeLen, eps)
+		fSodaS, errSodaS := are_soda_hash.NewSodaARE(seqU64, rangeLen, eps)
+		fTruncU, errTruncU := are_trunc.NewTruncARE(unifBS, eps)
+		fTruncS, errTruncS := are_trunc.NewTruncARE(seqBS, eps)
 		fHybridU, errHybridU := are_hybrid.NewHybridARE(unifBS, rangeLen, eps)
 		fHybridS, errHybridS := are_hybrid.NewHybridARE(seqBS, rangeLen, eps)
 		fScanU, errScanU := are_hybrid_scan.NewHybridScanARE(unifBS, rangeLen, eps)
@@ -669,14 +669,14 @@ func perfSafeSize(f *are_adaptive.AdaptiveApproximateRangeEmptiness) uint64 {
 	return f.SizeInBits()
 }
 
-func perfSafeSizeSoda(f *are_soda_hash.ApproximateRangeEmptinessSoda) uint64 {
+func perfSafeSizeSoda(f *are_soda_hash.SodaARE) uint64 {
 	if f == nil {
 		return 0
 	}
 	return f.SizeInBits()
 }
 
-func perfSafeSizeTrunc(f *are_trunc.ApproximateRangeEmptiness) uint64 {
+func perfSafeSizeTrunc(f *are_trunc.TruncARE) uint64 {
 	if f == nil {
 		return 0
 	}

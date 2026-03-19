@@ -171,7 +171,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					for _, K := range kGrid {
 						K := K
 						if rebuildKGridSeries["Truncation"] {
-							if f, err := are_trunc.NewApproximateRangeEmptinessFromK(keysBS, K); err == nil {
+							if f, err := are_trunc.NewTruncAREFromK(keysBS, K); err == nil {
 								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
 								goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
@@ -185,7 +185,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							}
 						}
 						if rebuildKGridSeries["SODA"] {
-							if f, err := are_soda_hash.NewApproximateRangeEmptinessSodaFromK(cfg.keys, rangeLen, K); err == nil {
+							if f, err := are_soda_hash.NewSodaAREFromK(cfg.keys, rangeLen, K); err == nil {
 								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
 								goTasks = append(goTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(a, b) }})

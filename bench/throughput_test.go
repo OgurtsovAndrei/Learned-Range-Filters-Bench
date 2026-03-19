@@ -156,7 +156,7 @@ func TestBuildThroughput(t *testing.T) {
 		{
 			name: "SODA", color: "#4dd88a", marker: "diamond", dashed: false,
 			build: func(keys []uint64) error {
-				_, err := are_soda_hash.NewApproximateRangeEmptinessSoda(keys, rangeLen, eps)
+				_, err := are_soda_hash.NewSodaARE(keys, rangeLen, eps)
 				return err
 			},
 		},
@@ -167,7 +167,7 @@ func TestBuildThroughput(t *testing.T) {
 				for i, v := range keys {
 					bs[i] = testutils.TrieBS(v)
 				}
-				_, err := are_trunc.NewApproximateRangeEmptiness(bs, eps)
+				_, err := are_trunc.NewTruncARE(bs, eps)
 				return err
 			},
 		},
