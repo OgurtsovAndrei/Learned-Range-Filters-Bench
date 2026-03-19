@@ -2,11 +2,13 @@ package bench_test
 
 import (
 	"Thesis/bits"
+	"Thesis/emptiness/are_dp_scan"
 	"Thesis/emptiness/are_greedy_scan"
 	"Thesis/emptiness/are_hybrid"
 	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/testutils"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"sort"
@@ -25,10 +27,16 @@ func toTrieBS(keys []uint64) []bits.BitString {
 	return bs
 }
 
-// hybridFPRPoint builds all three filters at a given K and returns (bpk, fpr) for each.
-// FPR is averaged over the provided seeds using avgFPRParallel.
+// dpMaxNFPR caps the N at which DP-Optimal is included in FPR benchmarks.
+// segmentDP is O(n²); at n=262144 with 24 K values this would take hours.
+const dpMaxNFPR = 1 << 14 // 16384
+
+// dpMaxNBuild caps the N at which DP-Optimal is included in build-time benchmarks.
+const dpMaxNBuild = 1 << 16 // 65536
+
 type hybridPoint struct {
-	hybrid, scan, greedy testutils.Point
+	hybrid, scan, greedyRaw, greedyMerge, dp testutils.Point
+	dpValid                                   bool
 }
 
 func hybridMeasureK(
@@ -38,6 +46,7 @@ func hybridMeasureK(
 	rangeLen uint64,
 	K uint32,
 	seeds []int64,
+	includDP bool,
 ) hybridPoint {
 	type task struct {
 		name    string
@@ -61,11 +70,27 @@ func hybridMeasureK(
 		}})
 	}
 
-	if fg, err := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K); err == nil {
+	if fg, err := are_greedy_scan.NewGreedyScanAREFromKRaw(keysBS, rangeLen, K); err == nil {
 		bpk := float64(fg.SizeInBits()) / float64(len(keys))
-		tasks = append(tasks, task{"Greedy-ARE", bpk, func(a, b uint64) bool {
+		tasks = append(tasks, task{"Greedy-raw", bpk, func(a, b uint64) bool {
 			return fg.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
 		}})
+	}
+
+	if fg, err := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K); err == nil {
+		bpk := float64(fg.SizeInBits()) / float64(len(keys))
+		tasks = append(tasks, task{"Greedy+Merge", bpk, func(a, b uint64) bool {
+			return fg.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
+		}})
+	}
+
+	if includDP {
+		if fd, err := are_dp_scan.NewDPScanAREFromK(keysBS, rangeLen, K); err == nil {
+			bpk := float64(fd.SizeInBits()) / float64(len(keys))
+			tasks = append(tasks, task{"DP-Optimal", bpk, func(a, b uint64) bool {
+				return fd.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
+			}})
+		}
 	}
 
 	results := make([]float64, len(tasks))
@@ -82,13 +107,19 @@ func hybridMeasureK(
 
 	var hp hybridPoint
 	for i, tk := range tasks {
+		p := testutils.Point{X: tk.bpk, Y: results[i]}
 		switch tk.name {
 		case "Hybrid":
-			hp.hybrid = testutils.Point{X: tk.bpk, Y: results[i]}
+			hp.hybrid = p
 		case "Scan-ARE":
-			hp.scan = testutils.Point{X: tk.bpk, Y: results[i]}
-		case "Greedy-ARE":
-			hp.greedy = testutils.Point{X: tk.bpk, Y: results[i]}
+			hp.scan = p
+		case "Greedy-raw":
+			hp.greedyRaw = p
+		case "Greedy+Merge":
+			hp.greedyMerge = p
+		case "DP-Optimal":
+			hp.dp = p
+			hp.dpValid = true
 		}
 	}
 	return hp
@@ -97,30 +128,12 @@ func hybridMeasureK(
 func runHybridCompareFPR(t *testing.T, distName string, keys []uint64, queryFunc func(uint64, int64) [][2]uint64) {
 	t.Helper()
 
-	const rangeLen = uint64(128)
-	const queryCount = 1 << 18
+	rangeLens := []uint64{16, 128, 1024}
 	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48}
 	seeds := []int64{12345, 54321, 99999}
 
 	keysBS := toTrieBS(keys)
-
-	hybridSeries := &testutils.SeriesData{Name: "Hybrid", Color: "#ff6b6b", Marker: "circle"}
-	scanSeries := &testutils.SeriesData{Name: "Scan-ARE", Color: "#06b6d4", Marker: "square"}
-	greedySeries := &testutils.SeriesData{Name: "Greedy-ARE", Color: "#22c55e", Marker: "diamond"}
-
-	fmt.Printf("\n=== Hybrid Compare FPR — %s (n=%d, L=%d) ===\n", distName, len(keys), rangeLen)
-	fmt.Printf("%-12s | %10s | %10s | %10s | %10s | %10s | %10s\n",
-		"K", "Hyb-BPK", "Hyb-FPR", "Scan-BPK", "Scan-FPR", "Grdy-BPK", "Grdy-FPR")
-	fmt.Println("--------------------------------------------------------------------------------------------")
-
-	for _, K := range kGrid {
-		hp := hybridMeasureK(keysBS, keys, queryFunc, rangeLen, K, seeds)
-		hybridSeries.Points = append(hybridSeries.Points, hp.hybrid)
-		scanSeries.Points = append(scanSeries.Points, hp.scan)
-		greedySeries.Points = append(greedySeries.Points, hp.greedy)
-		fmt.Printf("%-12d | %10.2f | %10.6f | %10.2f | %10.6f | %10.2f | %10.6f\n",
-			K, hp.hybrid.X, hp.hybrid.Y, hp.scan.X, hp.scan.Y, hp.greedy.X, hp.greedy.Y)
-	}
+	includDP := len(keys) <= dpMaxNFPR
 
 	outDir := fmt.Sprintf("../bench_results/plots/hybrid_compare/%s", distName)
 	if err := os.MkdirAll(outDir, 0755); err != nil {
@@ -128,20 +141,86 @@ func runHybridCompareFPR(t *testing.T, distName string, keys []uint64, queryFunc
 		return
 	}
 
-	svgPath := fmt.Sprintf("%s/L%d.svg", outDir, rangeLen)
-	series := []testutils.SeriesData{*hybridSeries, *scanSeries, *greedySeries}
-	err := testutils.GenerateTradeoffSVG(
-		fmt.Sprintf("Hybrid ARE Variants — %s (n=%d, L=%d)", distName, len(keys), rangeLen),
-		"Bits per Key (BPK)",
-		"False Positive Rate (FPR)",
-		series,
-		svgPath,
-	)
-	if err != nil {
-		t.Errorf("SVG generation failed: %v", err)
-	} else {
-		fmt.Printf("SVG written to %s\n", svgPath)
+	for _, rangeLen := range rangeLens {
+		rangeLen := rangeLen
+		t.Run(fmt.Sprintf("L=%d", rangeLen), func(t *testing.T) {
+			hybridSeries := &testutils.SeriesData{Name: "Hybrid", Color: "#ff6b6b", Marker: "circle"}
+			scanSeries := &testutils.SeriesData{Name: "Scan-ARE", Color: "#06b6d4", Marker: "square"}
+			greedyRawSeries := &testutils.SeriesData{Name: "Greedy-raw", Color: "#a3e635", Marker: "triangle"}
+			greedyMergeSeries := &testutils.SeriesData{Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"}
+			dpSeries := &testutils.SeriesData{Name: "DP-Optimal", Color: "#8b5cf6", Marker: "star"}
+
+			fmt.Printf("\n=== Hybrid Compare FPR — %s (n=%d, L=%d) ===\n", distName, len(keys), rangeLen)
+			if !includDP {
+				fmt.Printf("    (DP-Optimal skipped: n=%d > dpMaxNFPR=%d)\n", len(keys), dpMaxNFPR)
+			}
+			fmt.Printf("%-12s | %10s | %10s | %10s | %10s | %10s | %10s | %10s | %10s | %10s | %10s\n",
+				"K",
+				"Hyb-BPK", "Hyb-FPR",
+				"Scan-BPK", "Scan-FPR",
+				"GrRaw-BPK", "GrRaw-FPR",
+				"GrMrg-BPK", "GrMrg-FPR",
+				"DP-BPK", "DP-FPR")
+			fmt.Println("---------------------------------------------------------------------------------------------------------------------------")
+
+			for _, K := range kGrid {
+				hp := hybridMeasureK(keysBS, keys, queryFunc, rangeLen, K, seeds, includDP)
+				hybridSeries.Points = append(hybridSeries.Points, hp.hybrid)
+				scanSeries.Points = append(scanSeries.Points, hp.scan)
+				greedyRawSeries.Points = append(greedyRawSeries.Points, hp.greedyRaw)
+				greedyMergeSeries.Points = append(greedyMergeSeries.Points, hp.greedyMerge)
+				if hp.dpValid {
+					dpSeries.Points = append(dpSeries.Points, hp.dp)
+				}
+
+				dpBPK, dpFPR := 0.0, 0.0
+				if hp.dpValid {
+					dpBPK, dpFPR = hp.dp.X, hp.dp.Y
+				}
+				fmt.Printf("%-12d | %10.2f | %10.6f | %10.2f | %10.6f | %10.2f | %10.6f | %10.2f | %10.6f | %10.2f | %10.6f\n",
+					K,
+					hp.hybrid.X, hp.hybrid.Y,
+					hp.scan.X, hp.scan.Y,
+					hp.greedyRaw.X, hp.greedyRaw.Y,
+					hp.greedyMerge.X, hp.greedyMerge.Y,
+					dpBPK, dpFPR)
+			}
+
+			svgPath := fmt.Sprintf("%s/L%d.svg", outDir, rangeLen)
+			series := []testutils.SeriesData{
+				*hybridSeries,
+				*scanSeries,
+				*greedyRawSeries,
+				*greedyMergeSeries,
+			}
+			if len(dpSeries.Points) > 0 {
+				series = append(series, *dpSeries)
+			}
+
+			err := testutils.GenerateTradeoffSVG(
+				fmt.Sprintf("Hybrid ARE Variants — %s (n=%d, L=%d)", distName, len(keys), rangeLen),
+				"Bits per Key (BPK)",
+				"False Positive Rate (FPR)",
+				series,
+				svgPath,
+			)
+			if err != nil {
+				t.Errorf("SVG generation failed: %v", err)
+			} else {
+				fmt.Printf("SVG written to %s\n", svgPath)
+			}
+		})
 	}
+}
+
+// greedyKFromEpsilon replicates the K derivation used inside NewGreedyScanARE.
+func greedyKFromEpsilon(n int, rangeLen uint64, epsilon float64) uint32 {
+	rTarget := float64(n) * float64(rangeLen+1) / epsilon
+	K := uint32(math.Ceil(math.Log2(rTarget)))
+	if K > 64 {
+		K = 64
+	}
+	return K
 }
 
 func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, genKeys func(n int) []uint64) {
@@ -154,15 +233,19 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 
 	hybridSeries := &testutils.SeriesData{Name: "Hybrid", Color: "#ff6b6b", Marker: "circle"}
 	scanSeries := &testutils.SeriesData{Name: "Scan-ARE", Color: "#06b6d4", Marker: "square"}
-	greedySeries := &testutils.SeriesData{Name: "Greedy-ARE", Color: "#22c55e", Marker: "diamond"}
+	greedyRawSeries := &testutils.SeriesData{Name: "Greedy-raw", Color: "#a3e635", Marker: "triangle"}
+	greedyMergeSeries := &testutils.SeriesData{Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"}
+	dpSeries := &testutils.SeriesData{Name: "DP-Optimal", Color: "#8b5cf6", Marker: "star"}
 
 	fmt.Printf("\n=== Hybrid Compare Build Time — %s ===\n", distName)
-	fmt.Printf("%-10s | %12s | %12s | %12s\n", "N", "Hybrid", "Scan-ARE", "Greedy-ARE")
-	fmt.Println("------------------------------------------------------------")
+	fmt.Printf("%-10s | %12s | %12s | %14s | %14s | %12s\n",
+		"N", "Hybrid", "Scan-ARE", "Greedy-raw", "Greedy+Merge", "DP-Optimal")
+	fmt.Println("--------------------------------------------------------------------------------------------")
 
 	for _, n := range nValues {
 		keys := genKeys(n)
 		keysBS := toTrieBS(keys)
+		K := greedyKFromEpsilon(n, rangeLen, epsilon)
 
 		start := time.Now()
 		_, hybErr := are_hybrid.NewHybridARE(keysBS, rangeLen, epsilon)
@@ -173,12 +256,17 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		scanTime := time.Since(start)
 
 		start = time.Now()
-		_, greedyErr := are_greedy_scan.NewGreedyScanARE(keysBS, rangeLen, epsilon)
-		greedyTime := time.Since(start)
+		_, greedyRawErr := are_greedy_scan.NewGreedyScanAREFromKRaw(keysBS, rangeLen, K)
+		greedyRawTime := time.Since(start)
+
+		start = time.Now()
+		_, greedyMergeErr := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K)
+		greedyMergeTime := time.Since(start)
 
 		hybNs := float64(hybTime.Nanoseconds()) / float64(n)
 		scanNs := float64(scanTime.Nanoseconds()) / float64(n)
-		greedyNs := float64(greedyTime.Nanoseconds()) / float64(n)
+		greedyRawNs := float64(greedyRawTime.Nanoseconds()) / float64(n)
+		greedyMergeNs := float64(greedyMergeTime.Nanoseconds()) / float64(n)
 
 		if hybErr == nil {
 			hybridSeries.Points = append(hybridSeries.Points, testutils.Point{X: float64(n), Y: hybNs})
@@ -186,11 +274,27 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		if scanErr == nil {
 			scanSeries.Points = append(scanSeries.Points, testutils.Point{X: float64(n), Y: scanNs})
 		}
-		if greedyErr == nil {
-			greedySeries.Points = append(greedySeries.Points, testutils.Point{X: float64(n), Y: greedyNs})
+		if greedyRawErr == nil {
+			greedyRawSeries.Points = append(greedyRawSeries.Points, testutils.Point{X: float64(n), Y: greedyRawNs})
+		}
+		if greedyMergeErr == nil {
+			greedyMergeSeries.Points = append(greedyMergeSeries.Points, testutils.Point{X: float64(n), Y: greedyMergeNs})
 		}
 
-		fmt.Printf("%-10d | %10.1f ns | %10.1f ns | %10.1f ns\n", n, hybNs, scanNs, greedyNs)
+		dpNsStr := "skipped"
+		if n <= dpMaxNBuild {
+			start = time.Now()
+			_, dpErr := are_dp_scan.NewDPScanARE(keysBS, rangeLen, epsilon)
+			dpTime := time.Since(start)
+			dpNs := float64(dpTime.Nanoseconds()) / float64(n)
+			if dpErr == nil {
+				dpSeries.Points = append(dpSeries.Points, testutils.Point{X: float64(n), Y: dpNs})
+				dpNsStr = fmt.Sprintf("%.1f ns", dpNs)
+			}
+		}
+
+		fmt.Printf("%-10d | %10.1f ns | %10.1f ns | %12.1f ns | %12.1f ns | %s\n",
+			n, hybNs, scanNs, greedyRawNs, greedyMergeNs, dpNsStr)
 	}
 
 	outDir := "../bench_results/plots/hybrid_compare/build_time"
@@ -199,8 +303,17 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		return
 	}
 
+	series := []testutils.SeriesData{
+		*hybridSeries,
+		*scanSeries,
+		*greedyRawSeries,
+		*greedyMergeSeries,
+	}
+	if len(dpSeries.Points) > 0 {
+		series = append(series, *dpSeries)
+	}
+
 	svgPath := fmt.Sprintf("%s/%s.svg", outDir, distName)
-	series := []testutils.SeriesData{*hybridSeries, *scanSeries, *greedySeries}
 	err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("Build Time per Key — Hybrid ARE Variants (%s)", distName),
 		XLabel: "Number of Keys (n)",
@@ -219,7 +332,7 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 
 func TestHybridCompare_FPR_Clustered(t *testing.T) {
 	const (
-		n         = 1 << 18
+		n          = 1 << 18
 		queryCount = 1 << 18
 	)
 	keys := cacheOrGenerate("../bench/synthetic_data", "clustered", n, func() []uint64 {
@@ -228,7 +341,6 @@ func TestHybridCompare_FPR_Clustered(t *testing.T) {
 		return mask60Keys(raw)
 	})
 
-	// We need cluster info for query generation — re-generate with same seed.
 	rng := rand.New(rand.NewSource(99))
 	_, clusters := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
 
