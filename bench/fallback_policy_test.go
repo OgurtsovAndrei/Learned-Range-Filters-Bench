@@ -449,6 +449,18 @@ func TestFallbackPolicy_SOSD_OSM(t *testing.T) {
 	})
 }
 
+func TestFallbackPolicy_SOSD_OSM_UnifQueries(t *testing.T) {
+	const queryCount = 1 << 18
+	keys, err := loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 1<<18)
+	if err != nil {
+		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
+	}
+	keys = mask60Keys(keys)
+	runFallbackPolicyBench(t, "sosd_osm_unifq", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateUniformQueries(queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
 func TestFallbackPolicy_SOSD_Books(t *testing.T) {
 	const queryCount = 1 << 18
 	keys, err := loadSOSDUint32(sosdPath("books_200M_uint32"), 1<<18)
