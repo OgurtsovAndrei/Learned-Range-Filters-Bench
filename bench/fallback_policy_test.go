@@ -397,15 +397,50 @@ func TestFallbackPolicy_Zipfian(t *testing.T) {
 	})
 }
 
-func TestFallbackPolicy_Temporal(t *testing.T) {
-	const (
-		n          = 1 << 18
-		queryCount = 1 << 18
-	)
-	keys := cacheOrGenerate("../bench/synthetic_data", "temporal", n, func() []uint64 {
-		return generateTemporalKeys(n, rand.New(rand.NewSource(55)))
+func TestFallbackPolicy_SOSD_Facebook(t *testing.T) {
+	const queryCount = 1 << 18
+	keys, err := loadSOSDUint64(sosdPath("fb_200M_uint64"), 1<<18)
+	if err != nil {
+		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
+	}
+	keys = mask60Keys(keys)
+	runFallbackPolicyBench(t, "sosd_fb", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
-	runFallbackPolicyBench(t, "temporal", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
-		return generateTemporalQueries(queryCount, keys, rangeLen, rand.New(rand.NewSource(seed)))
+}
+
+func TestFallbackPolicy_SOSD_Wiki(t *testing.T) {
+	const queryCount = 1 << 18
+	keys, err := loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), 1<<18)
+	if err != nil {
+		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
+	}
+	keys = mask60Keys(keys)
+	runFallbackPolicyBench(t, "sosd_wiki", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
+func TestFallbackPolicy_SOSD_OSM(t *testing.T) {
+	const queryCount = 1 << 18
+	keys, err := loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 1<<18)
+	if err != nil {
+		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
+	}
+	keys = mask60Keys(keys)
+	runFallbackPolicyBench(t, "sosd_osm", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
+func TestFallbackPolicy_SOSD_Books(t *testing.T) {
+	const queryCount = 1 << 18
+	keys, err := loadSOSDUint32(sosdPath("books_200M_uint32"), 1<<18)
+	if err != nil {
+		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
+	}
+	keys = mask60Keys(keys)
+	runFallbackPolicyBench(t, "sosd_books", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
 }
