@@ -50,6 +50,14 @@ var fallbackPolicies = []policyEntry{
 			return are_hybrid_scan.FallbackEstimateFPR{Epsilon: epsilon}
 		},
 	},
+	{
+		name:   "GapFrac",
+		color:  "#e74c3c",
+		marker: "square",
+		policy: func(epsilon float64) are_hybrid_scan.FallbackPolicy {
+			return are_hybrid_scan.FallbackGapFraction{Epsilon: epsilon}
+		},
+	},
 }
 
 // runFallbackPolicyBench benchmarks all 4 FallbackPolicy variants for a single distribution.
