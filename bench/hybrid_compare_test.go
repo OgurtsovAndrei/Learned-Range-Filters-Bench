@@ -7,6 +7,7 @@ import (
 	"Thesis/emptiness/are_hybrid"
 	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/testutils"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -125,17 +126,89 @@ func hybridMeasureK(
 	return hp
 }
 
-func runHybridCompareFPR(t *testing.T, distName string, keys []uint64, queryFunc func(uint64, int64) [][2]uint64) {
+// filterBPK returns a copy of series with points where X > maxBPK removed.
+func filterBPK(s testutils.SeriesData, maxBPK float64) testutils.SeriesData {
+	out := s
+	out.Points = nil
+	for _, p := range s.Points {
+		if p.X <= maxBPK {
+			out.Points = append(out.Points, p)
+		}
+	}
+	return out
+}
+
+// hybridSaveJSON writes the FPR series data for a single (distName, rangeLen, n) combination.
+func hybridSaveJSON(t *testing.T, distName string, n int, rangeLen uint64, allSeries []*testutils.SeriesData) {
+	t.Helper()
+	dir := fmt.Sprintf("../bench_results/data/hybrid_compare/N%d/%s", n, distName)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Errorf("mkdir JSON dir: %v", err)
+		return
+	}
+	path := fmt.Sprintf("%s/L%d.json", dir, rangeLen)
+	seriesMap := make(map[string]*testutils.SeriesData, len(allSeries))
+	for _, s := range allSeries {
+		seriesMap[s.Name] = s
+	}
+	if err := saveSeriesData(path, seriesMap); err != nil {
+		t.Errorf("save JSON: %v", err)
+	}
+}
+
+// hybridSaveBuildTimeJSON writes the build-time series data for a single distribution.
+func hybridSaveBuildTimeJSON(t *testing.T, distName string, allSeries []*testutils.SeriesData) {
+	t.Helper()
+	dir := "../bench_results/data/hybrid_compare/build_time"
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Errorf("mkdir JSON dir: %v", err)
+		return
+	}
+	path := fmt.Sprintf("%s/%s.json", dir, distName)
+	seriesMap := make(map[string]*testutils.SeriesData, len(allSeries))
+	for _, s := range allSeries {
+		seriesMap[s.Name] = s
+	}
+	if err := saveSeriesData(path, seriesMap); err != nil {
+		t.Errorf("save JSON: %v", err)
+	}
+}
+
+// hybridJSONToSavedSeries converts a slice of SeriesData pointers to []savedSeries for JSON.
+func hybridJSONToSavedSeries(allSeries []*testutils.SeriesData) []savedSeries {
+	var out []savedSeries
+	for _, s := range allSeries {
+		if len(s.Points) > 0 {
+			pts := make([]testutils.Point, len(s.Points))
+			copy(pts, s.Points)
+			out = append(out, savedSeries{Name: s.Name, Points: pts})
+		}
+	}
+	return out
+}
+
+// saveHybridJSON writes []savedSeries as JSON to path, creating parent dirs.
+func saveHybridJSON(path string, data []savedSeries) error {
+	b, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, b, 0644)
+}
+
+func runHybridCompareFPR(t *testing.T, distName string, n int, keys []uint64, queryFunc func(uint64, int64) [][2]uint64) {
 	t.Helper()
 
 	rangeLens := []uint64{16, 128, 1024}
-	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48}
+	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48, 52, 56}
 	seeds := []int64{12345, 54321, 99999}
+
+	const maxBPKForSVG = 35.0
 
 	keysBS := toTrieBS(keys)
 	includDP := len(keys) <= dpMaxNFPR
 
-	outDir := fmt.Sprintf("../bench_results/plots/hybrid_compare/%s", distName)
+	outDir := fmt.Sprintf("../bench_results/plots/hybrid_compare/N%d/%s", n, distName)
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		t.Errorf("mkdir: %v", err)
 		return
@@ -186,22 +259,40 @@ func runHybridCompareFPR(t *testing.T, distName string, keys []uint64, queryFunc
 					dpBPK, dpFPR)
 			}
 
-			svgPath := fmt.Sprintf("%s/L%d.svg", outDir, rangeLen)
-			series := []testutils.SeriesData{
-				*hybridSeries,
-				*scanSeries,
-				*greedyRawSeries,
-				*greedyMergeSeries,
-			}
+			// Save full data (including BPK > 35 points) to JSON.
+			allSeries := []*testutils.SeriesData{hybridSeries, scanSeries, greedyRawSeries, greedyMergeSeries}
 			if len(dpSeries.Points) > 0 {
-				series = append(series, *dpSeries)
+				allSeries = append(allSeries, dpSeries)
+			}
+			jsonDir := fmt.Sprintf("../bench_results/data/hybrid_compare/N%d/%s", n, distName)
+			if err := os.MkdirAll(jsonDir, 0755); err != nil {
+				t.Errorf("mkdir JSON dir: %v", err)
+			} else {
+				jsonPath := fmt.Sprintf("%s/L%d.json", jsonDir, rangeLen)
+				seriesMap := make(map[string]*testutils.SeriesData, len(allSeries))
+				for _, s := range allSeries {
+					seriesMap[s.Name] = s
+				}
+				if err := saveSeriesData(jsonPath, seriesMap); err != nil {
+					t.Errorf("save JSON: %v", err)
+				}
 			}
 
+			// Filter BPK > 35 for SVG to avoid scale distortion from Greedy-raw at low K.
+			svgSeries := make([]testutils.SeriesData, 0, len(allSeries))
+			for _, s := range allSeries {
+				filtered := filterBPK(*s, maxBPKForSVG)
+				if len(filtered.Points) > 0 {
+					svgSeries = append(svgSeries, filtered)
+				}
+			}
+
+			svgPath := fmt.Sprintf("%s/L%d.svg", outDir, rangeLen)
 			err := testutils.GenerateTradeoffSVG(
 				fmt.Sprintf("Hybrid ARE Variants — %s (n=%d, L=%d)", distName, len(keys), rangeLen),
 				"Bits per Key (BPK)",
 				"False Positive Rate (FPR)",
-				series,
+				svgSeries,
 				svgPath,
 			)
 			if err != nil {
@@ -303,14 +394,29 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		return
 	}
 
-	series := []testutils.SeriesData{
-		*hybridSeries,
-		*scanSeries,
-		*greedyRawSeries,
-		*greedyMergeSeries,
-	}
+	allSeries := []*testutils.SeriesData{hybridSeries, scanSeries, greedyRawSeries, greedyMergeSeries}
 	if len(dpSeries.Points) > 0 {
-		series = append(series, *dpSeries)
+		allSeries = append(allSeries, dpSeries)
+	}
+
+	// Save JSON.
+	jsonDir := "../bench_results/data/hybrid_compare/build_time"
+	if err := os.MkdirAll(jsonDir, 0755); err != nil {
+		t.Errorf("mkdir JSON dir: %v", err)
+	} else {
+		jsonPath := fmt.Sprintf("%s/%s.json", jsonDir, distName)
+		seriesMap := make(map[string]*testutils.SeriesData, len(allSeries))
+		for _, s := range allSeries {
+			seriesMap[s.Name] = s
+		}
+		if err := saveSeriesData(jsonPath, seriesMap); err != nil {
+			t.Errorf("save JSON: %v", err)
+		}
+	}
+
+	svgSeries := make([]testutils.SeriesData, 0, len(allSeries))
+	for _, s := range allSeries {
+		svgSeries = append(svgSeries, *s)
 	}
 
 	svgPath := fmt.Sprintf("%s/%s.svg", outDir, distName)
@@ -320,7 +426,7 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		YLabel: "Build Time (ns/key)",
 		XScale: testutils.Log10,
 		YScale: testutils.Log10,
-	}, series, svgPath)
+	}, svgSeries, svgPath)
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)
 	} else {
@@ -328,7 +434,7 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 	}
 }
 
-// ---- FPR benchmarks for synthetic distributions ----
+// ---- FPR benchmarks for synthetic distributions (N=1<<18) ----
 
 func TestHybridCompare_FPR_Clustered(t *testing.T) {
 	const (
@@ -344,7 +450,7 @@ func TestHybridCompare_FPR_Clustered(t *testing.T) {
 	rng := rand.New(rand.NewSource(99))
 	_, clusters := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
 
-	runHybridCompareFPR(t, "clustered", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "clustered", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
 		return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, 0.15, rangeLen, qrng))
 	})
@@ -359,7 +465,7 @@ func TestHybridCompare_FPR_Uniform(t *testing.T) {
 		rng := rand.New(rand.NewSource(42))
 		return generateUniformKeys(n, rng)
 	})
-	runHybridCompareFPR(t, "uniform", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "uniform", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
 		return generateUniformQueries(queryCount, rangeLen, qrng)
 	})
@@ -373,7 +479,7 @@ func TestHybridCompare_FPR_Spread(t *testing.T) {
 	keys := cacheOrGenerate("../bench/synthetic_data", "spread", n, func() []uint64 {
 		return generateSpreadKeys(n)
 	})
-	runHybridCompareFPR(t, "spread", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "spread", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
 		return generateUniformQueries(queryCount, rangeLen, qrng)
 	})
@@ -404,7 +510,7 @@ func TestHybridCompare_FPR_Zipfian(t *testing.T) {
 		saveSyntheticKeys(prefixesPath, prefixes)
 	}
 
-	runHybridCompareFPR(t, "zipfian", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "zipfian", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
 		return generateZipfianQueries(queryCount, prefixes, rangeLen, qrng)
 	})
@@ -419,13 +525,13 @@ func TestHybridCompare_FPR_Temporal(t *testing.T) {
 		rng := rand.New(rand.NewSource(55))
 		return generateTemporalKeys(n, rng)
 	})
-	runHybridCompareFPR(t, "temporal", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "temporal", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
 		return generateTemporalQueries(queryCount, keys, rangeLen, qrng)
 	})
 }
 
-// ---- FPR benchmarks for SOSD distributions ----
+// ---- FPR benchmarks for SOSD distributions (N=1<<18) ----
 
 func TestHybridCompare_FPR_SOSD_Facebook(t *testing.T) {
 	const (
@@ -439,7 +545,7 @@ func TestHybridCompare_FPR_SOSD_Facebook(t *testing.T) {
 	}
 	keys = mask60Keys(keys)
 
-	runHybridCompareFPR(t, "sosd_fb", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "sosd_fb", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
 }
@@ -456,7 +562,7 @@ func TestHybridCompare_FPR_SOSD_Wiki(t *testing.T) {
 	}
 	keys = mask60Keys(keys)
 
-	runHybridCompareFPR(t, "sosd_wiki", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "sosd_wiki", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
 }
@@ -473,7 +579,7 @@ func TestHybridCompare_FPR_SOSD_OSM(t *testing.T) {
 	}
 	keys = mask60Keys(keys)
 
-	runHybridCompareFPR(t, "sosd_osm", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "sosd_osm", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
 }
@@ -490,7 +596,174 @@ func TestHybridCompare_FPR_SOSD_Books(t *testing.T) {
 	}
 	keys = mask60Keys(keys)
 
-	runHybridCompareFPR(t, "sosd_books", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+	runHybridCompareFPR(t, "sosd_books", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
+// ---- FPR benchmarks for synthetic distributions (N=1<<20) ----
+
+func TestHybridCompare_FPR_1M_Clustered(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	keys := cacheOrGenerate("../bench/synthetic_data", "clustered", n, func() []uint64 {
+		rng := rand.New(rand.NewSource(99))
+		raw, _ := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
+		return mask60Keys(raw)
+	})
+
+	rng := rand.New(rand.NewSource(99))
+	_, clusters := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
+
+	runHybridCompareFPR(t, "clustered", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		qrng := rand.New(rand.NewSource(seed))
+		return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, 0.15, rangeLen, qrng))
+	})
+}
+
+func TestHybridCompare_FPR_1M_Uniform(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	keys := cacheOrGenerate("../bench/synthetic_data", "uniform", n, func() []uint64 {
+		rng := rand.New(rand.NewSource(42))
+		return generateUniformKeys(n, rng)
+	})
+	runHybridCompareFPR(t, "uniform", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		qrng := rand.New(rand.NewSource(seed))
+		return generateUniformQueries(queryCount, rangeLen, qrng)
+	})
+}
+
+func TestHybridCompare_FPR_1M_Spread(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	keys := cacheOrGenerate("../bench/synthetic_data", "spread", n, func() []uint64 {
+		return generateSpreadKeys(n)
+	})
+	runHybridCompareFPR(t, "spread", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		qrng := rand.New(rand.NewSource(seed))
+		return generateUniformQueries(queryCount, rangeLen, qrng)
+	})
+}
+
+func TestHybridCompare_FPR_1M_Zipfian(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+		nPrefixes  = 100
+	)
+	keysPath := fmt.Sprintf("../bench/synthetic_data/zipfian_%d.bin", n)
+	prefixesPath := fmt.Sprintf("../bench/synthetic_data/zipfian_%d_prefixes.bin", n)
+
+	os.MkdirAll("../bench/synthetic_data", 0755)
+
+	var keys, prefixes []uint64
+	cachedKeys, keyErr := loadSyntheticKeys(keysPath)
+	cachedPrefixes, prefixErr := loadSyntheticKeys(prefixesPath)
+
+	if keyErr == nil && prefixErr == nil {
+		keys = cachedKeys
+		prefixes = cachedPrefixes
+	} else {
+		rng := rand.New(rand.NewSource(77))
+		keys, prefixes = generateZipfianKeys(n, nPrefixes, rng)
+		saveSyntheticKeys(keysPath, keys)
+		saveSyntheticKeys(prefixesPath, prefixes)
+	}
+
+	runHybridCompareFPR(t, "zipfian", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		qrng := rand.New(rand.NewSource(seed))
+		return generateZipfianQueries(queryCount, prefixes, rangeLen, qrng)
+	})
+}
+
+func TestHybridCompare_FPR_1M_Temporal(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	keys := cacheOrGenerate("../bench/synthetic_data", "temporal", n, func() []uint64 {
+		rng := rand.New(rand.NewSource(55))
+		return generateTemporalKeys(n, rng)
+	})
+	runHybridCompareFPR(t, "temporal", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		qrng := rand.New(rand.NewSource(seed))
+		return generateTemporalQueries(queryCount, keys, rangeLen, qrng)
+	})
+}
+
+// ---- FPR benchmarks for SOSD distributions (N=1<<20) ----
+
+func TestHybridCompare_FPR_1M_SOSD_Facebook(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	path := sosdPath("fb_200M_uint64")
+	keys, err := loadSOSDUint64(path, n)
+	if err != nil {
+		t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
+	}
+	keys = mask60Keys(keys)
+
+	runHybridCompareFPR(t, "sosd_fb", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
+func TestHybridCompare_FPR_1M_SOSD_Wiki(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	path := sosdPath("wiki_ts_200M_uint64")
+	keys, err := loadSOSDUint64(path, n)
+	if err != nil {
+		t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
+	}
+	keys = mask60Keys(keys)
+
+	runHybridCompareFPR(t, "sosd_wiki", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
+func TestHybridCompare_FPR_1M_SOSD_OSM(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	path := sosdPath("osm_cellids_800M_uint64")
+	keys, err := loadSOSDUint64(path, n)
+	if err != nil {
+		t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
+	}
+	keys = mask60Keys(keys)
+
+	runHybridCompareFPR(t, "sosd_osm", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
+		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+	})
+}
+
+func TestHybridCompare_FPR_1M_SOSD_Books(t *testing.T) {
+	const (
+		n          = 1 << 20
+		queryCount = 1 << 18
+	)
+	path := sosdPath("books_200M_uint32")
+	keys, err := loadSOSDUint32(path, n)
+	if err != nil {
+		t.Skipf("SOSD books_200M_uint32 not available: %v", err)
+	}
+	keys = mask60Keys(keys)
+
+	runHybridCompareFPR(t, "sosd_books", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
 }
