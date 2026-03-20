@@ -248,22 +248,8 @@ func loadCachedSeries(path string) map[string]savedSeries {
 			for _, p := range rs.Points {
 				ss.Points = append(ss.Points, testutils.Point{X: p.BPK, Y: p.FPR})
 			}
-			// Synthesize params from filterFamily for shouldSkipSeries compat.
-			if rs.FilterFamily != "" {
-				paramsMap := map[string]interface{}{"type": rs.FilterFamily}
-				if rs.SweepValues != nil {
-					paramsMap["sweepValues"] = rs.SweepValues
-				}
-				paramsMap["rangeLen"] = br.Benchmark.RangeLen
-				paramsMap["nKeys"] = br.Benchmark.NKeys
-				if br.Queries.Seeds != nil {
-					paramsMap["querySeeds"] = br.Queries.Seeds
-				}
-				paramsMap["queryCount"] = br.Queries.Count
-				paramsMap["nRuns"] = br.Queries.NRuns
-				b, _ := json.Marshal(paramsMap)
-				ss.Params = b
-			}
+			// Use stored params directly (v1-compatible JSON for shouldSkipSeries).
+			ss.Params = rs.Params
 			result[rs.Name] = ss
 		}
 		return result
@@ -488,10 +474,11 @@ type queriesMeta struct {
 }
 
 type richSeries struct {
-	Name         string      `json:"name"`
-	FilterFamily string      `json:"filterFamily"`
-	SweepValues  interface{} `json:"sweepValues"`
-	Points       []richPoint `json:"points"`
+	Name         string          `json:"name"`
+	FilterFamily string          `json:"filterFamily"`
+	SweepValues  interface{}     `json:"sweepValues"`
+	Params       json.RawMessage `json:"params,omitempty"`
+	Points       []richPoint     `json:"points"`
 }
 
 type richPoint struct {

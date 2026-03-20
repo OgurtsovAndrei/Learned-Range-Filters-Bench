@@ -124,6 +124,13 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					"SuRFReal(8)":    paramsBPKSweep,
 				}
 
+				// Store params in richData for v2 cache compatibility.
+				for name, p := range seriesParams {
+					if rd, ok := richData[name]; ok {
+						rd.Params = p
+					}
+				}
+
 				// newSeriesParams tracks which params to record for rebuilt series.
 				newParams := make(map[string]json.RawMessage)
 
