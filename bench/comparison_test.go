@@ -378,6 +378,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				"False Positive Rate (FPR)",
 				orderedSeries,
 				svgPath,
+				1.0/float64(cfg.queryCount*nRuns),
 			)
 			if err != nil {
 				t.Errorf("SVG generation failed: %v", err)

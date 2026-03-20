@@ -294,6 +294,7 @@ func runHybridCompareFPR(t *testing.T, distName string, n int, keys []uint64, qu
 				"False Positive Rate (FPR)",
 				svgSeries,
 				svgPath,
+				1.0/float64((1<<18)*len(seeds)),
 			)
 			if err != nil {
 				t.Errorf("SVG generation failed: %v", err)
