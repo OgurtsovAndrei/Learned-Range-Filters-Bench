@@ -6,6 +6,7 @@ import (
 	"Thesis/bits"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_hybrid"
+	"Thesis/emptiness/are_greedy_scan"
 	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/emptiness/are_adaptive"
 	"Thesis/emptiness/are_pgm"
@@ -194,6 +195,17 @@ func TestBuildThroughput(t *testing.T) {
 			},
 		},
 		{
+			name: "Greedy+Merge", color: "#22c55e", marker: "diamond", dashed: false,
+			build: func(keys []uint64) error {
+				bs := make([]bits.BitString, len(keys))
+				for i, v := range keys {
+					bs[i] = testutils.TrieBS(v)
+				}
+				_, err := are_greedy_scan.NewGreedyScanARE(bs, rangeLen, eps)
+				return err
+			},
+		},
+		{
 			name: "CDF-ARE", color: "#ff922b", marker: "circle", dashed: false,
 			build: func(keys []uint64) error {
 				_, err := are_pgm.NewPGMApproximateRangeEmptiness(keys, rangeLen, eps, 64)
@@ -267,6 +279,7 @@ func TestBuildThroughput(t *testing.T) {
 				"Truncation":    {Name: "Truncation", Color: "#9b59b6", Marker: "triangle"},
 				"Hybrid":        {Name: "Hybrid", Color: "#ff6b6b", Marker: "star"},
 				"Scan-ARE":      {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
+				"Greedy+Merge":  {Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"},
 				"CDF-ARE":       {Name: "CDF-ARE", Color: "#ff922b", Marker: "circle"},
 				"BloomARE":      {Name: "BloomARE", Color: "#888888", Marker: "circle", Dashed: true},
 				"Grafite":       {Name: "Grafite", Color: "#1a6b3c", Marker: "diamond"},
@@ -325,6 +338,7 @@ func TestBuildThroughput(t *testing.T) {
 				*allSeries["Truncation"],
 				*allSeries["Hybrid"],
 				*allSeries["Scan-ARE"],
+				*allSeries["Greedy+Merge"],
 				*allSeries["CDF-ARE"],
 				*allSeries["BloomARE"],
 				*allSeries["Grafite"],

@@ -7,6 +7,7 @@ import (
 	"Thesis/bits"
 	"Thesis/emptiness/are_trunc"
 	"Thesis/emptiness/are_bloom"
+	"Thesis/emptiness/are_greedy_scan"
 	"Thesis/emptiness/are_hybrid"
 	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/emptiness/are_adaptive"
@@ -57,6 +58,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				"SODA":           {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
 				"Hybrid":         {Name: "Hybrid", Color: "#ff6b6b", Marker: "star"},
 				"Scan-ARE":       {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
+				"Greedy+Merge":   {Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"},
 				"CDF-ARE":        {Name: "CDF-ARE", Color: "#ff922b", Marker: "circle"},
 				"BloomARE":       {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
 			}
@@ -92,6 +94,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					"SODA":           paramsKGrid,
 					"Hybrid":         paramsKGrid,
 					"Scan-ARE":       paramsKGrid,
+					"Greedy+Merge":   paramsKGrid,
 					"CDF-ARE":        paramsEpsilon,
 					"BloomARE":       paramsEpsilon,
 					"Grafite":        paramsBPKSweep,
@@ -153,7 +156,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				var goTasks []fprTask
 
 				// Determine which K-grid series to rebuild (logs [CACHED]/[BUILD] once per series).
-				kgridSeriesNames := []string{"Truncation", "Adaptive (t=0)", "SODA", "Hybrid", "Scan-ARE"}
+				kgridSeriesNames := []string{"Truncation", "Adaptive (t=0)", "SODA", "Hybrid", "Scan-ARE", "Greedy+Merge"}
 				rebuildKGridSeries := make(map[string]bool)
 				for _, name := range kgridSeriesNames {
 					if d := decideSkip(name, paramsKGrid); !d.skip {
@@ -202,6 +205,13 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							if f, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
 								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
 								goTasks = append(goTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+							}
+						}
+						if rebuildKGridSeries["Greedy+Merge"] {
+							if f, err := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K); err == nil {
+								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								goTasks = append(goTasks, fprTask{"Greedy+Merge", fmt.Sprintf("Greedy+Merge(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
 							}
 						}
@@ -367,6 +377,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				*allSeries["SODA"],
 				*allSeries["Hybrid"],
 				*allSeries["Scan-ARE"],
+				*allSeries["Greedy+Merge"],
 				*allSeries["CDF-ARE"],
 				*allSeries["BloomARE"],
 			}
