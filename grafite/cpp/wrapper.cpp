@@ -20,6 +20,15 @@ int grafite_query(GrafitePtr ptr, uint64_t lo, uint64_t hi) {
     return f->query(lo, hi) ? 1 : 0;
 }
 
+void grafite_query_batch(GrafitePtr ptr, const uint64_t* queries, size_t count, uint8_t* results) {
+    auto* f = static_cast<GrafiteDefaultFilter*>(ptr);
+    for (size_t i = 0; i < count; i++) {
+        uint64_t lo = queries[2 * i];
+        uint64_t hi = queries[2 * i + 1];
+        results[i] = f->query(lo, hi) ? 1 : 0;
+    }
+}
+
 uint64_t grafite_size_bits(GrafitePtr ptr) {
     auto* f = static_cast<GrafiteDefaultFilter*>(ptr);
     // size() returns bytes

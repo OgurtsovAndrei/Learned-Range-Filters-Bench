@@ -54,6 +54,34 @@ func (f *SuRFFilter) IsEmpty(lo, hi uint64) bool {
 	return C.surf_query(f.ptr, C.uint64_t(lo), C.uint64_t(hi)) == 0
 }
 
+const queryBatchSize = 1024
+
+func (f *SuRFFilter) QueryBatch(queries [][2]uint64) []bool {
+	n := len(queries)
+	result := make([]bool, n)
+	if f.ptr == nil || n == 0 {
+		for i := range result {
+			result[i] = true
+		}
+		return result
+	}
+	buf := make([]C.uint8_t, n)
+	for off := 0; off < n; off += queryBatchSize {
+		chunk := n - off
+		if chunk > queryBatchSize {
+			chunk = queryBatchSize
+		}
+		C.surf_query_batch(f.ptr,
+			(*C.uint64_t)(unsafe.Pointer(&queries[off][0])),
+			C.size_t(chunk),
+			(*C.uint8_t)(unsafe.Pointer(&buf[off])))
+	}
+	for i, v := range buf {
+		result[i] = v == 0
+	}
+	return result
+}
+
 func (f *SuRFFilter) SizeInBits() uint64 {
 	if f.ptr == nil {
 		return 0

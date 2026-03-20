@@ -96,6 +96,15 @@ func avgFPRSeq(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, rangeLe
 	return sum / float64(len(seeds))
 }
 
+func avgFPRBatch(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, rangeLen uint64, seeds []int64, queryBatch func([][2]uint64) []bool) float64 {
+	sum := 0.0
+	for _, seed := range seeds {
+		qs := queryFunc(rangeLen, seed)
+		sum += testutils.MeasureFPRBatch(keys, qs, queryBatch)
+	}
+	return sum / float64(len(seeds))
+}
+
 type seriesPoint struct {
 	series string
 	point  testutils.Point

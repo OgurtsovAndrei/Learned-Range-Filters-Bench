@@ -181,88 +181,88 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 		color  string
 		marker string
 		dashed bool
-		build  func(L uint64) (func(a, b uint64) bool, error)
+		build  func(L uint64) (check func(a, b uint64) bool, batchQuery func([][2]uint64) []bool, err error)
 	}
 
 	filters := []filterDef{
-		{"Adaptive(t=0)", "#2a7fff", "square", false, func(L uint64) (func(a, b uint64) bool, error) {
+		{"Adaptive(t=0)", "#2a7fff", "square", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_adaptive.NewAdaptiveARE(keysBS, L, eps, 0)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
-		{"SODA", "#22a06b", "diamond", false, func(L uint64) (func(a, b uint64) bool, error) {
+		{"SODA", "#22a06b", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_soda_hash.NewSodaARE(keysU64, L, eps)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, nil
 		}},
-		{"Truncation", "#e6a800", "triangle", false, func(_ uint64) (func(a, b uint64) bool, error) {
+		{"Truncation", "#e6a800", "triangle", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_trunc.NewTruncARE(keysBS, eps)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
-		{"Hybrid", "#9b59b6", "star", false, func(L uint64) (func(a, b uint64) bool, error) {
+		{"Hybrid", "#9b59b6", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_hybrid.NewHybridARE(keysBS, L, eps)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
-		{"Scan-ARE", "#06b6d4", "star", false, func(L uint64) (func(a, b uint64) bool, error) {
+		{"Scan-ARE", "#06b6d4", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_hybrid_scan.NewHybridScanARE(keysBS, L, eps)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
-		{"Greedy+Merge", "#22c55e", "diamond", false, func(L uint64) (func(a, b uint64) bool, error) {
+		{"Greedy+Merge", "#22c55e", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_greedy_scan.NewGreedyScanARE(keysBS, L, eps)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
-		{"CDF-ARE", "#e05d10", "circle", false, func(L uint64) (func(a, b uint64) bool, error) {
+		{"CDF-ARE", "#e05d10", "circle", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_pgm.NewPGMApproximateRangeEmptiness(keysU64, L, eps, 64)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, nil
 		}},
-		{"Bloom V3", "#888888", "circle", true, func(L uint64) (func(a, b uint64) bool, error) {
+		{"Bloom V3", "#888888", "circle", true, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_bloom.NewBloomARE(keysU64, L, eps)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, nil
 		}},
-		{"Grafite", "#1a6b3c", "diamond", false, func(_ uint64) (func(a, b uint64) bool, error) {
+		{"Grafite", "#1a6b3c", "diamond", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := tryGrafite(maskedKeys, bpk)
 			if f == nil {
-				return nil, fmt.Errorf("grafite: unsupported bpk=%.2f for this key set", bpk)
+				return nil, nil, fmt.Errorf("grafite: unsupported bpk=%.2f for this key set", bpk)
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SNARF", "#1a3a6b", "star", false, func(_ uint64) (func(a, b uint64) bool, error) {
+		{"SNARF", "#1a3a6b", "star", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := snarf.New(maskedKeys, bpk)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SuRF", "#111111", "square", false, func(_ uint64) (func(a, b uint64) bool, error) {
+		{"SuRF", "#111111", "square", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := surf.New(maskedKeys, surf.SuffixNone, 0, 0)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SuRFHash(8)", "#111111", "triangle", false, func(_ uint64) (func(a, b uint64) bool, error) {
+		{"SuRFHash(8)", "#111111", "triangle", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := surf.New(maskedKeys, surf.SuffixHash, 8, 0)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SuRFReal(8)", "#111111", "diamond", false, func(_ uint64) (func(a, b uint64) bool, error) {
+		{"SuRFReal(8)", "#111111", "diamond", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := surf.New(maskedKeys, surf.SuffixReal, 0, 8)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
 	}
 
@@ -287,7 +287,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 			qrng := rand.New(rand.NewSource(12345))
 			rawQueries := testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, L, qrng)
 
-			check, err := fd.build(L)
+			check, batchQuery, err := fd.build(L)
 			if err != nil {
 				fmt.Printf(" | %10s", "err")
 				continue
@@ -295,17 +295,23 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 
 			// CGo filters use masked queries
 			queries := rawQueries
-			isCGo := fd.name == "Grafite" || fd.name == "SNARF" ||
-				fd.name == "SuRF" || fd.name == "SuRFHash(8)" || fd.name == "SuRFReal(8)"
+			isCGo := batchQuery != nil
 			if isCGo {
 				queries = mask60Queries(rawQueries)
 			}
 
-			start := time.Now()
-			for _, q := range queries {
-				check(q[0], q[1])
+			var dur time.Duration
+			if batchQuery != nil {
+				start := time.Now()
+				batchQuery(queries)
+				dur = time.Since(start)
+			} else {
+				start := time.Now()
+				for _, q := range queries {
+					check(q[0], q[1])
+				}
+				dur = time.Since(start)
 			}
-			dur := time.Since(start)
 			nsPerQuery := float64(dur.Nanoseconds()) / float64(queryCount)
 
 			allSeries[fi].Points = append(allSeries[fi].Points, testutils.Point{X: float64(L), Y: nsPerQuery})
@@ -343,94 +349,94 @@ func TestScalability(t *testing.T) {
 
 	type filterEntry struct {
 		name  string
-		build func(keysBS []bits.BitString, keysU64 []uint64, masked []uint64) (func(a, b uint64) bool, uint64, string, error)
+		build func(keysBS []bits.BitString, keysU64 []uint64, masked []uint64) (check func(a, b uint64) bool, batchQuery func([][2]uint64) []bool, sizeBits uint64, info string, err error)
 	}
 
 	filters := []filterEntry{
-		{"Adaptive(t=0)", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Adaptive(t=0)", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), "-", nil
 		}},
-		{"SODA", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"SODA", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_soda_hash.NewSodaARE(u64, rangeLen, eps)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, f.SizeInBits(), "-", nil
 		}},
-		{"Truncation", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Truncation", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_trunc.NewTruncARE(bs, eps)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), "-", nil
 		}},
-		{"Hybrid", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Hybrid", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_hybrid.NewHybridARE(bs, rangeLen, eps)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
 			nc, nf, nt := f.Stats()
 			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), info, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), info, nil
 		}},
-		{"Scan-ARE", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Scan-ARE", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
 			nc, nf, nt := f.Stats()
 			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), info, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), info, nil
 		}},
-		{"Greedy+Merge", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Greedy+Merge", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_greedy_scan.NewGreedyScanARE(bs, rangeLen, eps)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
 			nc, nf, nt := f.Stats()
 			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, f.SizeInBits(), info, nil
+			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), info, nil
 		}},
-		{"CDF-ARE", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"CDF-ARE", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_pgm.NewPGMApproximateRangeEmptiness(u64, rangeLen, eps, 64)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.TotalSizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, f.TotalSizeInBits(), "-", nil
 		}},
-		{"Bloom V3", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Bloom V3", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_bloom.NewBloomARE(u64, rangeLen, eps)
 			if err != nil {
-				return nil, 0, "", err
+				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, f.SizeInBits(), "-", nil
 		}},
-		{"Grafite", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"Grafite", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f := tryGrafite(masked, bpk)
 			if f == nil {
-				return nil, 0, "", fmt.Errorf("grafite: unsupported bpk=%.2f", bpk)
+				return nil, nil, 0, "", fmt.Errorf("grafite: unsupported bpk=%.2f", bpk)
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, f.SizeInBits(), "-", nil
 		}},
-		{"SNARF", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"SNARF", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f := snarf.New(masked, bpk)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, f.SizeInBits(), "-", nil
 		}},
-		{"SuRF", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"SuRF", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f := surf.New(masked, surf.SuffixNone, 0, 0)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, f.SizeInBits(), "-", nil
 		}},
-		{"SuRFHash(8)", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"SuRFHash(8)", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f := surf.New(masked, surf.SuffixHash, 8, 0)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, f.SizeInBits(), "-", nil
 		}},
-		{"SuRFReal(8)", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, uint64, string, error) {
+		{"SuRFReal(8)", func(_ []bits.BitString, _ []uint64, masked []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f := surf.New(masked, surf.SuffixReal, 0, 8)
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), "-", nil
+			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, f.SizeInBits(), "-", nil
 		}},
 	}
 
@@ -454,11 +460,8 @@ func TestScalability(t *testing.T) {
 			fmt.Println(strings.Repeat("-", 90))
 
 			for _, fe := range filters {
-				isCGo := fe.name == "Grafite" || fe.name == "SNARF" ||
-					fe.name == "SuRF" || fe.name == "SuRFHash(8)" || fe.name == "SuRFReal(8)"
-
 				buildStart := time.Now()
-				check, sizeBits, info, err := fe.build(keysBS, keysU64, maskedKeys)
+				check, batchQuery, sizeBits, info, err := fe.build(keysBS, keysU64, maskedKeys)
 				buildDur := time.Since(buildStart)
 				if err != nil {
 					fmt.Printf("%-16s | %8s | %12s | %12s | %12s | err: %v\n",
@@ -466,6 +469,7 @@ func TestScalability(t *testing.T) {
 					continue
 				}
 
+				isCGo := batchQuery != nil
 				queryKeys := keysU64
 				queries := rawQueries
 				if isCGo {
@@ -475,30 +479,25 @@ func TestScalability(t *testing.T) {
 
 				bpkActual := float64(sizeBits) / float64(n)
 
-				fp, totalEmpty := 0, 0
-				for _, q := range queries {
-					a, b := q[0], q[1]
-					if b < a {
-						continue
-					}
-					if !testutils.GroundTruth(queryKeys, a, b) {
-						continue
-					}
-					totalEmpty++
-					if !check(a, b) {
-						fp++
-					}
-				}
 				var fpr float64
-				if totalEmpty > 0 {
-					fpr = float64(fp) / float64(totalEmpty)
+				if batchQuery != nil {
+					fpr = testutils.MeasureFPRBatch(queryKeys, queries, batchQuery)
+				} else {
+					fpr = testutils.MeasureFPR(queryKeys, queries, check)
 				}
 
-				queryStart := time.Now()
-				for _, q := range queries {
-					check(q[0], q[1])
+				var queryDur time.Duration
+				if batchQuery != nil {
+					queryStart := time.Now()
+					batchQuery(queries)
+					queryDur = time.Since(queryStart)
+				} else {
+					queryStart := time.Now()
+					for _, q := range queries {
+						check(q[0], q[1])
+					}
+					queryDur = time.Since(queryStart)
 				}
-				queryDur := time.Since(queryStart)
 				queryNs := float64(queryDur.Nanoseconds()) / float64(queryCount)
 
 				fmt.Printf("%-16s | %8.2f | %12.6f | %12.1f | %12.1f | %s\n",

@@ -22,6 +22,15 @@ int snarf_query(SNARFPtr ptr, uint64_t lo, uint64_t hi) {
     return f->range_query(lo, hi) ? 1 : 0;
 }
 
+void snarf_query_batch(SNARFPtr ptr, const uint64_t* queries, size_t count, uint8_t* results) {
+    auto* f = static_cast<snarf_updatable_gcs<uint64_t>*>(ptr);
+    for (size_t i = 0; i < count; i++) {
+        uint64_t lo = queries[2 * i];
+        uint64_t hi = queries[2 * i + 1];
+        results[i] = f->range_query(lo, hi) ? 1 : 0;
+    }
+}
+
 uint64_t snarf_size_bits(SNARFPtr ptr) {
     auto* f = static_cast<snarf_updatable_gcs<uint64_t>*>(ptr);
     // return_size() returns bytes

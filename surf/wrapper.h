@@ -13,6 +13,7 @@ typedef void* SuRFPtr;
 // suffix_type: 0=kNone, 1=kHash, 2=kReal
 SuRFPtr  surf_new(const uint64_t* keys, size_t n, int suffix_type, int hash_bits, int real_bits);
 int      surf_query(SuRFPtr ptr, uint64_t lo, uint64_t hi);
+void     surf_query_batch(SuRFPtr ptr, const uint64_t* queries, size_t count, uint8_t* results);
 uint64_t surf_size_bits(SuRFPtr ptr);
 void     surf_free(SuRFPtr ptr);
 

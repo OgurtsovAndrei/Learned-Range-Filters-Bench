@@ -305,7 +305,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						if rebuildCGoSeries["Grafite"] {
 							if f := tryGrafite(cfg.keys, bpk); f != nil {
 								actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-								fpr := avgFPRSeq(cfg.keys, cfg.queryFunc, rangeLen, seeds, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+								fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
 								allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
 									testutils.Point{X: actualBPK, Y: fpr})
 								fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.0f)", bpk), actualBPK, fpr)
@@ -315,7 +315,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						if rebuildCGoSeries["SNARF"] {
 							f := snarf.New(cfg.keys, bpk)
 							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-							fpr := avgFPRSeq(cfg.keys, cfg.queryFunc, rangeLen, seeds, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+							fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
 							allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
 								testutils.Point{X: actualBPK, Y: fpr})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
@@ -336,7 +336,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						if rebuildCGoSeries[sv.name] {
 							f := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
 							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
-							fpr := avgFPRSeq(cfg.keys, cfg.queryFunc, rangeLen, seeds, func(a, b uint64) bool { return f.IsEmpty(a, b) })
+							fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
 							allSeries[sv.name].Points = append(allSeries[sv.name].Points,
 								testutils.Point{X: actualBPK, Y: fpr})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", sv.name, actualBPK, fpr)

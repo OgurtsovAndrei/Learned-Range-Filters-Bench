@@ -48,6 +48,15 @@ int surf_query(SuRFPtr ptr, uint64_t lo, uint64_t hi) {
     return f->lookupRange(lo_s, true, hi_s, true) ? 1 : 0;
 }
 
+void surf_query_batch(SuRFPtr ptr, const uint64_t* queries, size_t count, uint8_t* results) {
+    auto* f = static_cast<surf::SuRF*>(ptr);
+    for (size_t i = 0; i < count; i++) {
+        std::string lo_s = uint64_to_be_string(queries[2 * i]);
+        std::string hi_s = uint64_to_be_string(queries[2 * i + 1]);
+        results[i] = f->lookupRange(lo_s, true, hi_s, true) ? 1 : 0;
+    }
+}
+
 uint64_t surf_size_bits(SuRFPtr ptr) {
     auto* f = static_cast<surf::SuRF*>(ptr);
     return static_cast<uint64_t>(f->getMemoryUsage()) * 8;
