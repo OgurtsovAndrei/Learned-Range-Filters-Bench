@@ -324,7 +324,33 @@ func TestBuildThroughput(t *testing.T) {
 					}
 				}
 
-				if err := saveSeriesData(dataPath, allSeries); err != nil {
+				// Save v2 benchResult
+				v2Result := &benchResult{
+					Version: 2,
+					Benchmark: benchMeta{
+						Type:         "build_throughput",
+						Distribution: dist.name,
+						NKeys:        nSizes[len(nSizes)-1],
+						RangeLen:     rangeLen,
+						Timestamp:    time.Now().UTC().Format(time.RFC3339),
+						GitCommit:    gitCommitShort(),
+					},
+				}
+				for name, sd := range allSeries {
+					rs := richSeries{Name: name, FilterFamily: "build_throughput", SweepValues: nSizes}
+					for _, p := range sd.Points {
+						buildNs := int64(p.X / p.Y * 1e3) // back-compute ns from M keys/sec
+						rs.Points = append(rs.Points, richPoint{
+							SweepParam:  p.X,
+							BPK:         p.Y,
+							BuildTimeNs: &buildNs,
+						})
+					}
+					if len(rs.Points) > 0 {
+						v2Result.Series = append(v2Result.Series, rs)
+					}
+				}
+				if err := saveBenchResult(dataPath, v2Result); err != nil {
 					t.Logf("warning: failed to save data: %v", err)
 				}
 			}

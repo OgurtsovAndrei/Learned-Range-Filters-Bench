@@ -3,13 +3,19 @@ package bench_test
 import (
 	"Thesis-bench-industry/grafite"
 	"Thesis/testutils"
+	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 const mask60 = (uint64(1) << 60) - 1
@@ -49,6 +55,14 @@ type benchConfig struct {
 	keys       []uint64
 	queryCount int
 	queryFunc  func(rangeLen uint64, seed int64) [][2]uint64
+
+	// v2 metadata
+	keySource           string                 // "synthetic" | "sosd"
+	keyFile             string                 // relative path to key file (optional)
+	keySeed             *int64                 // RNG seed used for key generation (nil for SOSD)
+	keyGenParams        map[string]interface{} // distribution-specific generation params
+	queryStrategy       string                 // "cluster" | "uniform" | "zipfian" | "temporal" | "smart_mix"
+	queryStrategyParams map[string]interface{} // e.g. smart_mix weights
 }
 
 // tryGrafite returns nil when the requested bpk exceeds what the key universe can support.
@@ -210,6 +224,7 @@ func buildParamsTheoretical(kGrid []uint32, rangeLen uint64) json.RawMessage {
 }
 
 // loadCachedSeries loads all saved series from the JSON file, keyed by name.
+// Supports both v1 (top-level array) and v2 (object with "version") formats.
 // Returns an empty map (not an error) when the file does not exist.
 func loadCachedSeries(path string) map[string]savedSeries {
 	result := make(map[string]savedSeries)
@@ -217,8 +232,46 @@ func loadCachedSeries(path string) map[string]savedSeries {
 	if err != nil {
 		return result
 	}
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 {
+		return result
+	}
+
+	// v2: object starting with '{'
+	if data[0] == '{' {
+		var br benchResult
+		if json.Unmarshal(data, &br) != nil {
+			return result
+		}
+		for _, rs := range br.Series {
+			ss := savedSeries{Name: rs.Name}
+			for _, p := range rs.Points {
+				ss.Points = append(ss.Points, testutils.Point{X: p.BPK, Y: p.FPR})
+			}
+			// Synthesize params from filterFamily for shouldSkipSeries compat.
+			if rs.FilterFamily != "" {
+				paramsMap := map[string]interface{}{"type": rs.FilterFamily}
+				if rs.SweepValues != nil {
+					paramsMap["sweepValues"] = rs.SweepValues
+				}
+				paramsMap["rangeLen"] = br.Benchmark.RangeLen
+				paramsMap["nKeys"] = br.Benchmark.NKeys
+				if br.Queries.Seeds != nil {
+					paramsMap["querySeeds"] = br.Queries.Seeds
+				}
+				paramsMap["queryCount"] = br.Queries.Count
+				paramsMap["nRuns"] = br.Queries.NRuns
+				b, _ := json.Marshal(paramsMap)
+				ss.Params = b
+			}
+			result[rs.Name] = ss
+		}
+		return result
+	}
+
+	// v1: array starting with '['
 	var saved []savedSeries
-	if err := json.Unmarshal(data, &saved); err != nil {
+	if json.Unmarshal(data, &saved) != nil {
 		return result
 	}
 	for _, s := range saved {
@@ -310,6 +363,29 @@ func loadSeriesData(path string, series map[string]*testutils.SeriesData) error 
 	if err != nil {
 		return err
 	}
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 {
+		return fmt.Errorf("empty file")
+	}
+
+	// v2: object
+	if data[0] == '{' {
+		var br benchResult
+		if err := json.Unmarshal(data, &br); err != nil {
+			return err
+		}
+		for _, rs := range br.Series {
+			if target, ok := series[rs.Name]; ok {
+				target.Points = nil
+				for _, p := range rs.Points {
+					target.Points = append(target.Points, testutils.Point{X: p.BPK, Y: p.FPR})
+				}
+			}
+		}
+		return nil
+	}
+
+	// v1: array
 	var saved []savedSeries
 	if err := json.Unmarshal(data, &saved); err != nil {
 		return err
@@ -346,7 +422,13 @@ func paramsEqual(a, b json.RawMessage) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	return string(a) == string(b)
+	var va, vb interface{}
+	if json.Unmarshal(a, &va) != nil || json.Unmarshal(b, &vb) != nil {
+		return false
+	}
+	ca, _ := json.Marshal(va)
+	cb, _ := json.Marshal(vb)
+	return string(ca) == string(cb)
 }
 
 // shouldSkipSeries decides whether a series should be skipped (use cache).
@@ -367,4 +449,241 @@ func shouldSkipSeries(name string, onlySet, skipSet map[string]bool, cached map[
 		}
 	}
 	return false, ""
+}
+
+// ---- v2 JSON format ----
+
+type benchResult struct {
+	Version   int          `json:"version"`
+	Benchmark benchMeta    `json:"benchmark"`
+	Keys      keysMeta     `json:"keys"`
+	Queries   queriesMeta  `json:"queries"`
+	Series    []richSeries `json:"series"`
+}
+
+type benchMeta struct {
+	Type         string `json:"type"`
+	Distribution string `json:"distribution"`
+	NKeys        int    `json:"nKeys"`
+	RangeLen     uint64 `json:"rangeLen,omitempty"`
+	Timestamp    string `json:"timestamp"`
+	GitCommit    string `json:"gitCommit"`
+}
+
+type keysMeta struct {
+	Source           string                 `json:"source"`
+	File             string                 `json:"file,omitempty"`
+	Seed             *int64                 `json:"seed,omitempty"`
+	GenerationParams map[string]interface{} `json:"generationParams,omitempty"`
+	Count            int                    `json:"count"`
+	SHA256           string                 `json:"sha256"`
+}
+
+type queriesMeta struct {
+	Strategy       string                 `json:"strategy"`
+	StrategyParams map[string]interface{} `json:"strategyParams,omitempty"`
+	Count          int                    `json:"count"`
+	Seeds          []int64                `json:"seeds"`
+	NRuns          int                    `json:"nRuns"`
+}
+
+type richSeries struct {
+	Name         string      `json:"name"`
+	FilterFamily string      `json:"filterFamily"`
+	SweepValues  interface{} `json:"sweepValues"`
+	Points       []richPoint `json:"points"`
+}
+
+type richPoint struct {
+	SweepParam       float64                `json:"sweepParam"`
+	BPK              float64                `json:"bpk"`
+	FPR              float64                `json:"fpr"`
+	FilterSizeBits   uint64                 `json:"filterSizeBits"`
+	BuildTimeNs      *int64                 `json:"buildTimeNs,omitempty"`
+	QueryTimeNsPerOp *float64               `json:"queryTimeNsPerOp,omitempty"`
+	FilterStats      map[string]interface{} `json:"filterStats,omitempty"`
+}
+
+func sha256Keys(keys []uint64) string {
+	h := sha256.New()
+	buf := make([]byte, 8)
+	for _, k := range keys {
+		binary.LittleEndian.PutUint64(buf, k)
+		h.Write(buf)
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func gitCommitShort() string {
+	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err != nil {
+		return "unknown"
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func saveBenchResult(path string, result *benchResult) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// loadBenchResult detects v1 (top-level array) vs v2 (object with "version")
+// and loads either format. v1 files are converted to benchResult with minimal metadata.
+func loadBenchResult(path string) (*benchResult, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty file")
+	}
+
+	// v2: starts with '{'
+	if data[0] == '{' {
+		var result benchResult
+		if err := json.Unmarshal(data, &result); err != nil {
+			return nil, err
+		}
+		return &result, nil
+	}
+
+	// v1: starts with '[' — array of savedSeries
+	var saved []savedSeries
+	if err := json.Unmarshal(data, &saved); err != nil {
+		return nil, err
+	}
+
+	result := &benchResult{Version: 1}
+	for _, s := range saved {
+		rs := richSeries{Name: s.Name}
+		for _, p := range s.Points {
+			rs.Points = append(rs.Points, richPoint{BPK: p.X, FPR: p.Y})
+		}
+		if s.Params != nil {
+			var params map[string]interface{}
+			if json.Unmarshal(s.Params, &params) == nil {
+				if t, ok := params["type"].(string); ok {
+					rs.FilterFamily = t
+				}
+			}
+		}
+		result.Series = append(result.Series, rs)
+	}
+	return result, nil
+}
+
+// richSeriesToPlotSeries extracts (bpk, fpr) pairs for SVG plotting.
+func richSeriesToPlotSeries(rs richSeries, color, marker string, dashed bool) testutils.SeriesData {
+	sd := testutils.SeriesData{
+		Name:   rs.Name,
+		Color:  color,
+		Marker: marker,
+		Dashed: dashed,
+	}
+	for _, p := range rs.Points {
+		sd.Points = append(sd.Points, testutils.Point{X: p.BPK, Y: p.FPR})
+	}
+	return sd
+}
+
+// shouldSkipSeriesV2 decides whether a series should be skipped based on the
+// v2 bench result's metadata. It checks ONLY/SKIP env vars and compares
+// the existing series metadata hash.
+func shouldSkipSeriesV2(name string, onlySet, skipSet map[string]bool, existing *benchResult) (bool, string) {
+	if skipSet != nil && skipSet[name] {
+		return true, "SKIP env var"
+	}
+	if onlySet != nil && !onlySet[name] {
+		return true, "ONLY env var"
+	}
+	if existing != nil && existing.Version == 2 {
+		for _, s := range existing.Series {
+			if s.Name == name && len(s.Points) > 0 {
+				return true, fmt.Sprintf("v2 cached, %d points", len(s.Points))
+			}
+		}
+	}
+	return false, ""
+}
+
+// v2CachedSeriesToPlotMap converts a v2 benchResult into the allSeries map format
+// used by plotting, restoring cached points.
+func v2CachedSeriesToPlotMap(existing *benchResult, allSeries map[string]*testutils.SeriesData) {
+	if existing == nil {
+		return
+	}
+	for _, rs := range existing.Series {
+		if sd, ok := allSeries[rs.Name]; ok {
+			sd.Points = nil
+			for _, p := range rs.Points {
+				sd.Points = append(sd.Points, testutils.Point{X: p.BPK, Y: p.FPR})
+			}
+		}
+	}
+}
+
+// v2FindSeries returns the richSeries with the given name from a benchResult, or nil.
+func v2FindSeries(result *benchResult, name string) *richSeries {
+	if result == nil {
+		return nil
+	}
+	for i := range result.Series {
+		if result.Series[i].Name == name {
+			return &result.Series[i]
+		}
+	}
+	return nil
+}
+
+// v2SetSeries replaces or appends a richSeries in the benchResult.
+func v2SetSeries(result *benchResult, rs richSeries) {
+	for i := range result.Series {
+		if result.Series[i].Name == rs.Name {
+			result.Series[i] = rs
+			return
+		}
+	}
+	result.Series = append(result.Series, rs)
+}
+
+// newBenchMeta creates a benchMeta with current timestamp and git commit.
+func newBenchMeta(benchType, distribution string, nKeys int, rangeLen uint64) benchMeta {
+	return benchMeta{
+		Type:         benchType,
+		Distribution: distribution,
+		NKeys:        nKeys,
+		RangeLen:     rangeLen,
+		Timestamp:    time.Now().UTC().Format(time.RFC3339),
+		GitCommit:    gitCommitShort(),
+	}
+}
+
+// newKeysMeta builds keysMeta from a benchConfig and pre-computed sha256.
+func newKeysMeta(cfg benchConfig, keySHA string) keysMeta {
+	return keysMeta{
+		Source:           cfg.keySource,
+		File:             cfg.keyFile,
+		Seed:             cfg.keySeed,
+		GenerationParams: cfg.keyGenParams,
+		Count:            len(cfg.keys),
+		SHA256:           keySHA,
+	}
+}
+
+// newQueriesMeta builds queriesMeta from a benchConfig.
+func newQueriesMeta(cfg benchConfig, seeds []int64, nRuns int) queriesMeta {
+	return queriesMeta{
+		Strategy:       cfg.queryStrategy,
+		StrategyParams: cfg.queryStrategyParams,
+		Count:          cfg.queryCount,
+		Seeds:          seeds,
+		NRuns:          nRuns,
+	}
 }

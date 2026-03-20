@@ -37,6 +37,8 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 		keysBS[i] = testutils.TrieBS(v)
 	}
 
+	keySHA := sha256Keys(cfg.keys)
+
 	os.MkdirAll(fmt.Sprintf("../bench_results/plots/N%d/%s", cfg.n, cfg.distName), 0755)
 
 	// Parse ONLY/SKIP env vars once (shared across all range lengths).
@@ -63,6 +65,21 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				"BloomARE":       {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
 			}
 
+			// v2 rich data tracking (parallel to allSeries for SVG).
+			richData := make(map[string]*richSeries)
+			for name := range allSeries {
+				family := "kgrid"
+				switch name {
+				case "Theoretical":
+					family = "theoretical"
+				case "CDF-ARE", "BloomARE":
+					family = "epsilon"
+				case "Grafite", "SNARF", "SuRF", "SuRFHash(8)", "SuRFReal(8)":
+					family = "bpksweep"
+				}
+				richData[name] = &richSeries{Name: name, FilterFamily: family}
+			}
+
 			dataDir := fmt.Sprintf("../bench_results/data/N%d/%s", cfg.n, cfg.distName)
 			os.MkdirAll(dataDir, 0755)
 			dataPath := fmt.Sprintf("%s/L%d.json", dataDir, rangeLen)
@@ -79,6 +96,9 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 				// Load existing cache for per-series skip logic.
 				cached := loadCachedSeries(dataPath)
+
+				// Also load v2 for rich data preservation.
+				existingV2, _ := loadBenchResult(dataPath)
 
 				// Pre-compute current params for each series group.
 				paramsKGrid := buildParamsKGrid(kGrid, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
@@ -113,6 +133,15 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						sd.Points = cs.Points
 					}
 				}
+				// Restore v2 rich data from existing file.
+				if existingV2 != nil {
+					for _, rs := range existingV2.Series {
+						if rd, ok := richData[rs.Name]; ok {
+							rd.Points = rs.Points
+							rd.SweepValues = rs.SweepValues
+						}
+					}
+				}
 
 				fmt.Printf("\n=== Industry Comparison — %s (60-bit keys, %d keys, L=%d, %d runs) ===\n", cfg.distName, len(cfg.keys), rangeLen, nRuns)
 				fmt.Printf("%-16s | %8s | %14s\n", "Series", "BPK", "FPR(avg)")
@@ -137,21 +166,28 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				// ---- Theoretical (derived from K-grid) ----
 				if d := decideSkip("Theoretical", paramsTheoretical); !d.skip {
 					allSeries["Theoretical"].Points = nil
+					richData["Theoretical"].Points = nil
+					richData["Theoretical"].SweepValues = kGrid
 					for _, K := range kGrid {
 						thEps := float64(rangeLen) / math.Exp2(float64(K))
 						if thEps > 0 && thEps <= 1 {
 							allSeries["Theoretical"].Points = append(allSeries["Theoretical"].Points,
 								testutils.Point{X: float64(K), Y: thEps})
+							richData["Theoretical"].Points = append(richData["Theoretical"].Points,
+								richPoint{SweepParam: float64(K), BPK: float64(K), FPR: thEps})
 						}
 					}
 				}
 
 				// ---- Build & measure ARE filters in parallel (pure Go, thread-safe) ----
 				type fprTask struct {
-					series  string
-					label   string
-					bpk     float64
-					isEmpty func(a, b uint64) bool
+					series         string
+					label          string
+					bpk            float64
+					isEmpty        func(a, b uint64) bool
+					sweepParam     float64
+					filterSizeBits uint64
+					filterStats    map[string]interface{}
 				}
 				var goTasks []fprTask
 
@@ -169,55 +205,91 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					// Clear points for series that need rebuilding.
 					for name := range rebuildKGridSeries {
 						allSeries[name].Points = nil
+						richData[name].Points = nil
+						richData[name].SweepValues = kGrid
 					}
 
 					for _, K := range kGrid {
 						K := K
 						if rebuildKGridSeries["Truncation"] {
 							if f, err := are_trunc.NewTruncAREFromK(keysBS, K); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									float64(K), sizeBits, nil})
 							}
 						}
 						if rebuildKGridSeries["Adaptive (t=0)"] {
 							if f, err := are_adaptive.NewAdaptiveAREFromK(keysBS, rangeLen, K, 0); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								goTasks = append(goTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									float64(K), sizeBits, nil})
 							}
 						}
 						if rebuildKGridSeries["SODA"] {
 							if f, err := are_soda_hash.NewSodaAREFromK(cfg.keys, rangeLen, K); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								goTasks = append(goTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+									func(a, b uint64) bool { return f.IsEmpty(a, b) },
+									float64(K), sizeBits, nil})
 							}
 						}
 						if rebuildKGridSeries["Hybrid"] {
 							if f, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
+								nc, nf, nt := f.Stats()
+								stats := map[string]interface{}{
+									"numClusters":  nc,
+									"fallbackKeys": nf,
+									"totalKeys":    nt,
+								}
 								goTasks = append(goTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									float64(K), sizeBits, stats})
 							}
 						}
 						if rebuildKGridSeries["Scan-ARE"] {
 							if f, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
+								nc, nf, nt := f.Stats()
+								stats := map[string]interface{}{
+									"numClusters":  nc,
+									"fallbackKeys": nf,
+									"totalKeys":    nt,
+								}
 								goTasks = append(goTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									float64(K), sizeBits, stats})
 							}
 						}
 						if rebuildKGridSeries["Greedy+Merge"] {
 							if f, err := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
+								nc, nf, nt := f.Stats()
+								stats := map[string]interface{}{
+									"numClusters":  nc,
+									"fallbackKeys": nf,
+									"totalKeys":    nt,
+								}
 								goTasks = append(goTasks, fprTask{"Greedy+Merge", fmt.Sprintf("Greedy+Merge(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }})
+									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									float64(K), sizeBits, stats})
 							}
 						}
 					}
 
-					goResults := make([]seriesPoint, len(goTasks))
+					type richResult struct {
+						seriesPoint
+						rich richPoint
+					}
+					goResults := make([]richResult, len(goTasks))
 					var wg sync.WaitGroup
 					for i, task := range goTasks {
 						i, task := i, task
@@ -225,14 +297,24 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						go func() {
 							defer wg.Done()
 							fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
-							goResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
+							goResults[i] = richResult{
+								seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label},
+								richPoint{
+									SweepParam:     task.sweepParam,
+									BPK:            task.bpk,
+									FPR:            fpr,
+									FilterSizeBits: task.filterSizeBits,
+									FilterStats:    task.filterStats,
+								},
+							}
 						}()
 					}
 					wg.Wait()
 
-					for _, sp := range goResults {
-						allSeries[sp.series].Points = append(allSeries[sp.series].Points, sp.point)
-						fmt.Printf("%-16s | %8.2f | %14.6f\n", sp.label, sp.point.X, sp.point.Y)
+					for _, rr := range goResults {
+						allSeries[rr.series].Points = append(allSeries[rr.series].Points, rr.point)
+						richData[rr.series].Points = append(richData[rr.series].Points, rr.rich)
+						fmt.Printf("%-16s | %8.2f | %14.6f\n", rr.label, rr.point.X, rr.point.Y)
 					}
 				}
 
@@ -247,27 +329,41 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				if len(rebuildEpsilonSeries) > 0 {
 					for name := range rebuildEpsilonSeries {
 						allSeries[name].Points = nil
+						richData[name].Points = nil
+						richData[name].SweepValues = epsilons
 					}
 
-					var epsilonTasks []fprTask
+					type fprTaskEps struct {
+						fprTask
+						eps float64
+					}
+					var epsilonTasks []fprTaskEps
 					for _, eps := range epsilons {
 						if rebuildEpsilonSeries["CDF-ARE"] {
 							if f, err := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64); err == nil {
-								bpk := float64(f.TotalSizeInBits()) / float64(len(cfg.keys))
-								epsilonTasks = append(epsilonTasks, fprTask{"CDF-ARE", "CDF-ARE", bpk,
-									func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+								sizeBits := f.TotalSizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
+								epsilonTasks = append(epsilonTasks, fprTaskEps{fprTask{"CDF-ARE", "CDF-ARE", bpk,
+									func(a, b uint64) bool { return f.IsEmpty(a, b) },
+									eps, sizeBits, nil}, eps})
 							}
 						}
 						if rebuildEpsilonSeries["BloomARE"] {
 							if f, err := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps); err == nil {
-								bpk := float64(f.SizeInBits()) / float64(len(cfg.keys))
-								epsilonTasks = append(epsilonTasks, fprTask{"BloomARE", "BloomARE", bpk,
-									func(a, b uint64) bool { return f.IsEmpty(a, b) }})
+								sizeBits := f.SizeInBits()
+								bpk := float64(sizeBits) / float64(len(cfg.keys))
+								epsilonTasks = append(epsilonTasks, fprTaskEps{fprTask{"BloomARE", "BloomARE", bpk,
+									func(a, b uint64) bool { return f.IsEmpty(a, b) },
+									eps, sizeBits, nil}, eps})
 							}
 						}
 					}
 
-					epsilonResults := make([]seriesPoint, len(epsilonTasks))
+					type richResult struct {
+						seriesPoint
+						rich richPoint
+					}
+					epsilonResults := make([]richResult, len(epsilonTasks))
 					var wg sync.WaitGroup
 					for i, task := range epsilonTasks {
 						i, task := i, task
@@ -275,14 +371,23 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						go func() {
 							defer wg.Done()
 							fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
-							epsilonResults[i] = seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label}
+							epsilonResults[i] = richResult{
+								seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label},
+								richPoint{
+									SweepParam:     task.sweepParam,
+									BPK:            task.bpk,
+									FPR:            fpr,
+									FilterSizeBits: task.filterSizeBits,
+								},
+							}
 						}()
 					}
 					wg.Wait()
 
-					for _, sp := range epsilonResults {
-						allSeries[sp.series].Points = append(allSeries[sp.series].Points, sp.point)
-						fmt.Printf("%-16s | %8.2f | %14.6f\n", sp.label, sp.point.X, sp.point.Y)
+					for _, rr := range epsilonResults {
+						allSeries[rr.series].Points = append(allSeries[rr.series].Points, rr.point)
+						richData[rr.series].Points = append(richData[rr.series].Points, rr.rich)
+						fmt.Printf("%-16s | %8.2f | %14.6f\n", rr.label, rr.point.X, rr.point.Y)
 					}
 				}
 
@@ -299,25 +404,33 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				if len(rebuildCGoSeries) > 0 {
 					for name := range rebuildCGoSeries {
 						allSeries[name].Points = nil
+						richData[name].Points = nil
+						richData[name].SweepValues = bpkSweep
 					}
 
 					for _, bpk := range bpkSweep {
 						if rebuildCGoSeries["Grafite"] {
 							if f := tryGrafite(cfg.keys, bpk); f != nil {
-								actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+								sizeBits := f.SizeInBits()
+								actualBPK := float64(sizeBits) / float64(len(cfg.keys))
 								fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
 								allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
 									testutils.Point{X: actualBPK, Y: fpr})
+								richData["Grafite"].Points = append(richData["Grafite"].Points,
+									richPoint{SweepParam: bpk, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
 								fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.0f)", bpk), actualBPK, fpr)
 							}
 						}
 
 						if rebuildCGoSeries["SNARF"] {
 							f := snarf.New(cfg.keys, bpk)
-							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+							sizeBits := f.SizeInBits()
+							actualBPK := float64(sizeBits) / float64(len(cfg.keys))
 							fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
 							allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
 								testutils.Point{X: actualBPK, Y: fpr})
+							richData["SNARF"].Points = append(richData["SNARF"].Points,
+								richPoint{SweepParam: bpk, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
 						}
 					}
@@ -335,27 +448,49 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					} {
 						if rebuildCGoSeries[sv.name] {
 							f := surf.New(cfg.keys, sv.st, sv.hashBits, sv.realBits)
-							actualBPK := float64(f.SizeInBits()) / float64(len(cfg.keys))
+							sizeBits := f.SizeInBits()
+							actualBPK := float64(sizeBits) / float64(len(cfg.keys))
 							fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
 							allSeries[sv.name].Points = append(allSeries[sv.name].Points,
 								testutils.Point{X: actualBPK, Y: fpr})
+							richData[sv.name].Points = append(richData[sv.name].Points,
+								richPoint{SweepParam: 0, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", sv.name, actualBPK, fpr)
 						}
 					}
 				}
 
-				// Save: merge new data into cache, keep all old points.
-				// Build a map of only the series that were rebuilt (new points).
-				rebuiltSeries := make(map[string]*testutils.SeriesData)
-				for name := range newParams {
-					rebuiltSeries[name] = allSeries[name]
+				// ---- Save v2 benchResult ----
+				v2Result := &benchResult{
+					Version:   2,
+					Benchmark: newBenchMeta("fpr_tradeoff", cfg.distName, len(cfg.keys), rangeLen),
+					Keys:      newKeysMeta(cfg, keySHA),
+					Queries:   newQueriesMeta(cfg, seeds, nRuns),
 				}
-				if err := saveSeriesDataWithCache(dataPath, cached, rebuiltSeries, newParams); err != nil {
-					t.Logf("warning: failed to save data: %v", err)
+				for _, name := range []string{
+					"Theoretical", "Grafite", "SNARF", "SuRF", "SuRFHash(8)", "SuRFReal(8)",
+					"Adaptive (t=0)", "Truncation", "SODA", "Hybrid", "Scan-ARE", "Greedy+Merge",
+					"CDF-ARE", "BloomARE",
+				} {
+					rs := *richData[name]
+					// For series not rebuilt this run, preserve existing v2 data.
+					if _, rebuilt := newParams[name]; !rebuilt {
+						if existingV2 != nil {
+							if es := v2FindSeries(existingV2, name); es != nil && len(es.Points) > 0 {
+								rs = *es
+							}
+						}
+					}
+					if len(rs.Points) > 0 {
+						v2Result.Series = append(v2Result.Series, rs)
+					}
+				}
+				if err := saveBenchResult(dataPath, v2Result); err != nil {
+					t.Logf("warning: failed to save v2 data: %v", err)
 				} else {
-					// Reload cache so allSeries reflects the merged state for plotting.
-					merged := loadCachedSeries(dataPath)
-					for name, cs := range merged {
+					// Reload to ensure allSeries reflects the complete merged state.
+					reloaded := loadCachedSeries(dataPath)
+					for name, cs := range reloaded {
 						if sd, ok := allSeries[name]; ok {
 							sd.Points = cs.Points
 						}
@@ -457,6 +592,7 @@ func TestTradeoff_Clustered(t *testing.T) {
 				}
 			}
 
+			keySeed := int64(99)
 			runTradeoffBench(t, benchConfig{
 				distName:   "clustered",
 				n:          n,
@@ -466,6 +602,11 @@ func TestTradeoff_Clustered(t *testing.T) {
 					qrng := rand.New(rand.NewSource(seed))
 					return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng))
 				},
+				keySource:     "synthetic",
+				keyFile:       fmt.Sprintf("clustered_%d.bin", n),
+				keySeed:       &keySeed,
+				keyGenParams:  map[string]interface{}{"nClusters": nClusters, "unifFrac": unifFrac},
+				queryStrategy: "cluster",
 			})
 		})
 	}
@@ -479,6 +620,7 @@ func TestTradeoff_Uniform(t *testing.T) {
 				rng := rand.New(rand.NewSource(42))
 				return generateUniformKeys(n, rng)
 			})
+			keySeed := int64(42)
 			runTradeoffBench(t, benchConfig{
 				distName:   "uniform",
 				n:          n,
@@ -488,6 +630,10 @@ func TestTradeoff_Uniform(t *testing.T) {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateUniformQueries(queryCount, rangeLen, qrng)
 				},
+				keySource:     "synthetic",
+				keyFile:       fmt.Sprintf("uniform_%d.bin", n),
+				keySeed:       &keySeed,
+				queryStrategy: "uniform",
 			})
 		})
 	}
@@ -509,6 +655,9 @@ func TestTradeoff_Spread(t *testing.T) {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateUniformQueries(queryCount, rangeLen, qrng)
 				},
+				keySource:     "synthetic",
+				keyFile:       fmt.Sprintf("spread_%d.bin", n),
+				queryStrategy: "uniform",
 			})
 		})
 	}
@@ -550,6 +699,7 @@ func TestTradeoff_Zipfian(t *testing.T) {
 				}
 			}
 
+			keySeed := int64(77)
 			runTradeoffBench(t, benchConfig{
 				distName:   "zipfian",
 				n:          n,
@@ -559,6 +709,11 @@ func TestTradeoff_Zipfian(t *testing.T) {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateZipfianQueries(queryCount, prefixes, rangeLen, qrng)
 				},
+				keySource:    "synthetic",
+				keyFile:      fmt.Sprintf("zipfian_%d.bin", n),
+				keySeed:      &keySeed,
+				keyGenParams: map[string]interface{}{"nPrefixes": nPrefixes},
+				queryStrategy: "zipfian",
 			})
 		})
 	}
@@ -572,6 +727,7 @@ func TestTradeoff_Temporal(t *testing.T) {
 				rng := rand.New(rand.NewSource(55))
 				return generateTemporalKeys(n, rng)
 			})
+			keySeed := int64(55)
 			runTradeoffBench(t, benchConfig{
 				distName:   "temporal",
 				n:          n,
@@ -581,6 +737,10 @@ func TestTradeoff_Temporal(t *testing.T) {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateTemporalQueries(queryCount, keys, rangeLen, qrng)
 				},
+				keySource:     "synthetic",
+				keyFile:       fmt.Sprintf("temporal_%d.bin", n),
+				keySeed:       &keySeed,
+				queryStrategy: "temporal",
 			})
 		})
 	}

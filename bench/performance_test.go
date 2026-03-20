@@ -154,6 +154,37 @@ func TestBuildTimePerKey(t *testing.T) {
 	} else {
 		fmt.Println("\nSVG written to bench_results/plots/build_time_per_key.svg")
 	}
+
+	// Save v2 benchResult
+	v2Result := &benchResult{
+		Version: 2,
+		Benchmark: benchMeta{
+			Type:      "build_time",
+			Distribution: "clustered",
+			NKeys:     sizes[len(sizes)-1],
+			RangeLen:  rangeLen,
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+			GitCommit: gitCommitShort(),
+		},
+	}
+	for _, s := range allSeries {
+		rs := richSeries{Name: s.Name, FilterFamily: "build_time"}
+		for _, p := range s.Points {
+			buildNs := int64(p.Y * p.X)
+			rs.Points = append(rs.Points, richPoint{
+				SweepParam: p.X,
+				BPK:        p.Y,
+				FPR:        0,
+				BuildTimeNs: &buildNs,
+			})
+		}
+		if len(rs.Points) > 0 {
+			v2Result.Series = append(v2Result.Series, rs)
+		}
+	}
+	if err := saveBenchResult("../bench_results/data/build_time_per_key.json", v2Result); err != nil {
+		t.Logf("warning: failed to save v2 data: %v", err)
+	}
 }
 
 func TestQueryTimeVsRangeLen(t *testing.T) {
@@ -333,6 +364,35 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 	} else {
 		fmt.Println("\nSVG written to bench_results/plots/query_time_vs_rangelen.svg")
 	}
+
+	// Save v2 benchResult
+	v2Result := &benchResult{
+		Version: 2,
+		Benchmark: benchMeta{
+			Type:         "query_time",
+			Distribution: "clustered",
+			NKeys:        n,
+			Timestamp:    time.Now().UTC().Format(time.RFC3339),
+			GitCommit:    gitCommitShort(),
+		},
+	}
+	for _, s := range allSeries {
+		rs := richSeries{Name: s.Name, FilterFamily: "query_time"}
+		for _, p := range s.Points {
+			qns := p.Y
+			rs.Points = append(rs.Points, richPoint{
+				SweepParam:       p.X,
+				BPK:              0,
+				QueryTimeNsPerOp: &qns,
+			})
+		}
+		if len(rs.Points) > 0 {
+			v2Result.Series = append(v2Result.Series, rs)
+		}
+	}
+	if err := saveBenchResult("../bench_results/data/query_time_vs_rangelen.json", v2Result); err != nil {
+		t.Logf("warning: failed to save v2 data: %v", err)
+	}
 }
 
 func TestScalability(t *testing.T) {
@@ -459,6 +519,7 @@ func TestScalability(t *testing.T) {
 				"Filter", "BPK", "FPR", "Build(ms)", "Query(ns/op)", "Info")
 			fmt.Println(strings.Repeat("-", 90))
 
+			var v2Series []richSeries
 			for _, fe := range filters {
 				buildStart := time.Now()
 				check, batchQuery, sizeBits, info, err := fe.build(keysBS, keysU64, maskedKeys)
@@ -502,6 +563,34 @@ func TestScalability(t *testing.T) {
 
 				fmt.Printf("%-16s | %8.2f | %12.6f | %12.1f | %12.1f | %s\n",
 					fe.name, bpkActual, fpr, float64(buildDur.Milliseconds()), queryNs, info)
+				v2Series = append(v2Series, richSeries{
+					Name:         fe.name,
+					FilterFamily: "scalability",
+					Points: []richPoint{{
+						BPK:              bpkActual,
+						FPR:              fpr,
+						FilterSizeBits:   sizeBits,
+						BuildTimeNs:      func() *int64 { v := buildDur.Nanoseconds(); return &v }(),
+						QueryTimeNsPerOp: &queryNs,
+					}},
+				})
+			}
+
+			// Save v2 benchResult
+			v2Result := &benchResult{
+				Version: 2,
+				Benchmark: benchMeta{
+					Type:         "scalability",
+					Distribution: "clustered",
+					NKeys:        n,
+					RangeLen:     rangeLen,
+					Timestamp:    time.Now().UTC().Format(time.RFC3339),
+					GitCommit:    gitCommitShort(),
+				},
+				Series: v2Series,
+			}
+			if err := saveBenchResult(fmt.Sprintf("../bench_results/data/scalability_n%d.json", n), v2Result); err != nil {
+				t.Logf("warning: failed to save v2 data: %v", err)
 			}
 		})
 	}

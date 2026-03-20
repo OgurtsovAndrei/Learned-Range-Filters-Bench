@@ -188,6 +188,14 @@ func TestTradeoff_SOSD_Books(t *testing.T) {
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
+				keySource: "sosd",
+				keyFile:   "books_200M_uint32",
+				queryStrategy: "smart_mix",
+				queryStrategyParams: map[string]interface{}{
+					"nearKeyWeight": queryWeightNearKey,
+					"inGapWeight":   queryWeightInGap,
+					"uniformWeight": queryWeightUniform,
+				},
 			})
 		})
 	}
@@ -212,6 +220,14 @@ func TestTradeoff_SOSD_Facebook(t *testing.T) {
 				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+				},
+				keySource: "sosd",
+				keyFile:   "fb_200M_uint64",
+				queryStrategy: "smart_mix",
+				queryStrategyParams: map[string]interface{}{
+					"nearKeyWeight": queryWeightNearKey,
+					"inGapWeight":   queryWeightInGap,
+					"uniformWeight": queryWeightUniform,
 				},
 			})
 		})
@@ -238,6 +254,14 @@ func TestTradeoff_SOSD_Wiki(t *testing.T) {
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 				},
+				keySource: "sosd",
+				keyFile:   "wiki_ts_200M_uint64",
+				queryStrategy: "smart_mix",
+				queryStrategyParams: map[string]interface{}{
+					"nearKeyWeight": queryWeightNearKey,
+					"inGapWeight":   queryWeightInGap,
+					"uniformWeight": queryWeightUniform,
+				},
 			})
 		})
 	}
@@ -262,6 +286,14 @@ func TestTradeoff_SOSD_OSM(t *testing.T) {
 				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
+				},
+				keySource: "sosd",
+				keyFile:   "osm_cellids_800M_uint64",
+				queryStrategy: "smart_mix",
+				queryStrategyParams: map[string]interface{}{
+					"nearKeyWeight": queryWeightNearKey,
+					"inGapWeight":   queryWeightInGap,
+					"uniformWeight": queryWeightUniform,
 				},
 			})
 		})
