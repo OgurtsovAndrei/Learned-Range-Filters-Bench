@@ -355,7 +355,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 									eps, sizeBits, nil}, eps})
 							}
 						}
-						if rebuildEpsilonSeries["BloomARE"] {
+						if rebuildEpsilonSeries["BloomARE"] && rangeLen < 1<<16 {
 							if f, err := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
