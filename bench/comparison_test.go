@@ -19,6 +19,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -196,8 +197,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					filterSizeBits uint64
 					filterStats    map[string]interface{}
 				}
-				var goTasks []fprTask
-
 				// Determine which K-grid series to rebuild (logs [CACHED]/[BUILD] once per series).
 				kgridSeriesNames := []string{"Truncation", "Adaptive (t=0)", "SODA", "Hybrid", "Scan-ARE", "Greedy+Merge"}
 				rebuildKGridSeries := make(map[string]bool)
@@ -216,13 +215,21 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						richData[name].SweepValues = kGrid
 					}
 
+					type richResult struct {
+						seriesPoint
+						rich richPoint
+					}
+
+					// Process one K at a time: build filters → measure FPR → release memory.
 					for _, K := range kGrid {
 						K := K
+						var kTasks []fprTask
+
 						if rebuildKGridSeries["Truncation"] {
 							if f, err := are_trunc.NewTruncAREFromK(keysBS, K); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								goTasks = append(goTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
+								kTasks = append(kTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
 									float64(K), sizeBits, nil})
 							}
@@ -231,7 +238,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							if f, err := are_adaptive.NewAdaptiveAREFromK(keysBS, rangeLen, K, 0); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								goTasks = append(goTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
+								kTasks = append(kTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
 									float64(K), sizeBits, nil})
 							}
@@ -240,7 +247,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							if f, err := are_soda_hash.NewSodaAREFromK(cfg.keys, rangeLen, K); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								goTasks = append(goTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
+								kTasks = append(kTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(a, b) },
 									float64(K), sizeBits, nil})
 							}
@@ -255,7 +262,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 									"fallbackKeys": nf,
 									"totalKeys":    nt,
 								}
-								goTasks = append(goTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
+								kTasks = append(kTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
 									float64(K), sizeBits, stats})
 							}
@@ -270,7 +277,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 									"fallbackKeys": nf,
 									"totalKeys":    nt,
 								}
-								goTasks = append(goTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
+								kTasks = append(kTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
 									float64(K), sizeBits, stats})
 							}
@@ -285,43 +292,42 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 									"fallbackKeys": nf,
 									"totalKeys":    nt,
 								}
-								goTasks = append(goTasks, fprTask{"Greedy+Merge", fmt.Sprintf("Greedy+Merge(K=%d)", K), bpk,
+								kTasks = append(kTasks, fprTask{"Greedy+Merge", fmt.Sprintf("Greedy+Merge(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
 									float64(K), sizeBits, stats})
 							}
 						}
-					}
 
-					type richResult struct {
-						seriesPoint
-						rich richPoint
-					}
-					goResults := make([]richResult, len(goTasks))
-					var wg sync.WaitGroup
-					for i, task := range goTasks {
-						i, task := i, task
-						wg.Add(1)
-						go func() {
-							defer wg.Done()
-							fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
-							goResults[i] = richResult{
-								seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label},
-								richPoint{
-									SweepParam:     task.sweepParam,
-									BPK:            task.bpk,
-									FPR:            fpr,
-									FilterSizeBits: task.filterSizeBits,
-									FilterStats:    task.filterStats,
-								},
-							}
-						}()
-					}
-					wg.Wait()
+						// Measure FPR for this K's filters in parallel, then release them.
+						kResults := make([]richResult, len(kTasks))
+						var wg sync.WaitGroup
+						for i, task := range kTasks {
+							i, task := i, task
+							wg.Add(1)
+							go func() {
+								defer wg.Done()
+								fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
+								kResults[i] = richResult{
+									seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label},
+									richPoint{
+										SweepParam:     task.sweepParam,
+										BPK:            task.bpk,
+										FPR:            fpr,
+										FilterSizeBits: task.filterSizeBits,
+										FilterStats:    task.filterStats,
+									},
+								}
+							}()
+						}
+						wg.Wait()
 
-					for _, rr := range goResults {
-						allSeries[rr.series].Points = append(allSeries[rr.series].Points, rr.point)
-						richData[rr.series].Points = append(richData[rr.series].Points, rr.rich)
-						fmt.Printf("%-16s | %8.2f | %14.6f\n", rr.label, rr.point.X, rr.point.Y)
+						for _, rr := range kResults {
+							allSeries[rr.series].Points = append(allSeries[rr.series].Points, rr.point)
+							richData[rr.series].Points = append(richData[rr.series].Points, rr.rich)
+							fmt.Printf("%-16s | %8.2f | %14.6f\n", rr.label, rr.point.X, rr.point.Y)
+						}
+						// Filters for this K are now unreferenced; GC can reclaim.
+						runtime.GC()
 					}
 				}
 
