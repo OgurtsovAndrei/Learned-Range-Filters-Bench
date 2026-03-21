@@ -17,6 +17,8 @@ snarf/build/
 bench_results/plots/
 bench_results/data/
 bench_results/from-vm/
+bench_results/logs
+bench_results/obsolete/data_v1_20260320
 
 # SOSD datasets (large binary files, use bench/sosd_data/download.sh)
 bench/sosd_data/*
