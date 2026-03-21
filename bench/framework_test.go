@@ -101,6 +101,25 @@ func avgFPRParallel(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, ra
 	return sum / float64(len(seeds))
 }
 
+func avgFPRWithQueries(keys []uint64, pregenQueries map[int64][][2]uint64, seeds []int64, isEmpty func(a, b uint64) bool) float64 {
+	results := make([]float64, len(seeds))
+	var wg sync.WaitGroup
+	for i, seed := range seeds {
+		i, seed := i, seed
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			results[i] = testutils.MeasureFPR(keys, pregenQueries[seed], isEmpty)
+		}()
+	}
+	wg.Wait()
+	sum := 0.0
+	for _, v := range results {
+		sum += v
+	}
+	return sum / float64(len(seeds))
+}
+
 func avgFPRSeq(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, rangeLen uint64, seeds []int64, isEmpty func(a, b uint64) bool) float64 {
 	sum := 0.0
 	for _, seed := range seeds {

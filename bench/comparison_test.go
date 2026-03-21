@@ -220,6 +220,12 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						rich richPoint
 					}
 
+					// Pre-generate queries once (avoid repeated generation per K×series×seed).
+					pregenQueries := make(map[int64][][2]uint64, len(seeds))
+					for _, seed := range seeds {
+						pregenQueries[seed] = cfg.queryFunc(rangeLen, seed)
+					}
+
 					// Process one K at a time: build filters → measure FPR → release memory.
 					for _, K := range kGrid {
 						K := K
@@ -306,7 +312,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							wg.Add(1)
 							go func() {
 								defer wg.Done()
-								fpr := avgFPRParallel(cfg.keys, cfg.queryFunc, rangeLen, seeds, task.isEmpty)
+								fpr := avgFPRWithQueries(cfg.keys, pregenQueries, seeds, task.isEmpty)
 								kResults[i] = richResult{
 									seriesPoint{task.series, testutils.Point{X: task.bpk, Y: fpr}, task.label},
 									richPoint{
