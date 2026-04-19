@@ -1,0 +1,19 @@
+[12:39:09]   PASS  temporal_N262144
+[12:39:09]   PASS  uniform_N1048576
+[12:39:09]   PASS  spread_N1048576
+[12:40:43]   PASS  zipfian_N1048576
+[12:41:50]   PASS  temporal_N1048576
+[12:41:50] === BATCH batch1: ALL PASS ===
+
+[12:41:50] === BATCH: batch2 ===
+[12:41:50]   START sosd_books_N1048576
+[12:42:18]   PASS  sosd_books_N1048576
+[12:42:18] === BATCH batch2: ALL PASS ===
+
+[12:42:18] === BATCH: batch3 ===
+[12:42:18]   START sosd_fb_N16777216
+[13:04:25]   FAIL  sosd_fb_N16777216 (exit 1)
+[13:04:25] === BATCH batch3: SOME FAILURES ===
+
+[13:04:25] === BATCH: batch4 ===
+[13:04:25]   START sosd_osm_N16777216

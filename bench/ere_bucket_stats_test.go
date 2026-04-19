@@ -81,6 +81,62 @@ func TestEREBucketStats_SodaARE(t *testing.T) {
 	}
 }
 
+func TestEREBucketStats_SodaARE_Large(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping large ERE bucket stats in -short mode")
+	}
+
+	rangeLens := []uint64{16, 256, 4096}
+	epsilon := 0.01
+
+	type dataset struct {
+		name string
+		n    int
+		load func(n int) ([]uint64, error)
+	}
+
+	datasets := []dataset{
+		{"sosd_fb", 1 << 27, func(n int) ([]uint64, error) {
+			return bucketLoadSOSD64(bucketSOSDPath("fb_200M_uint64"), n)
+		}},
+		{"sosd_wiki", 1 << 27, func(n int) ([]uint64, error) {
+			return bucketLoadSOSD64(bucketSOSDPath("wiki_ts_200M_uint64"), n)
+		}},
+		{"sosd_books", 1 << 27, func(n int) ([]uint64, error) {
+			return bucketLoadSOSD32(bucketSOSDPath("books_200M_uint32"), n)
+		}},
+		{"sosd_osm", 1 << 29, func(n int) ([]uint64, error) {
+			return bucketLoadSOSD64(bucketSOSDPath("osm_cellids_800M_uint64"), n)
+		}},
+	}
+
+	for _, ds := range datasets {
+		keys, err := ds.load(ds.n)
+		if err != nil {
+			t.Logf("skip %s: %v", ds.name, err)
+			continue
+		}
+		actualN := len(keys)
+
+		for _, L := range rangeLens {
+			name := fmt.Sprintf("%s/n=%d/L=%d", ds.name, ds.n, L)
+			t.Run(name, func(t *testing.T) {
+				are, err := are_soda_hash.NewSodaARE(keys, L, epsilon)
+				if err != nil {
+					t.Fatalf("build failed: %v", err)
+				}
+				stats := are.EREStats()
+				fmt.Printf("%-12s n=%-11d L=%-5d | blocks=%-10d non-empty=%-10d avg=%.2f max=%d\n",
+					ds.name, actualN, L, stats.NumBlocks, stats.NonEmptyBlocks,
+					stats.AvgKeysPerBlock, stats.MaxKeysInBlock)
+			})
+		}
+
+		keys = nil // free input array between datasets
+		runtime.GC()
+	}
+}
+
 func bucketSOSDPath(name string) string {
 	_, thisFile, _, _ := runtime.Caller(0)
 	return filepath.Join(filepath.Dir(thisFile), "sosd_data", name)

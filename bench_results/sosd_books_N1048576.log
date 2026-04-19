@@ -1,0 +1,319 @@
+# Thesis-bench-industry/bench.test
+ld: warning: ignoring duplicate libraries: '-lc++', '-lm'
+=== RUN   TestTradeoff_SOSD_Books
+=== RUN   TestTradeoff_SOSD_Books/N=1048576
+    sosd_test.go:181: loaded 1048576 keys from books_200M, range [0, 2524972]
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=1
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=1, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 24 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[CACHED] CDF-ARE          (params match, 10 points)
+[CACHED] BloomARE         (params match, 10 points)
+[BUILD]  Grafite          (params changed)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L1.svg
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=16
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=16, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 24 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[CACHED] CDF-ARE          (params match, 10 points)
+[CACHED] BloomARE         (params match, 10 points)
+[BUILD]  Grafite          (params changed)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L16.svg
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=128
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=128, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 21 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[CACHED] CDF-ARE          (params match, 10 points)
+[CACHED] BloomARE         (params match, 10 points)
+[BUILD]  Grafite          (params changed)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L128.svg
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=1024
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=1024, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 18 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[CACHED] CDF-ARE          (params match, 10 points)
+[CACHED] BloomARE         (params match, 10 points)
+[BUILD]  Grafite          (params changed)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L1024.svg
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=4096
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=4096, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 16 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[CACHED] CDF-ARE          (params match, 10 points)
+[CACHED] BloomARE         (params match, 10 points)
+[BUILD]  Grafite          (params changed)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L4096.svg
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=16384
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=16384, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 14 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[CACHED] CDF-ARE          (params match, 10 points)
+[CACHED] BloomARE         (params match, 10 points)
+[BUILD]  Grafite          (params changed)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L16384.svg
+=== RUN   TestTradeoff_SOSD_Books/N=1048576/L=65536
+
+=== Industry Comparison — sosd_books (60-bit keys, 1048576 keys, L=65536, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       0.989409
+Adaptive(K=4)    |     0.00 |       1.000000
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       0.989409
+Scan-ARE(K=4)    |     0.00 |       0.989409
+Greedy+Merge(K=4) |     0.00 |       0.989409
+Truncation(K=5)  |     0.00 |       0.989409
+Adaptive(K=5)    |     0.00 |       1.000000
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       0.989409
+Scan-ARE(K=5)    |     0.00 |       0.989409
+Greedy+Merge(K=5) |     0.00 |       0.989409
+Truncation(K=6)  |     0.00 |       0.989409
+Adaptive(K=6)    |     0.00 |       1.000000
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       0.989409
+Scan-ARE(K=6)    |     0.00 |       0.989409
+Greedy+Merge(K=6) |     3.34 |       0.989343
+Truncation(K=7)  |     0.00 |       0.989409
+Adaptive(K=7)    |     0.00 |       1.000000
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       0.989409
+Scan-ARE(K=7)    |     0.00 |       0.989409
+Greedy+Merge(K=7) |     4.90 |       0.988792
+Truncation(K=8)  |     0.00 |       0.989409
+Adaptive(K=8)    |     0.00 |       1.000000
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       0.989409
+Scan-ARE(K=8)    |     0.00 |       0.989409
+Greedy+Merge(K=8) |     4.26 |       0.988379
+Truncation(K=9)  |     0.00 |       0.989409
+Adaptive(K=9)    |     0.00 |       1.000000
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       0.989409
+Scan-ARE(K=9)    |     0.00 |       0.989409
+Greedy+Merge(K=9) |     3.56 |       0.919122
+Truncation(K=10) |     0.00 |       0.989409
+Adaptive(K=10)   |     0.00 |       1.000000
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       0.989409
+Scan-ARE(K=10)   |     0.00 |       0.989409
+Greedy+Merge(K=10) |     3.33 |       0.576117
+Truncation(K=11) |     0.00 |       0.989409
+Adaptive(K=11)   |     0.01 |       1.000000
+SODA(K=11)       |     0.01 |       1.000000
+Hybrid(K=11)     |     0.00 |       0.989409
+Scan-ARE(K=11)   |     0.01 |       0.989409
+Greedy+Merge(K=11) |     3.19 |       0.359283
+Truncation(K=12) |     0.01 |       0.989409
+Adaptive(K=12)   |     0.01 |       1.000000
+SODA(K=12)       |     0.01 |       1.000000
+Hybrid(K=12)     |     0.01 |       0.989409
+Scan-ARE(K=12)   |     0.01 |       0.989409
+Greedy+Merge(K=12) |     2.96 |       0.332485
+Truncation(K=13) |     0.02 |       0.989409
+Adaptive(K=13)   |     0.02 |       1.000000
+SODA(K=13)       |     0.02 |       1.000000
+Hybrid(K=13)     |     0.02 |       0.989409
+Scan-ARE(K=13)   |     0.02 |       0.989409
+Greedy+Merge(K=13) |     3.04 |       0.291438
+Truncation(K=14) |     0.03 |       0.989409
+Adaptive(K=14)   |     0.05 |       1.000000
+SODA(K=14)       |     0.05 |       1.000000
+Hybrid(K=14)     |     0.03 |       0.989409
+Scan-ARE(K=14)   |     0.05 |       0.989409
+Greedy+Merge(K=14) |     3.17 |       0.257923
+Truncation(K=15) |     0.07 |       0.989409
+Adaptive(K=15)   |     0.09 |       1.000000
+SODA(K=15)       |     0.09 |       1.000000
+Hybrid(K=15)     |     0.07 |       0.989409
+Scan-ARE(K=15)   |     0.09 |       0.989409
+Greedy+Merge(K=15) |     3.52 |       0.168415
+Truncation(K=16) |     0.14 |       0.989409
+Adaptive(K=16)   |     0.19 |       1.000000
+SODA(K=16)       |     0.19 |       1.000000
+Hybrid(K=16)     |     0.14 |       0.989409
+Scan-ARE(K=16)   |     0.19 |       0.989409
+Greedy+Merge(K=16) |     3.27 |       0.264907
+Truncation(K=17) |     0.28 |       0.989409
+Adaptive(K=17)   |     0.37 |       0.999986
+SODA(K=17)       |     0.37 |       0.999986
+Hybrid(K=17)     |     0.28 |       0.989409
+Scan-ARE(K=17)   |     0.38 |       0.989395
+Greedy+Merge(K=17) |     3.59 |       0.210913
+Truncation(K=18) |     0.55 |       0.988561
+Adaptive(K=18)   |     0.75 |       0.996152
+SODA(K=18)       |     0.75 |       0.996152
+Hybrid(K=18)     |     0.55 |       0.988561
+Scan-ARE(K=18)   |     0.75 |       0.985561
+Greedy+Merge(K=18) |     4.25 |       0.000000
+Truncation(K=19) |     1.08 |       0.976807
+Adaptive(K=19)   |     1.43 |       0.939949
+SODA(K=19)       |     1.43 |       0.939949
+Hybrid(K=19)     |     1.08 |       0.976807
+Scan-ARE(K=19)   |     1.43 |       0.929358
+Greedy+Merge(K=19) |     4.25 |       0.000000
+Truncation(K=20) |     2.03 |       0.905827
+Adaptive(K=20)   |     2.45 |       0.711615
+SODA(K=20)       |     2.45 |       0.711615
+Hybrid(K=20)     |     2.03 |       0.905827
+Scan-ARE(K=20)   |     2.45 |       0.701024
+Greedy+Merge(K=20) |     4.25 |       0.000000
+Truncation(K=22) |     5.00 |       0.000000
+Adaptive(K=22)   |     5.00 |       0.000000
+SODA(K=22)       |     5.00 |       0.000000
+Hybrid(K=22)     |     5.00 |       0.000000
+Scan-ARE(K=22)   |     5.00 |       0.000000
+Greedy+Merge(K=22) |     5.00 |       0.000000
+Truncation(K=24) |     7.00 |       0.000000
+Adaptive(K=24)   |     5.00 |       0.000000
+SODA(K=24)       |     7.00 |       0.000000
+Hybrid(K=24)     |     7.00 |       0.000000
+Scan-ARE(K=24)   |     5.00 |       0.000000
+Greedy+Merge(K=24) |     5.00 |       0.000000
+Truncation(K=28) |    11.00 |       0.000000
+Adaptive(K=28)   |     5.00 |       0.000000
+SODA(K=28)       |    11.00 |       0.000000
+Hybrid(K=28)     |    11.00 |       0.000000
+Scan-ARE(K=28)   |     5.00 |       0.000000
+Greedy+Merge(K=28) |     5.00 |       0.000000
+Truncation(K=32) |    15.00 |       0.000000
+Adaptive(K=32)   |     5.00 |       0.000000
+SODA(K=32)       |    15.00 |       0.000000
+Hybrid(K=32)     |    15.00 |       0.000000
+Scan-ARE(K=32)   |     5.00 |       0.000000
+Greedy+Merge(K=32) |     5.00 |       0.000000
+Truncation(K=36) |    19.00 |       0.000000
+Adaptive(K=36)   |     5.00 |       0.000000
+SODA(K=36)       |    19.00 |       0.000000
+Hybrid(K=36)     |    19.00 |       0.000000
+Scan-ARE(K=36)   |     5.00 |       0.000000
+Greedy+Merge(K=36) |     5.00 |       0.000000
+Truncation(K=40) |    23.00 |       0.000000
+Adaptive(K=40)   |     5.00 |       0.000000
+SODA(K=40)       |    23.00 |       0.000000
+Hybrid(K=40)     |    23.00 |       0.000000
+Scan-ARE(K=40)   |     5.00 |       0.000000
+Greedy+Merge(K=40) |     5.00 |       0.000000
+Truncation(K=48) |    31.00 |       0.000000
+Adaptive(K=48)   |     5.00 |       0.000000
+SODA(K=48)       |    31.00 |       0.000000
+Hybrid(K=48)     |    31.00 |       0.000000
+Scan-ARE(K=48)   |     5.00 |       0.000000
+Greedy+Merge(K=48) |     5.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+SNARF(bpk=4)     |     3.37 |       0.269782
+SNARF(bpk=6)     |     5.36 |       0.021604
+SNARF(bpk=8)     |     7.37 |       0.020335
+SNARF(bpk=10)    |     9.38 |       0.020091
+SNARF(bpk=12)    |    11.37 |       0.020012
+SNARF(bpk=14)    |    13.36 |       0.020006
+SNARF(bpk=16)    |    15.37 |       0.020003
+SNARF(bpk=18)    |    17.38 |       0.020003
+SNARF(bpk=20)    |    19.37 |       0.020003
+SuRF             |     5.16 |       0.000000
+SuRFHash(8)      |    13.16 |       0.000000
+SuRFReal(8)      |    13.16 |       0.000000
+
+SVG written to ../bench_results/plots/N1048576/sosd_books/L65536.svg
+--- PASS: TestTradeoff_SOSD_Books (26.84s)
+    --- PASS: TestTradeoff_SOSD_Books/N=1048576 (26.84s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=1 (0.02s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=16 (0.01s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=128 (0.01s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=1024 (0.02s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=4096 (0.01s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=16384 (0.01s)
+        --- PASS: TestTradeoff_SOSD_Books/N=1048576/L=65536 (26.73s)
+PASS
+ok  	Thesis-bench-industry/bench	27.345s

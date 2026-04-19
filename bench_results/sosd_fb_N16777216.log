@@ -1,0 +1,1173 @@
+# Thesis-bench-industry/bench.test
+ld: warning: ignoring duplicate libraries: '-lc++', '-lm'
+=== RUN   TestTradeoff_SOSD_Facebook
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216
+    sosd_test.go:214: loaded 16777216 keys from fb_200M, range [1, 6368513613]
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=1
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=1, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[CACHED] Theoretical      (params match, 24 points)
+[CACHED] Truncation       (params match, 24 points)
+[CACHED] Adaptive (t=0)   (params match, 24 points)
+[CACHED] SODA             (params match, 24 points)
+[CACHED] Hybrid           (params match, 24 points)
+[CACHED] Scan-ARE         (params match, 24 points)
+[CACHED] Greedy+Merge     (params match, 24 points)
+[BUILD]  CDF-ARE          (params changed)
+[CACHED] BloomARE         (params match, 10 points)
+[CACHED] Grafite          (params match, 4 points)
+[CACHED] SNARF            (params match, 9 points)
+[CACHED] SuRF             (params match, 1 points)
+[CACHED] SuRFHash(8)      (params match, 1 points)
+[CACHED] SuRFReal(8)      (params match, 1 points)
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L1.svg
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=16
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=16, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       1.000000
+Adaptive(K=4)    |     0.00 |       1.000000
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       1.000000
+Scan-ARE(K=4)    |     0.14 |       1.000000
+Greedy+Merge(K=4) |     0.00 |       1.000000
+Truncation(K=5)  |     0.00 |       1.000000
+Adaptive(K=5)    |     0.00 |       1.000000
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       1.000000
+Scan-ARE(K=5)    |     0.17 |       1.000000
+Greedy+Merge(K=5) |     0.00 |       1.000000
+Truncation(K=6)  |     0.00 |       1.000000
+Adaptive(K=6)    |     0.00 |       1.000000
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       1.000000
+Scan-ARE(K=6)    |     0.25 |       1.000000
+Greedy+Merge(K=6) |     0.04 |       1.000000
+Truncation(K=7)  |     0.00 |       1.000000
+Adaptive(K=7)    |     0.00 |       1.000000
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       1.000000
+Scan-ARE(K=7)    |     0.39 |       1.000000
+Greedy+Merge(K=7) |     0.35 |       1.000000
+Truncation(K=8)  |     0.00 |       1.000000
+Adaptive(K=8)    |     0.00 |       1.000000
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       1.000000
+Scan-ARE(K=8)    |     0.66 |       1.000000
+Greedy+Merge(K=8) |     1.12 |       1.000000
+Truncation(K=9)  |     0.00 |       1.000000
+Adaptive(K=9)    |     0.00 |       1.000000
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       1.000000
+Scan-ARE(K=9)    |     1.11 |       1.000000
+Greedy+Merge(K=9) |     2.36 |       1.000000
+Truncation(K=10) |     0.00 |       1.000000
+Adaptive(K=10)   |     0.00 |       1.000000
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       1.000000
+Scan-ARE(K=10)   |     1.77 |       1.000000
+Greedy+Merge(K=10) |     3.99 |       1.000000
+Truncation(K=11) |     0.00 |       1.000000
+Adaptive(K=11)   |     0.00 |       1.000000
+SODA(K=11)       |     0.00 |       1.000000
+Hybrid(K=11)     |     0.00 |       1.000000
+Scan-ARE(K=11)   |     2.63 |       1.000000
+Greedy+Merge(K=11) |     5.86 |       1.000000
+Truncation(K=12) |     0.00 |       1.000000
+Adaptive(K=12)   |     0.00 |       1.000000
+SODA(K=12)       |     0.00 |       1.000000
+Hybrid(K=12)     |     0.00 |       1.000000
+Scan-ARE(K=12)   |     3.62 |       1.000000
+Greedy+Merge(K=12) |     7.74 |       0.999999
+Truncation(K=13) |     0.00 |       1.000000
+Adaptive(K=13)   |     0.00 |       1.000000
+SODA(K=13)       |     0.00 |       1.000000
+Hybrid(K=13)     |     0.00 |       1.000000
+Scan-ARE(K=13)   |     4.66 |       1.000000
+Greedy+Merge(K=13) |     9.33 |       0.999999
+Truncation(K=14) |     0.00 |       1.000000
+Adaptive(K=14)   |     0.00 |       1.000000
+SODA(K=14)       |     0.00 |       1.000000
+Hybrid(K=14)     |     0.00 |       1.000000
+Scan-ARE(K=14)   |     5.68 |       1.000000
+Greedy+Merge(K=14) |    10.44 |       0.982738
+Truncation(K=15) |     0.00 |       0.999984
+Adaptive(K=15)   |     0.01 |       1.000000
+SODA(K=15)       |     0.01 |       1.000000
+Hybrid(K=15)     |     0.00 |       0.999984
+Scan-ARE(K=15)   |     6.68 |       1.000000
+Greedy+Merge(K=15) |    11.01 |       0.449313
+Truncation(K=16) |     0.01 |       0.999770
+Adaptive(K=16)   |     0.01 |       1.000000
+SODA(K=16)       |     0.01 |       1.000000
+Hybrid(K=16)     |     0.01 |       0.999770
+Scan-ARE(K=16)   |     7.66 |       1.000000
+Greedy+Merge(K=16) |    11.19 |       0.066838
+Truncation(K=17) |     0.02 |       0.998475
+Adaptive(K=17)   |     0.02 |       1.000000
+SODA(K=17)       |     0.02 |       1.000000
+Hybrid(K=17)     |     0.02 |       0.998475
+Scan-ARE(K=17)   |     8.61 |       0.999999
+Greedy+Merge(K=17) |    11.22 |       0.007068
+Truncation(K=18) |     0.04 |       0.994295
+Adaptive(K=18)   |     0.05 |       1.000000
+SODA(K=18)       |     0.05 |       1.000000
+Hybrid(K=18)     |     0.04 |       0.994295
+Scan-ARE(K=18)   |     9.51 |       0.999761
+Greedy+Merge(K=18) |    11.26 |       0.000324
+Truncation(K=19) |     0.07 |       0.984659
+Adaptive(K=19)   |     0.09 |       1.000000
+SODA(K=19)       |     0.09 |       1.000000
+Hybrid(K=19)     |     0.07 |       0.984659
+Scan-ARE(K=19)   |    10.18 |       0.995722
+Greedy+Merge(K=19) |    11.34 |       0.000000
+Truncation(K=20) |     0.14 |       0.967295
+Adaptive(K=20)   |     0.19 |       1.000000
+SODA(K=20)       |     0.19 |       1.000000
+Hybrid(K=20)     |     0.14 |       0.967295
+Scan-ARE(K=20)   |    10.46 |       0.979957
+Greedy+Merge(K=20) |    11.41 |       0.000000
+Truncation(K=22) |     0.45 |       0.910957
+Adaptive(K=22)   |     0.74 |       0.998784
+SODA(K=22)       |     0.74 |       0.998784
+Hybrid(K=22)     |     0.45 |       0.910957
+Scan-ARE(K=22)   |    10.67 |       0.894060
+Greedy+Merge(K=22) |    11.48 |       0.000000
+Truncation(K=24) |     1.20 |       0.837657
+Adaptive(K=24)   |     2.27 |       0.965663
+SODA(K=24)       |     2.27 |       0.965663
+Hybrid(K=24)     |     1.20 |       0.837657
+Scan-ARE(K=24)   |    10.87 |       0.580558
+Greedy+Merge(K=24) |    11.49 |       0.000000
+Truncation(K=28) |     4.74 |       0.528307
+Adaptive(K=28)   |     6.82 |       0.410861
+SODA(K=28)       |     6.82 |       0.410861
+Hybrid(K=28)     |     4.74 |       0.528307
+Scan-ARE(K=28)   |    11.23 |       0.056100
+Greedy+Merge(K=28) |    11.50 |       0.000000
+Truncation(K=32) |    10.56 |       0.200358
+Adaptive(K=32)   |    10.99 |       0.015897
+SODA(K=32)       |    10.99 |       0.015897
+Hybrid(K=32)     |    10.56 |       0.200358
+Scan-ARE(K=32)   |    10.84 |       0.010368
+Greedy+Merge(K=32) |    11.50 |       0.000000
+Truncation(K=36) |    15.00 |       0.000000
+Adaptive(K=36)   |    12.00 |       0.000000
+SODA(K=36)       |    15.00 |       0.000000
+Hybrid(K=36)     |    15.00 |       0.000000
+Scan-ARE(K=36)   |    11.89 |       0.000000
+Greedy+Merge(K=36) |    12.00 |       0.000000
+Truncation(K=40) |    19.00 |       0.000000
+Adaptive(K=40)   |    12.00 |       0.000000
+SODA(K=40)       |    19.00 |       0.000000
+Hybrid(K=40)     |    19.00 |       0.000000
+Scan-ARE(K=40)   |    12.00 |       0.000000
+Greedy+Merge(K=40) |    12.00 |       0.000000
+Truncation(K=48) |    27.00 |       0.000000
+Adaptive(K=48)   |    12.00 |       0.000000
+SODA(K=48)       |    27.00 |       0.000000
+Hybrid(K=48)     |    27.00 |       0.000000
+Scan-ARE(K=48)   |    12.00 |       0.000000
+Greedy+Merge(K=48) |    12.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+BloomARE         |    10.46 |       0.078810
+BloomARE         |    11.96 |       0.039619
+BloomARE         |    13.89 |       0.015515
+BloomARE         |    15.35 |       0.007810
+BloomARE         |    16.79 |       0.003896
+BloomARE         |    18.70 |       0.001543
+BloomARE         |    20.15 |       0.000773
+BloomARE         |    21.59 |       0.000395
+BloomARE         |    23.50 |       0.000155
+BloomARE         |    24.94 |       0.000074
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+Grafite(bpk=4)   |     4.25 |       0.824882
+SNARF(bpk=4)     |     3.37 |       0.767669
+Grafite(bpk=6)   |     6.47 |       0.410738
+SNARF(bpk=6)     |     5.36 |       0.583554
+Grafite(bpk=8)   |     8.58 |       0.112946
+SNARF(bpk=8)     |     7.37 |       0.415681
+Grafite(bpk=10)  |    10.62 |       0.015305
+SNARF(bpk=10)    |     9.38 |       0.259551
+SNARF(bpk=12)    |    11.37 |       0.003853
+SNARF(bpk=14)    |    13.36 |       0.000557
+SNARF(bpk=16)    |    15.37 |       0.000557
+SNARF(bpk=18)    |    17.38 |       0.000557
+SNARF(bpk=20)    |    19.37 |       0.000556
+SuRF             |    11.32 |       0.164257
+SuRFHash(8)      |    19.32 |       0.164257
+SuRFReal(8)      |    19.32 |       0.000047
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L16.svg
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=128
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=128, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       1.000000
+Adaptive(K=4)    |     0.00 |       1.000000
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       1.000000
+Scan-ARE(K=4)    |     0.00 |       0.999982
+Greedy+Merge(K=4) |     0.00 |       1.000000
+Truncation(K=5)  |     0.00 |       1.000000
+Adaptive(K=5)    |     0.00 |       1.000000
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       1.000000
+Scan-ARE(K=5)    |     0.00 |       0.999982
+Greedy+Merge(K=5) |     0.00 |       1.000000
+Truncation(K=6)  |     0.00 |       1.000000
+Adaptive(K=6)    |     0.00 |       1.000000
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       1.000000
+Scan-ARE(K=6)    |     0.01 |       0.999982
+Greedy+Merge(K=6) |     0.04 |       1.000000
+Truncation(K=7)  |     0.00 |       1.000000
+Adaptive(K=7)    |     0.00 |       1.000000
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       1.000000
+Scan-ARE(K=7)    |     0.01 |       0.999982
+Greedy+Merge(K=7) |     0.35 |       1.000000
+Truncation(K=8)  |     0.00 |       1.000000
+Adaptive(K=8)    |     0.00 |       1.000000
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       1.000000
+Scan-ARE(K=8)    |     0.02 |       0.999982
+Greedy+Merge(K=8) |     1.12 |       1.000000
+Truncation(K=9)  |     0.00 |       1.000000
+Adaptive(K=9)    |     0.00 |       1.000000
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       1.000000
+Scan-ARE(K=9)    |     0.03 |       0.999982
+Greedy+Merge(K=9) |     2.36 |       1.000000
+Truncation(K=10) |     0.00 |       1.000000
+Adaptive(K=10)   |     0.00 |       1.000000
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       1.000000
+Scan-ARE(K=10)   |     0.06 |       0.999981
+Greedy+Merge(K=10) |     3.99 |       1.000000
+Truncation(K=11) |     0.00 |       1.000000
+Adaptive(K=11)   |     0.00 |       1.000000
+SODA(K=11)       |     0.00 |       1.000000
+Hybrid(K=11)     |     0.00 |       1.000000
+Scan-ARE(K=11)   |     0.11 |       0.999956
+Greedy+Merge(K=11) |     5.86 |       1.000000
+Truncation(K=12) |     0.00 |       1.000000
+Adaptive(K=12)   |     0.00 |       1.000000
+SODA(K=12)       |     0.00 |       1.000000
+Hybrid(K=12)     |     0.00 |       1.000000
+Scan-ARE(K=12)   |     0.21 |       0.999800
+Greedy+Merge(K=12) |     7.74 |       0.999998
+Truncation(K=13) |     0.00 |       1.000000
+Adaptive(K=13)   |     0.00 |       1.000000
+SODA(K=13)       |     0.00 |       1.000000
+Hybrid(K=13)     |     0.00 |       1.000000
+Scan-ARE(K=13)   |     0.40 |       0.999091
+Greedy+Merge(K=13) |     9.33 |       0.999998
+Truncation(K=14) |     0.00 |       1.000000
+Adaptive(K=14)   |     0.00 |       1.000000
+SODA(K=14)       |     0.00 |       1.000000
+Hybrid(K=14)     |     0.00 |       1.000000
+Scan-ARE(K=14)   |     0.72 |       0.996603
+Greedy+Merge(K=14) |    10.44 |       0.982702
+Truncation(K=15) |     0.00 |       0.999983
+Adaptive(K=15)   |     0.01 |       1.000000
+SODA(K=15)       |     0.01 |       1.000000
+Hybrid(K=15)     |     0.00 |       0.999983
+Scan-ARE(K=15)   |     1.25 |       0.989713
+Greedy+Merge(K=15) |    11.01 |       0.449092
+Truncation(K=16) |     0.01 |       0.999761
+Adaptive(K=16)   |     0.01 |       1.000000
+SODA(K=16)       |     0.01 |       1.000000
+Hybrid(K=16)     |     0.01 |       0.999761
+Scan-ARE(K=16)   |     2.00 |       0.974168
+Greedy+Merge(K=16) |    11.19 |       0.066646
+Truncation(K=17) |     0.02 |       0.998471
+Adaptive(K=17)   |     0.02 |       1.000000
+SODA(K=17)       |     0.02 |       1.000000
+Hybrid(K=17)     |     0.02 |       0.998471
+Scan-ARE(K=17)   |     2.96 |       0.945762
+Greedy+Merge(K=17) |    11.22 |       0.007041
+Truncation(K=18) |     0.04 |       0.994328
+Adaptive(K=18)   |     0.05 |       1.000000
+SODA(K=18)       |     0.05 |       1.000000
+Hybrid(K=18)     |     0.04 |       0.994328
+Scan-ARE(K=18)   |     4.05 |       0.901117
+Greedy+Merge(K=18) |    11.26 |       0.000318
+Truncation(K=19) |     0.07 |       0.984729
+Adaptive(K=19)   |     0.09 |       1.000000
+SODA(K=19)       |     0.09 |       1.000000
+Hybrid(K=19)     |     0.07 |       0.984729
+Scan-ARE(K=19)   |     5.18 |       0.835421
+Greedy+Merge(K=19) |    11.34 |       0.000000
+Truncation(K=20) |     0.14 |       0.967446
+Adaptive(K=20)   |     0.19 |       1.000000
+SODA(K=20)       |     0.19 |       1.000000
+Hybrid(K=20)     |     0.14 |       0.967446
+Scan-ARE(K=20)   |     6.29 |       0.741407
+Greedy+Merge(K=20) |    11.41 |       0.000000
+Truncation(K=22) |     0.45 |       0.909822
+Adaptive(K=22)   |     0.74 |       0.998988
+SODA(K=22)       |     0.74 |       0.998988
+Hybrid(K=22)     |     0.45 |       0.909822
+Scan-ARE(K=22)   |     8.44 |       0.443243
+Greedy+Merge(K=22) |    11.48 |       0.000000
+Truncation(K=24) |     1.20 |       0.808621
+Adaptive(K=24)   |     2.27 |       0.972314
+SODA(K=24)       |     2.27 |       0.972314
+Hybrid(K=24)     |     1.20 |       0.808621
+Scan-ARE(K=24)   |    10.42 |       0.134062
+Greedy+Merge(K=24) |    11.49 |       0.000000
+Truncation(K=28) |     4.74 |       0.604795
+Adaptive(K=28)   |     6.82 |       0.717652
+SODA(K=28)       |     6.82 |       0.717652
+Hybrid(K=28)     |     4.74 |       0.604795
+Scan-ARE(K=28)   |    12.04 |       0.000408
+Greedy+Merge(K=28) |    11.50 |       0.000000
+Truncation(K=32) |    10.56 |       0.308361
+Adaptive(K=32)   |    10.99 |       0.057010
+SODA(K=32)       |    10.99 |       0.057010
+Hybrid(K=32)     |    10.56 |       0.308361
+Scan-ARE(K=32)   |    10.86 |       0.040706
+Greedy+Merge(K=32) |    11.50 |       0.000000
+Truncation(K=36) |    15.00 |       0.000000
+Adaptive(K=36)   |    12.00 |       0.000000
+SODA(K=36)       |    15.00 |       0.000000
+Hybrid(K=36)     |    15.00 |       0.000000
+Scan-ARE(K=36)   |    11.90 |       0.000000
+Greedy+Merge(K=36) |    12.00 |       0.000000
+Truncation(K=40) |    19.00 |       0.000000
+Adaptive(K=40)   |    12.00 |       0.000000
+SODA(K=40)       |    19.00 |       0.000000
+Hybrid(K=40)     |    19.00 |       0.000000
+Scan-ARE(K=40)   |    12.00 |       0.000000
+Greedy+Merge(K=40) |    12.00 |       0.000000
+Truncation(K=48) |    27.00 |       0.000000
+Adaptive(K=48)   |    12.00 |       0.000000
+SODA(K=48)       |    27.00 |       0.000000
+Hybrid(K=48)     |    27.00 |       0.000000
+Scan-ARE(K=48)   |    12.00 |       0.000000
+Greedy+Merge(K=48) |    12.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+BloomARE         |    14.78 |       0.058097
+BloomARE         |    16.28 |       0.028816
+BloomARE         |    18.22 |       0.011337
+BloomARE         |    19.67 |       0.005678
+BloomARE         |    21.12 |       0.002852
+BloomARE         |    23.03 |       0.001127
+BloomARE         |    24.48 |       0.000600
+BloomARE         |    25.92 |       0.000288
+BloomARE         |    27.83 |       0.000119
+BloomARE         |    29.27 |       0.000062
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+Grafite(bpk=4)   |     4.25 |       0.889479
+SNARF(bpk=4)     |     3.37 |       0.715381
+Grafite(bpk=6)   |     6.47 |       0.717603
+SNARF(bpk=6)     |     5.36 |       0.623159
+Grafite(bpk=8)   |     8.58 |       0.338405
+SNARF(bpk=8)     |     7.37 |       0.554426
+Grafite(bpk=10)  |    10.62 |       0.056429
+SNARF(bpk=10)    |     9.38 |       0.392447
+SNARF(bpk=12)    |    11.37 |       0.005858
+SNARF(bpk=14)    |    13.36 |       0.000690
+SNARF(bpk=16)    |    15.37 |       0.000690
+SNARF(bpk=18)    |    17.38 |       0.000690
+SNARF(bpk=20)    |    19.37 |       0.000690
+SuRF             |    11.32 |       0.205104
+SuRFHash(8)      |    19.32 |       0.205104
+SuRFReal(8)      |    19.32 |       0.000032
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L128.svg
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=1024
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=1024, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       1.000000
+Adaptive(K=4)    |     0.00 |       1.000000
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       1.000000
+Scan-ARE(K=4)    |     0.00 |       1.000000
+Greedy+Merge(K=4) |     0.00 |       1.000000
+Truncation(K=5)  |     0.00 |       1.000000
+Adaptive(K=5)    |     0.00 |       1.000000
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       1.000000
+Scan-ARE(K=5)    |     0.00 |       1.000000
+Greedy+Merge(K=5) |     0.00 |       1.000000
+Truncation(K=6)  |     0.00 |       1.000000
+Adaptive(K=6)    |     0.00 |       1.000000
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       1.000000
+Scan-ARE(K=6)    |     0.00 |       1.000000
+Greedy+Merge(K=6) |     0.04 |       1.000000
+Truncation(K=7)  |     0.00 |       1.000000
+Adaptive(K=7)    |     0.00 |       1.000000
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       1.000000
+Scan-ARE(K=7)    |     0.00 |       1.000000
+Greedy+Merge(K=7) |     0.35 |       1.000000
+Truncation(K=8)  |     0.00 |       1.000000
+Adaptive(K=8)    |     0.00 |       1.000000
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       1.000000
+Scan-ARE(K=8)    |     0.00 |       1.000000
+Greedy+Merge(K=8) |     1.12 |       1.000000
+Truncation(K=9)  |     0.00 |       1.000000
+Adaptive(K=9)    |     0.00 |       1.000000
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       1.000000
+Scan-ARE(K=9)    |     0.00 |       1.000000
+Greedy+Merge(K=9) |     2.36 |       1.000000
+Truncation(K=10) |     0.00 |       1.000000
+Adaptive(K=10)   |     0.00 |       1.000000
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       1.000000
+Scan-ARE(K=10)   |     0.00 |       1.000000
+Greedy+Merge(K=10) |     3.99 |       1.000000
+Truncation(K=11) |     0.00 |       1.000000
+Adaptive(K=11)   |     0.00 |       1.000000
+SODA(K=11)       |     0.00 |       1.000000
+Hybrid(K=11)     |     0.00 |       1.000000
+Scan-ARE(K=11)   |     0.00 |       1.000000
+Greedy+Merge(K=11) |     5.86 |       1.000000
+Truncation(K=12) |     0.00 |       1.000000
+Adaptive(K=12)   |     0.00 |       1.000000
+SODA(K=12)       |     0.00 |       1.000000
+Hybrid(K=12)     |     0.00 |       1.000000
+Scan-ARE(K=12)   |     0.00 |       1.000000
+Greedy+Merge(K=12) |     7.74 |       0.999999
+Truncation(K=13) |     0.00 |       1.000000
+Adaptive(K=13)   |     0.00 |       1.000000
+SODA(K=13)       |     0.00 |       1.000000
+Hybrid(K=13)     |     0.00 |       1.000000
+Scan-ARE(K=13)   |     0.00 |       1.000000
+Greedy+Merge(K=13) |     9.33 |       0.999999
+Truncation(K=14) |     0.00 |       1.000000
+Adaptive(K=14)   |     0.00 |       1.000000
+SODA(K=14)       |     0.00 |       1.000000
+Hybrid(K=14)     |     0.00 |       1.000000
+Scan-ARE(K=14)   |     0.00 |       1.000000
+Greedy+Merge(K=14) |    10.44 |       0.982725
+Truncation(K=15) |     0.00 |       0.999982
+Adaptive(K=15)   |     0.01 |       1.000000
+SODA(K=15)       |     0.01 |       1.000000
+Hybrid(K=15)     |     0.00 |       0.999982
+Scan-ARE(K=15)   |     0.01 |       1.000000
+Greedy+Merge(K=15) |    11.01 |       0.449093
+Truncation(K=16) |     0.01 |       0.999758
+Adaptive(K=16)   |     0.01 |       1.000000
+SODA(K=16)       |     0.01 |       1.000000
+Hybrid(K=16)     |     0.01 |       0.999758
+Scan-ARE(K=16)   |     0.01 |       1.000000
+Greedy+Merge(K=16) |    11.19 |       0.066701
+Truncation(K=17) |     0.02 |       0.998490
+Adaptive(K=17)   |     0.02 |       1.000000
+SODA(K=17)       |     0.02 |       1.000000
+Hybrid(K=17)     |     0.02 |       0.998490
+Scan-ARE(K=17)   |     0.02 |       1.000000
+Greedy+Merge(K=17) |    11.22 |       0.007068
+Truncation(K=18) |     0.04 |       0.994440
+Adaptive(K=18)   |     0.05 |       1.000000
+SODA(K=18)       |     0.05 |       1.000000
+Hybrid(K=18)     |     0.04 |       0.994440
+Scan-ARE(K=18)   |     0.05 |       1.000000
+Greedy+Merge(K=18) |    11.26 |       0.000318
+Truncation(K=19) |     0.07 |       0.985008
+Adaptive(K=19)   |     0.09 |       1.000000
+SODA(K=19)       |     0.09 |       1.000000
+Hybrid(K=19)     |     0.07 |       0.985008
+Scan-ARE(K=19)   |     0.09 |       1.000000
+Greedy+Merge(K=19) |    11.34 |       0.000000
+Truncation(K=20) |     0.14 |       0.967766
+Adaptive(K=20)   |     0.19 |       1.000000
+SODA(K=20)       |     0.19 |       1.000000
+Hybrid(K=20)     |     0.14 |       0.967766
+Scan-ARE(K=20)   |     0.19 |       1.000000
+Greedy+Merge(K=20) |    11.41 |       0.000000
+Truncation(K=22) |     0.45 |       0.902647
+Adaptive(K=22)   |     0.74 |       0.999086
+SODA(K=22)       |     0.74 |       0.999086
+Hybrid(K=22)     |     0.45 |       0.902647
+Scan-ARE(K=22)   |     0.74 |       0.999086
+Greedy+Merge(K=22) |    11.48 |       0.000000
+Truncation(K=24) |     1.20 |       0.843038
+Adaptive(K=24)   |     2.27 |       0.975617
+SODA(K=24)       |     2.27 |       0.975617
+Hybrid(K=24)     |     1.20 |       0.843038
+Scan-ARE(K=24)   |     2.27 |       0.975617
+Greedy+Merge(K=24) |    11.49 |       0.000000
+Truncation(K=28) |     4.74 |       0.779580
+Adaptive(K=28)   |     6.82 |       0.777603
+SODA(K=28)       |     6.82 |       0.777603
+Hybrid(K=28)     |     4.74 |       0.779580
+Scan-ARE(K=28)   |     6.82 |       0.777603
+Greedy+Merge(K=28) |    11.50 |       0.000000
+Truncation(K=32) |    10.56 |       0.413287
+Adaptive(K=32)   |    10.99 |       0.132076
+SODA(K=32)       |    10.99 |       0.132076
+Hybrid(K=32)     |    10.56 |       0.413287
+Scan-ARE(K=32)   |    10.99 |       0.132076
+Greedy+Merge(K=32) |    11.50 |       0.000000
+Truncation(K=36) |    15.00 |       0.000000
+Adaptive(K=36)   |    12.00 |       0.000000
+SODA(K=36)       |    15.00 |       0.000000
+Hybrid(K=36)     |    15.00 |       0.000000
+Scan-ARE(K=36)   |    11.90 |       0.000000
+Greedy+Merge(K=36) |    12.00 |       0.000000
+Truncation(K=40) |    19.00 |       0.000000
+Adaptive(K=40)   |    12.00 |       0.000000
+SODA(K=40)       |    19.00 |       0.000000
+Hybrid(K=40)     |    19.00 |       0.000000
+Scan-ARE(K=40)   |    12.00 |       0.000000
+Greedy+Merge(K=40) |    12.00 |       0.000000
+Truncation(K=48) |    27.00 |       0.000000
+Adaptive(K=48)   |    12.00 |       0.000000
+SODA(K=48)       |    27.00 |       0.000000
+Hybrid(K=48)     |    27.00 |       0.000000
+Scan-ARE(K=48)   |    12.00 |       0.000000
+Greedy+Merge(K=48) |    12.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+BloomARE         |    19.11 |       0.035954
+BloomARE         |    20.61 |       0.018086
+BloomARE         |    22.55 |       0.007114
+BloomARE         |    24.00 |       0.003547
+BloomARE         |    25.45 |       0.001774
+BloomARE         |    27.36 |       0.000706
+BloomARE         |    28.80 |       0.000366
+BloomARE         |    30.25 |       0.000178
+BloomARE         |    32.15 |       0.000073
+BloomARE         |    33.60 |       0.000036
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+Grafite(bpk=4)   |     4.25 |       0.905878
+SNARF(bpk=4)     |     3.37 |       0.814364
+Grafite(bpk=6)   |     6.47 |       0.777025
+SNARF(bpk=6)     |     5.36 |       0.788049
+Grafite(bpk=8)   |     8.58 |       0.535505
+SNARF(bpk=8)     |     7.37 |       0.736668
+Grafite(bpk=10)  |    10.62 |       0.130323
+SNARF(bpk=10)    |     9.38 |       0.527468
+SNARF(bpk=12)    |    11.37 |       0.008525
+SNARF(bpk=14)    |    13.36 |       0.001168
+SNARF(bpk=16)    |    15.37 |       0.001167
+SNARF(bpk=18)    |    17.38 |       0.001167
+SNARF(bpk=20)    |    19.37 |       0.001166
+SuRF             |    11.32 |       0.366601
+SuRFHash(8)      |    19.32 |       0.366601
+SuRFReal(8)      |    19.32 |       0.000065
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L1024.svg
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=4096
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=4096, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       0.999999
+Adaptive(K=4)    |     0.00 |       0.999999
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       0.999999
+Scan-ARE(K=4)    |     0.00 |       0.999999
+Greedy+Merge(K=4) |     0.00 |       0.999999
+Truncation(K=5)  |     0.00 |       0.999999
+Adaptive(K=5)    |     0.00 |       0.999999
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       0.999999
+Scan-ARE(K=5)    |     0.00 |       0.999999
+Greedy+Merge(K=5) |     0.00 |       0.999999
+Truncation(K=6)  |     0.00 |       0.999999
+Adaptive(K=6)    |     0.00 |       0.999999
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       0.999999
+Scan-ARE(K=6)    |     0.00 |       0.999999
+Greedy+Merge(K=6) |     0.04 |       0.999999
+Truncation(K=7)  |     0.00 |       0.999999
+Adaptive(K=7)    |     0.00 |       0.999999
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       0.999999
+Scan-ARE(K=7)    |     0.00 |       0.999999
+Greedy+Merge(K=7) |     0.35 |       0.999999
+Truncation(K=8)  |     0.00 |       0.999999
+Adaptive(K=8)    |     0.00 |       0.999999
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       0.999999
+Scan-ARE(K=8)    |     0.00 |       0.999999
+Greedy+Merge(K=8) |     1.12 |       0.999999
+Truncation(K=9)  |     0.00 |       0.999999
+Adaptive(K=9)    |     0.00 |       0.999999
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       0.999999
+Scan-ARE(K=9)    |     0.00 |       0.999999
+Greedy+Merge(K=9) |     2.36 |       0.999999
+Truncation(K=10) |     0.00 |       0.999999
+Adaptive(K=10)   |     0.00 |       0.999999
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       0.999999
+Scan-ARE(K=10)   |     0.00 |       0.999999
+Greedy+Merge(K=10) |     3.99 |       0.999999
+Truncation(K=11) |     0.00 |       0.999999
+Adaptive(K=11)   |     0.00 |       0.999999
+SODA(K=11)       |     0.00 |       1.000000
+Hybrid(K=11)     |     0.00 |       0.999999
+Scan-ARE(K=11)   |     0.00 |       0.999999
+Greedy+Merge(K=11) |     5.86 |       0.999999
+Truncation(K=12) |     0.00 |       0.999999
+Adaptive(K=12)   |     0.00 |       0.999999
+SODA(K=12)       |     0.00 |       1.000000
+Hybrid(K=12)     |     0.00 |       0.999999
+Scan-ARE(K=12)   |     0.00 |       0.999999
+Greedy+Merge(K=12) |     7.74 |       0.999998
+Truncation(K=13) |     0.00 |       0.999999
+Adaptive(K=13)   |     0.00 |       0.999999
+SODA(K=13)       |     0.00 |       1.000000
+Hybrid(K=13)     |     0.00 |       0.999999
+Scan-ARE(K=13)   |     0.00 |       0.999999
+Greedy+Merge(K=13) |     9.33 |       0.999998
+Truncation(K=14) |     0.00 |       0.999999
+Adaptive(K=14)   |     0.00 |       0.999999
+SODA(K=14)       |     0.00 |       1.000000
+Hybrid(K=14)     |     0.00 |       0.999999
+Scan-ARE(K=14)   |     0.00 |       0.999999
+Greedy+Merge(K=14) |    10.44 |       0.982710
+Truncation(K=15) |     0.00 |       0.999983
+Adaptive(K=15)   |     0.01 |       0.999999
+SODA(K=15)       |     0.01 |       1.000000
+Hybrid(K=15)     |     0.00 |       0.999983
+Scan-ARE(K=15)   |     0.01 |       0.999999
+Greedy+Merge(K=15) |    11.01 |       0.449561
+Truncation(K=16) |     0.01 |       0.999759
+Adaptive(K=16)   |     0.01 |       0.999999
+SODA(K=16)       |     0.01 |       1.000000
+Hybrid(K=16)     |     0.01 |       0.999759
+Scan-ARE(K=16)   |     0.01 |       0.999999
+Greedy+Merge(K=16) |    11.19 |       0.067042
+Truncation(K=17) |     0.02 |       0.998535
+Adaptive(K=17)   |     0.02 |       0.999999
+SODA(K=17)       |     0.02 |       1.000000
+Hybrid(K=17)     |     0.02 |       0.998535
+Scan-ARE(K=17)   |     0.02 |       0.999999
+Greedy+Merge(K=17) |    11.22 |       0.007155
+Truncation(K=18) |     0.04 |       0.994631
+Adaptive(K=18)   |     0.05 |       0.999999
+SODA(K=18)       |     0.05 |       1.000000
+Hybrid(K=18)     |     0.04 |       0.994631
+Scan-ARE(K=18)   |     0.05 |       0.999999
+Greedy+Merge(K=18) |    11.26 |       0.000328
+Truncation(K=19) |     0.07 |       0.985322
+Adaptive(K=19)   |     0.09 |       0.999999
+SODA(K=19)       |     0.09 |       1.000000
+Hybrid(K=19)     |     0.07 |       0.985322
+Scan-ARE(K=19)   |     0.09 |       0.999999
+Greedy+Merge(K=19) |    11.34 |       0.000002
+Truncation(K=20) |     0.14 |       0.969132
+Adaptive(K=20)   |     0.19 |       0.999999
+SODA(K=20)       |     0.19 |       1.000000
+Hybrid(K=20)     |     0.14 |       0.969132
+Scan-ARE(K=20)   |     0.19 |       0.999999
+Greedy+Merge(K=20) |    11.41 |       0.000000
+Truncation(K=22) |     0.45 |       0.938548
+Adaptive(K=22)   |     0.74 |       0.999119
+SODA(K=22)       |     0.74 |       0.999120
+Hybrid(K=22)     |     0.45 |       0.938548
+Scan-ARE(K=22)   |     0.74 |       0.999119
+Greedy+Merge(K=22) |    11.48 |       0.000000
+Truncation(K=24) |     1.20 |       0.916363
+Adaptive(K=24)   |     2.27 |       0.976809
+SODA(K=24)       |     2.27 |       0.976809
+Hybrid(K=24)     |     1.20 |       0.916363
+Scan-ARE(K=24)   |     2.27 |       0.976809
+Greedy+Merge(K=24) |    11.49 |       0.000000
+Truncation(K=28) |     4.74 |       0.885896
+Adaptive(K=28)   |     6.82 |       0.798676
+SODA(K=28)       |     6.82 |       0.798676
+Hybrid(K=28)     |     4.74 |       0.885896
+Scan-ARE(K=28)   |     6.82 |       0.798676
+Greedy+Merge(K=28) |    11.50 |       0.000000
+Truncation(K=32) |    10.56 |       0.469521
+Adaptive(K=32)   |    10.99 |       0.179121
+SODA(K=32)       |    10.99 |       0.179121
+Hybrid(K=32)     |    10.56 |       0.469521
+Scan-ARE(K=32)   |    10.99 |       0.179121
+Greedy+Merge(K=32) |    11.50 |       0.000000
+Truncation(K=36) |    15.00 |       0.000000
+Adaptive(K=36)   |    12.00 |       0.000000
+SODA(K=36)       |    15.00 |       0.000000
+Hybrid(K=36)     |    15.00 |       0.000000
+Scan-ARE(K=36)   |    12.00 |       0.000000
+Greedy+Merge(K=36) |    12.00 |       0.000000
+Truncation(K=40) |    19.00 |       0.000000
+Adaptive(K=40)   |    12.00 |       0.000000
+SODA(K=40)       |    19.00 |       0.000000
+Hybrid(K=40)     |    19.00 |       0.000000
+Scan-ARE(K=40)   |    12.00 |       0.000000
+Greedy+Merge(K=40) |    12.00 |       0.000000
+Truncation(K=48) |    27.00 |       0.000000
+Adaptive(K=48)   |    12.00 |       0.000000
+SODA(K=48)       |    27.00 |       0.000000
+Hybrid(K=48)     |    27.00 |       0.000000
+Scan-ARE(K=48)   |    12.00 |       0.000000
+Greedy+Merge(K=48) |    12.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+BloomARE         |    22.00 |       0.022070
+BloomARE         |    23.49 |       0.011076
+BloomARE         |    25.43 |       0.004381
+BloomARE         |    26.89 |       0.002153
+BloomARE         |    28.33 |       0.001080
+BloomARE         |    30.25 |       0.000459
+BloomARE         |    31.69 |       0.000216
+BloomARE         |    33.13 |       0.000113
+BloomARE         |    35.04 |       0.000043
+BloomARE         |    36.48 |       0.000025
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+Grafite(bpk=4)   |     4.25 |       0.912381
+SNARF(bpk=4)     |     3.37 |       0.909314
+Grafite(bpk=6)   |     6.47 |       0.798472
+SNARF(bpk=6)     |     5.36 |       0.894061
+Grafite(bpk=8)   |     8.58 |       0.587147
+SNARF(bpk=8)     |     7.37 |       0.838614
+Grafite(bpk=10)  |    10.62 |       0.176413
+SNARF(bpk=10)    |     9.38 |       0.601857
+SNARF(bpk=12)    |    11.37 |       0.010550
+SNARF(bpk=14)    |    13.36 |       0.001902
+SNARF(bpk=16)    |    15.37 |       0.001901
+SNARF(bpk=18)    |    17.38 |       0.001901
+SNARF(bpk=20)    |    19.37 |       0.001901
+SuRF             |    11.32 |       0.492534
+SuRFHash(8)      |    19.32 |       0.492534
+SuRFReal(8)      |    19.32 |       0.000204
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L4096.svg
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=16384
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=16384, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       0.999999
+Adaptive(K=4)    |     0.00 |       0.999999
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       0.999999
+Scan-ARE(K=4)    |     0.00 |       0.999999
+Greedy+Merge(K=4) |     0.00 |       0.999999
+Truncation(K=5)  |     0.00 |       0.999999
+Adaptive(K=5)    |     0.00 |       0.999999
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       0.999999
+Scan-ARE(K=5)    |     0.00 |       0.999999
+Greedy+Merge(K=5) |     0.00 |       0.999999
+Truncation(K=6)  |     0.00 |       0.999999
+Adaptive(K=6)    |     0.00 |       0.999999
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       0.999999
+Scan-ARE(K=6)    |     0.00 |       0.999999
+Greedy+Merge(K=6) |     0.04 |       0.999999
+Truncation(K=7)  |     0.00 |       0.999999
+Adaptive(K=7)    |     0.00 |       0.999999
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       0.999999
+Scan-ARE(K=7)    |     0.00 |       0.999999
+Greedy+Merge(K=7) |     0.35 |       0.999999
+Truncation(K=8)  |     0.00 |       0.999999
+Adaptive(K=8)    |     0.00 |       0.999999
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       0.999999
+Scan-ARE(K=8)    |     0.00 |       0.999999
+Greedy+Merge(K=8) |     1.12 |       0.999999
+Truncation(K=9)  |     0.00 |       0.999999
+Adaptive(K=9)    |     0.00 |       0.999999
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       0.999999
+Scan-ARE(K=9)    |     0.00 |       0.999999
+Greedy+Merge(K=9) |     2.36 |       0.999999
+Truncation(K=10) |     0.00 |       0.999999
+Adaptive(K=10)   |     0.00 |       0.999999
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       0.999999
+Scan-ARE(K=10)   |     0.00 |       0.999999
+Greedy+Merge(K=10) |     3.99 |       0.999999
+Truncation(K=11) |     0.00 |       0.999999
+Adaptive(K=11)   |     0.00 |       0.999999
+SODA(K=11)       |     0.00 |       1.000000
+Hybrid(K=11)     |     0.00 |       0.999999
+Scan-ARE(K=11)   |     0.00 |       0.999999
+Greedy+Merge(K=11) |     5.86 |       0.999999
+Truncation(K=12) |     0.00 |       0.999999
+Adaptive(K=12)   |     0.00 |       0.999999
+SODA(K=12)       |     0.00 |       1.000000
+Hybrid(K=12)     |     0.00 |       0.999999
+Scan-ARE(K=12)   |     0.00 |       0.999999
+Greedy+Merge(K=12) |     7.74 |       0.999998
+Truncation(K=13) |     0.00 |       0.999999
+Adaptive(K=13)   |     0.00 |       0.999999
+SODA(K=13)       |     0.00 |       1.000000
+Hybrid(K=13)     |     0.00 |       0.999999
+Scan-ARE(K=13)   |     0.00 |       0.999999
+Greedy+Merge(K=13) |     9.33 |       0.999998
+Truncation(K=14) |     0.00 |       0.999999
+Adaptive(K=14)   |     0.00 |       0.999999
+SODA(K=14)       |     0.00 |       1.000000
+Hybrid(K=14)     |     0.00 |       0.999999
+Scan-ARE(K=14)   |     0.00 |       0.999999
+Greedy+Merge(K=14) |    10.44 |       0.982808
+Truncation(K=15) |     0.00 |       0.999982
+Adaptive(K=15)   |     0.01 |       0.999999
+SODA(K=15)       |     0.01 |       1.000000
+Hybrid(K=15)     |     0.00 |       0.999982
+Scan-ARE(K=15)   |     0.01 |       0.999999
+Greedy+Merge(K=15) |    11.01 |       0.453505
+Truncation(K=16) |     0.01 |       0.999766
+Adaptive(K=16)   |     0.01 |       0.999999
+SODA(K=16)       |     0.01 |       1.000000
+Hybrid(K=16)     |     0.01 |       0.999766
+Scan-ARE(K=16)   |     0.01 |       0.999999
+Greedy+Merge(K=16) |    11.19 |       0.069980
+Truncation(K=17) |     0.02 |       0.998619
+Adaptive(K=17)   |     0.02 |       0.999999
+SODA(K=17)       |     0.02 |       1.000000
+Hybrid(K=17)     |     0.02 |       0.998619
+Scan-ARE(K=17)   |     0.02 |       0.999999
+Greedy+Merge(K=17) |    11.22 |       0.007711
+Truncation(K=18) |     0.04 |       0.995192
+Adaptive(K=18)   |     0.05 |       0.999999
+SODA(K=18)       |     0.05 |       1.000000
+Hybrid(K=18)     |     0.04 |       0.995192
+Scan-ARE(K=18)   |     0.05 |       0.999999
+Greedy+Merge(K=18) |    11.26 |       0.000371
+Truncation(K=19) |     0.07 |       0.992181
+Adaptive(K=19)   |     0.09 |       0.999999
+SODA(K=19)       |     0.09 |       1.000000
+Hybrid(K=19)     |     0.07 |       0.992181
+Scan-ARE(K=19)   |     0.09 |       0.999999
+Greedy+Merge(K=19) |    11.34 |       0.000005
+Truncation(K=20) |     0.14 |       0.986798
+Adaptive(K=20)   |     0.19 |       0.999999
+SODA(K=20)       |     0.19 |       1.000000
+Hybrid(K=20)     |     0.14 |       0.986798
+Scan-ARE(K=20)   |     0.19 |       0.999999
+Greedy+Merge(K=20) |    11.41 |       0.000000
+Truncation(K=22) |     0.45 |       0.978638
+Adaptive(K=22)   |     0.74 |       0.999148
+SODA(K=22)       |     0.74 |       0.999149
+Hybrid(K=22)     |     0.45 |       0.978638
+Scan-ARE(K=22)   |     0.74 |       0.999148
+Greedy+Merge(K=22) |    11.48 |       0.000000
+Truncation(K=24) |     1.20 |       0.974744
+Adaptive(K=24)   |     2.27 |       0.977458
+SODA(K=24)       |     2.27 |       0.977458
+Hybrid(K=24)     |     1.20 |       0.974744
+Scan-ARE(K=24)   |     2.27 |       0.977458
+Greedy+Merge(K=24) |    11.49 |       0.000000
+Truncation(K=28) |     4.74 |       0.950408
+Adaptive(K=28)   |     6.82 |       0.812530
+SODA(K=28)       |     6.82 |       0.812530
+Hybrid(K=28)     |     4.74 |       0.950408
+Scan-ARE(K=28)   |     6.82 |       0.812530
+Greedy+Merge(K=28) |    11.50 |       0.000000
+Truncation(K=32) |    10.56 |       0.502553
+Adaptive(K=32)   |    10.99 |       0.210355
+SODA(K=32)       |    10.99 |       0.210355
+Hybrid(K=32)     |    10.56 |       0.502553
+Scan-ARE(K=32)   |    10.99 |       0.210355
+Greedy+Merge(K=32) |    11.50 |       0.000000
+Truncation(K=36) |    15.00 |       0.000000
+Adaptive(K=36)   |    12.00 |       0.000000
+SODA(K=36)       |    15.00 |       0.000000
+Hybrid(K=36)     |    15.00 |       0.000000
+Scan-ARE(K=36)   |    12.00 |       0.000000
+Greedy+Merge(K=36) |    12.00 |       0.000000
+Truncation(K=40) |    19.00 |       0.000000
+Adaptive(K=40)   |    12.00 |       0.000000
+SODA(K=40)       |    19.00 |       0.000000
+Hybrid(K=40)     |    19.00 |       0.000000
+Scan-ARE(K=40)   |    12.00 |       0.000000
+Greedy+Merge(K=40) |    12.00 |       0.000000
+Truncation(K=48) |    27.00 |       0.000000
+Adaptive(K=48)   |    12.00 |       0.000000
+SODA(K=48)       |    27.00 |       0.000000
+Hybrid(K=48)     |    27.00 |       0.000000
+Scan-ARE(K=48)   |    12.00 |       0.000000
+Greedy+Merge(K=48) |    12.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+BloomARE         |    24.88 |       0.011118
+BloomARE         |    26.38 |       0.005634
+BloomARE         |    28.32 |       0.002081
+BloomARE         |    29.77 |       0.001096
+BloomARE         |    31.22 |       0.000494
+BloomARE         |    33.13 |       0.000245
+BloomARE         |    34.57 |       0.000131
+BloomARE         |    36.02 |       0.000055
+BloomARE         |    37.92 |       0.000021
+BloomARE         |    39.37 |       0.000014
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+Grafite(bpk=4)   |     4.25 |       0.916371
+SNARF(bpk=4)     |     3.37 |       0.972343
+Grafite(bpk=6)   |     6.47 |       0.812355
+SNARF(bpk=6)     |     5.36 |       0.958684
+Grafite(bpk=8)   |     8.58 |       0.621984
+SNARF(bpk=8)     |     7.37 |       0.899830
+Grafite(bpk=10)  |    10.62 |       0.209905
+SNARF(bpk=10)    |     9.38 |       0.647138
+SNARF(bpk=12)    |    11.37 |       0.012700
+SNARF(bpk=14)    |    13.36 |       0.003058
+SNARF(bpk=16)    |    15.37 |       0.003058
+SNARF(bpk=18)    |    17.38 |       0.003058
+SNARF(bpk=20)    |    19.37 |       0.003057
+SuRF             |    11.32 |       0.586090
+SuRFHash(8)      |    19.32 |       0.586090
+SuRFReal(8)      |    19.32 |       0.000869
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L16384.svg
+=== RUN   TestTradeoff_SOSD_Facebook/N=16777216/L=65536
+
+=== Industry Comparison — sosd_fb (60-bit keys, 16777216 keys, L=65536, 3 runs) ===
+Series           |      BPK |       FPR(avg)
+---------------------------------------------
+[BUILD]  Theoretical      (params changed)
+[BUILD]  Truncation       (params changed)
+[BUILD]  Adaptive (t=0)   (params changed)
+[BUILD]  SODA             (params changed)
+[BUILD]  Hybrid           (params changed)
+[BUILD]  Scan-ARE         (params changed)
+[BUILD]  Greedy+Merge     (params changed)
+Truncation(K=4)  |     0.00 |       0.999993
+Adaptive(K=4)    |     0.00 |       0.999995
+SODA(K=4)        |     0.00 |       1.000000
+Hybrid(K=4)      |     0.00 |       0.999993
+Scan-ARE(K=4)    |     0.00 |       0.999993
+Greedy+Merge(K=4) |     0.00 |       0.999993
+Truncation(K=5)  |     0.00 |       0.999993
+Adaptive(K=5)    |     0.00 |       0.999995
+SODA(K=5)        |     0.00 |       1.000000
+Hybrid(K=5)      |     0.00 |       0.999993
+Scan-ARE(K=5)    |     0.00 |       0.999993
+Greedy+Merge(K=5) |     0.00 |       0.999993
+Truncation(K=6)  |     0.00 |       0.999993
+Adaptive(K=6)    |     0.00 |       0.999995
+SODA(K=6)        |     0.00 |       1.000000
+Hybrid(K=6)      |     0.00 |       0.999993
+Scan-ARE(K=6)    |     0.00 |       0.999993
+Greedy+Merge(K=6) |     0.04 |       0.999993
+Truncation(K=7)  |     0.00 |       0.999993
+Adaptive(K=7)    |     0.00 |       0.999995
+SODA(K=7)        |     0.00 |       1.000000
+Hybrid(K=7)      |     0.00 |       0.999993
+Scan-ARE(K=7)    |     0.00 |       0.999993
+Greedy+Merge(K=7) |     0.35 |       0.999993
+Truncation(K=8)  |     0.00 |       0.999993
+Adaptive(K=8)    |     0.00 |       0.999995
+SODA(K=8)        |     0.00 |       1.000000
+Hybrid(K=8)      |     0.00 |       0.999993
+Scan-ARE(K=8)    |     0.00 |       0.999993
+Greedy+Merge(K=8) |     1.12 |       0.999993
+Truncation(K=9)  |     0.00 |       0.999993
+Adaptive(K=9)    |     0.00 |       0.999995
+SODA(K=9)        |     0.00 |       1.000000
+Hybrid(K=9)      |     0.00 |       0.999993
+Scan-ARE(K=9)    |     0.00 |       0.999993
+Greedy+Merge(K=9) |     2.36 |       0.999993
+Truncation(K=10) |     0.00 |       0.999993
+Adaptive(K=10)   |     0.00 |       0.999995
+SODA(K=10)       |     0.00 |       1.000000
+Hybrid(K=10)     |     0.00 |       0.999993
+Scan-ARE(K=10)   |     0.00 |       0.999993
+Greedy+Merge(K=10) |     3.99 |       0.999993
+Truncation(K=11) |     0.00 |       0.999993
+Adaptive(K=11)   |     0.00 |       0.999995
+SODA(K=11)       |     0.00 |       1.000000
+Hybrid(K=11)     |     0.00 |       0.999993
+Scan-ARE(K=11)   |     0.00 |       0.999993
+Greedy+Merge(K=11) |     5.86 |       0.999993
+Truncation(K=12) |     0.00 |       0.999993
+Adaptive(K=12)   |     0.00 |       0.999995
+SODA(K=12)       |     0.00 |       1.000000
+Hybrid(K=12)     |     0.00 |       0.999993
+Scan-ARE(K=12)   |     0.00 |       0.999993
+Greedy+Merge(K=12) |     7.74 |       0.999992
+Truncation(K=13) |     0.00 |       0.999993
+Adaptive(K=13)   |     0.00 |       0.999995
+SODA(K=13)       |     0.00 |       1.000000
+Hybrid(K=13)     |     0.00 |       0.999993
+Scan-ARE(K=13)   |     0.00 |       0.999993
+Greedy+Merge(K=13) |     9.33 |       0.999992
+Truncation(K=14) |     0.00 |       0.999993
+Adaptive(K=14)   |     0.00 |       0.999995
+SODA(K=14)       |     0.00 |       1.000000
+Hybrid(K=14)     |     0.00 |       0.999993
+Scan-ARE(K=14)   |     0.00 |       0.999993
+Greedy+Merge(K=14) |    10.44 |       0.983708
+Truncation(K=15) |     0.00 |       0.999980
+Adaptive(K=15)   |     0.01 |       0.999995
+SODA(K=15)       |     0.01 |       1.000000
+Hybrid(K=15)     |     0.00 |       0.999980
+Scan-ARE(K=15)   |     0.01 |       0.999993
+Greedy+Merge(K=15) |    11.01 |       0.483123
+Truncation(K=16) |     0.01 |       0.999783
+Adaptive(K=16)   |     0.01 |       0.999995
+SODA(K=16)       |     0.01 |       1.000000
+Hybrid(K=16)     |     0.01 |       0.999783
+Scan-ARE(K=16)   |     0.01 |       0.999993
+Greedy+Merge(K=16) |    11.19 |       0.090527
+Truncation(K=17) |     0.02 |       0.999555
+Adaptive(K=17)   |     0.02 |       0.999995
+SODA(K=17)       |     0.02 |       1.000000
+Hybrid(K=17)     |     0.02 |       0.999555
+Scan-ARE(K=17)   |     0.02 |       0.999993
+Greedy+Merge(K=17) |    11.22 |       0.011066
+Truncation(K=18) |     0.04 |       0.998979
+Adaptive(K=18)   |     0.05 |       0.999995
+SODA(K=18)       |     0.05 |       1.000000
+Hybrid(K=18)     |     0.04 |       0.998979
+Scan-ARE(K=18)   |     0.05 |       0.999993
+Greedy+Merge(K=18) |    11.26 |       0.000623
+Truncation(K=19) |     0.07 |       0.998309
+Adaptive(K=19)   |     0.09 |       0.999995
+SODA(K=19)       |     0.09 |       1.000000
+Hybrid(K=19)     |     0.07 |       0.998309
+Scan-ARE(K=19)   |     0.09 |       0.999993
+Greedy+Merge(K=19) |    11.34 |       0.000016
+Truncation(K=20) |     0.14 |       0.997766
+Adaptive(K=20)   |     0.19 |       0.999995
+SODA(K=20)       |     0.19 |       1.000000
+Hybrid(K=20)     |     0.14 |       0.997766
+Scan-ARE(K=20)   |     0.19 |       0.999993
+Greedy+Merge(K=20) |    11.41 |       0.000000
+Truncation(K=22) |     0.45 |       0.997066
+Adaptive(K=22)   |     0.74 |       0.999155
+SODA(K=22)       |     0.74 |       0.999160
+Hybrid(K=22)     |     0.45 |       0.997066
+Scan-ARE(K=22)   |     0.74 |       0.999153
+Greedy+Merge(K=22) |    11.48 |       0.000000
+Truncation(K=24) |     1.20 |       0.996018
+Adaptive(K=24)   |     2.27 |       0.977875
+SODA(K=24)       |     2.27 |       0.977875
+Hybrid(K=24)     |     1.20 |       0.996018
+Scan-ARE(K=24)   |     2.27 |       0.977873
+Greedy+Merge(K=24) |    11.49 |       0.000000
+Truncation(K=28) |     4.74 |       0.971811
+Adaptive(K=28)   |     6.82 |       0.821057
+SODA(K=28)       |     6.82 |       0.821057
+Hybrid(K=28)     |     4.74 |       0.971811
+Scan-ARE(K=28)   |     6.82 |       0.821055
+Greedy+Merge(K=28) |    11.50 |       0.000000
+Truncation(K=32) |    10.56 |       0.514052
+Adaptive(K=32)   |    10.99 |       0.232087
+SODA(K=32)       |    10.99 |       0.232087
+Hybrid(K=32)     |    10.56 |       0.514052
+Scan-ARE(K=32)   |    10.99 |       0.232086
+Greedy+Merge(K=32) |    11.50 |       0.000000
+Truncation(K=36) |    15.00 |       0.000000
+Adaptive(K=36)   |    12.00 |       0.000000
+SODA(K=36)       |    15.00 |       0.000000
+Hybrid(K=36)     |    15.00 |       0.000000
+Scan-ARE(K=36)   |    12.00 |       0.000000
+Greedy+Merge(K=36) |    12.00 |       0.000000
+Truncation(K=40) |    19.00 |       0.000000
+Adaptive(K=40)   |    12.00 |       0.000000
+SODA(K=40)       |    19.00 |       0.000000
+Hybrid(K=40)     |    19.00 |       0.000000
+Scan-ARE(K=40)   |    12.00 |       0.000000
+Greedy+Merge(K=40) |    12.00 |       0.000000
+Truncation(K=48) |    27.00 |       0.000000
+Adaptive(K=48)   |    12.00 |       0.000000
+SODA(K=48)       |    27.00 |       0.000000
+Hybrid(K=48)     |    27.00 |       0.000000
+Scan-ARE(K=48)   |    12.00 |       0.000000
+Greedy+Merge(K=48) |    12.00 |       0.000000
+[BUILD]  CDF-ARE          (params changed)
+[BUILD]  BloomARE         (params changed)
+[BUILD]  Grafite          (params changed)
+[BUILD]  SNARF            (params changed)
+[BUILD]  SuRF             (params changed)
+[BUILD]  SuRFHash(8)      (params changed)
+[BUILD]  SuRFReal(8)      (params changed)
+Grafite(bpk=4)   |     4.25 |       0.918449
+SNARF(bpk=4)     |     3.37 |       0.993560
+Grafite(bpk=6)   |     6.47 |       0.820998
+SNARF(bpk=6)     |     5.36 |       0.979959
+Grafite(bpk=8)   |     8.58 |       0.645864
+SNARF(bpk=8)     |     7.37 |       0.920058
+Grafite(bpk=10)  |    10.62 |       0.229750
+SNARF(bpk=10)    |     9.38 |       0.662396
+SNARF(bpk=12)    |    11.37 |       0.014149
+SNARF(bpk=14)    |    13.36 |       0.004068
+SNARF(bpk=16)    |    15.37 |       0.004067
+SNARF(bpk=18)    |    17.38 |       0.004067
+SNARF(bpk=20)    |    19.37 |       0.004067
+SuRF             |    11.32 |       0.629033
+SuRFHash(8)      |    19.32 |       0.629033
+SuRFReal(8)      |    19.32 |       0.004371
+
+SVG written to ../bench_results/plots/N16777216/sosd_fb/L65536.svg
+--- PASS: TestTradeoff_SOSD_Facebook (3721.84s)
+    --- PASS: TestTradeoff_SOSD_Facebook/N=16777216 (3721.84s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=1 (0.02s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=16 (467.28s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=128 (492.82s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=1024 (584.95s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=4096 (753.70s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=16384 (979.52s)
+        --- PASS: TestTradeoff_SOSD_Facebook/N=16777216/L=65536 (443.23s)
+PASS
+ok  	Thesis-bench-industry/bench	3722.523s
