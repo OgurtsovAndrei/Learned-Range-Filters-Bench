@@ -1,0 +1,26 @@
+goos: darwin
+goarch: arm64
+pkg: Thesis/emptiness/ere
+cpu: Apple M4 Max
+BenchmarkExactRangeEmptiness_Query/KeySize=64/Keys=1024-16         	71727793	        33.50 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=64/Keys=8192-16         	68628208	        34.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=64/Keys=32768-16        	69408795	        34.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=64/Keys=262144-16       	67399006	        35.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=64/Keys=1048576-16      	71179653	        33.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=128/Keys=1024-16        	72691202	        32.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=128/Keys=8192-16        	66653937	        35.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=128/Keys=32768-16       	69967785	        34.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=128/Keys=262144-16      	71285716	        34.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=128/Keys=1048576-16     	44153121	        74.52 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=256/Keys=1024-16        	71768227	        33.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=256/Keys=8192-16        	67102678	        35.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=256/Keys=32768-16       	67427647	        35.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=256/Keys=262144-16      	66861835	        35.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=256/Keys=1048576-16     	70393016	        34.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=512/Keys=1024-16        	72960338	        33.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=512/Keys=8192-16        	65856720	        35.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=512/Keys=32768-16       	69098218	        34.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=512/Keys=262144-16      	71118399	        53.00 ns/op	       0 B/op	       0 allocs/op
+BenchmarkExactRangeEmptiness_Query/KeySize=512/Keys=1048576-16     	70502042	        34.10 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	Thesis/emptiness/ere	63.871s

@@ -1,0 +1,60 @@
+# Thesis-bench-industry/bench.test
+ld: warning: ignoring duplicate libraries: '-lc++', '-lm'
+=== RUN   TestEREBucketStats_SodaARE_Large
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_fb/n=134217728/L=16
+sosd_fb      n=134217728   L=16    | blocks=134217728  non-empty=14751796   avg=9.10 max=463
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_fb/n=134217728/L=256
+sosd_fb      n=134217728   L=256   | blocks=134217728  non-empty=1540315    avg=87.14 max=1589
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_fb/n=134217728/L=4096
+sosd_fb      n=134217728   L=4096  | blocks=134217728  non-empty=99155      avg=1353.62 max=6176
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_wiki/n=134217728/L=16
+sosd_wiki    n=65492346    L=16    | blocks=33554432   non-empty=48512      avg=1350.02 max=4054
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_wiki/n=134217728/L=256
+sosd_wiki    n=65492346    L=256   | blocks=33554432   non-empty=3174       avg=20634.01 max=62037
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_wiki/n=134217728/L=4096
+sosd_wiki    n=65492346    L=4096  | blocks=33554432   non-empty=199        avg=329107.27 max=956498
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_books/n=134217728/L=16
+sosd_books   n=134217728   L=16    | blocks=134217728  non-empty=185309     avg=724.29 max=978
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_books/n=134217728/L=256
+sosd_books   n=134217728   L=256   | blocks=134217728  non-empty=11582      avg=11588.48 max=14039
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_books/n=134217728/L=4096
+sosd_books   n=134217728   L=4096  | blocks=134217728  non-empty=724        avg=185383.60 max=218469
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_osm/n=536870912/L=16
+sosd_osm     n=536870912   L=16    | blocks=268435456  non-empty=231999951  avg=2.31 max=35
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_osm/n=536870912/L=256
+sosd_osm     n=536870912   L=256   | blocks=268435456  non-empty=231629855  avg=2.32 max=85
+=== RUN   TestEREBucketStats_SodaARE_Large/sosd_osm/n=536870912/L=4096
+sosd_osm     n=536870912   L=4096  | blocks=268435456  non-empty=228350787  avg=2.35 max=502
+--- PASS: TestEREBucketStats_SodaARE_Large (886.02s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_fb/n=134217728/L=16 (14.17s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_fb/n=134217728/L=256 (10.76s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_fb/n=134217728/L=4096 (10.66s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_wiki/n=134217728/L=16 (5.77s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_wiki/n=134217728/L=256 (3.53s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_wiki/n=134217728/L=4096 (3.37s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_books/n=134217728/L=16 (9.70s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_books/n=134217728/L=256 (12.48s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_books/n=134217728/L=4096 (9.36s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_osm/n=536870912/L=16 (302.88s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_osm/n=536870912/L=256 (260.74s)
+    --- PASS: TestEREBucketStats_SodaARE_Large/sosd_osm/n=536870912/L=4096 (237.39s)
+PASS
+ok  	Thesis-bench-industry/bench	889.208s
+      889.49 real       818.50 user       116.63 sys
+         30963761152  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+            32914277  page reclaims
+                1281  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+               50016  signals received
+               24881  voluntary context switches
+             2399316  involuntary context switches
+          2146103681  instructions retired
+          2330096014  cycles elapsed
+            20791920  peak memory footprint

@@ -1,0 +1,220 @@
+# Thesis-bench-industry/bench.test
+ld: warning: ignoring duplicate libraries: '-lc++', '-lm'
+[setup] dist=uniform/n=1048576: actualN=1048576 ready
+goos: darwin
+goarch: arm64
+pkg: Thesis-bench-industry/bench
+cpu: Apple M4 Max
+BenchmarkEREQueryLatency_Distributions/dist=uniform/n=1048576-16         	70611424	        33.53 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=uniform/n=1048576-16
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=1048576 actualN=1048576
+[setup] dist=uniform/n=4194304: actualN=4194304 ready
+BenchmarkEREQueryLatency_Distributions/dist=uniform/n=4194304-16         	70644074	        34.58 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=uniform/n=4194304-16
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=4194304 actualN=4194304
+[setup] dist=uniform/n=16777216: actualN=16777216 ready
+BenchmarkEREQueryLatency_Distributions/dist=uniform/n=16777216-16        	37549405	        65.44 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=uniform/n=16777216-16
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=16777216 actualN=16777216
+[setup] dist=uniform/n=67108864: actualN=67108864 ready
+BenchmarkEREQueryLatency_Distributions/dist=uniform/n=67108864-16        	62337122	        38.74 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=uniform/n=67108864-16
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=uniform requested_n=67108864 actualN=67108864
+[setup] dist=clustered/n=1048576: actualN=1047098 ready
+BenchmarkEREQueryLatency_Distributions/dist=clustered/n=1048576-16       	 4230720	       811.3 ns/op	      15 B/op	       1 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=clustered/n=1048576-16
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=1048576 actualN=1047098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=1048576 actualN=1047098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=1048576 actualN=1047098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=1048576 actualN=1047098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=1048576 actualN=1047098
+[setup] dist=clustered/n=4194304: actualN=4160152 ready
+BenchmarkEREQueryLatency_Distributions/dist=clustered/n=4194304-16       	 1000000	      2119 ns/op	      15 B/op	       1 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=clustered/n=4194304-16
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=4194304 actualN=4160152
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=4194304 actualN=4160152
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=4194304 actualN=4160152
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=4194304 actualN=4160152
+[setup] dist=clustered/n=16777216: actualN=15065680 ready
+BenchmarkEREQueryLatency_Distributions/dist=clustered/n=16777216-16      	  788769	      3051 ns/op	      15 B/op	       1 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=clustered/n=16777216-16
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=16777216 actualN=15065680
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=16777216 actualN=15065680
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=16777216 actualN=15065680
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=16777216 actualN=15065680
+[setup] dist=clustered/n=67108864: actualN=38173098 ready
+BenchmarkEREQueryLatency_Distributions/dist=clustered/n=67108864-16      	  297264	      7955 ns/op	      15 B/op	       1 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=clustered/n=67108864-16
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=67108864 actualN=38173098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=67108864 actualN=38173098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=67108864 actualN=38173098
+    ere_query_latency_bench_test.go:92: dist=clustered requested_n=67108864 actualN=38173098
+[setup] dist=sosd_fb/n=1048576: actualN=1048576 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=1048576-16         	11487892	       206.6 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=1048576-16
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=1048576 actualN=1048576
+[setup] dist=sosd_fb/n=4194304: actualN=4194304 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=4194304-16         	 9328588	       253.0 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=4194304-16
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=4194304 actualN=4194304
+[setup] dist=sosd_fb/n=16777216: actualN=16777216 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=16777216-16        	 7400352	       315.5 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=16777216-16
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=16777216 actualN=16777216
+[setup] dist=sosd_fb/n=67108864: actualN=67108864 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=67108864-16        	 3585151	       675.4 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_fb/n=67108864-16
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_fb requested_n=67108864 actualN=67108864
+[setup] dist=sosd_wiki/n=1048576: actualN=988851 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=1048576-16       	13179433	       186.5 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=1048576-16
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=1048576 actualN=988851
+[setup] dist=sosd_wiki/n=4194304: actualN=3901197 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=4194304-16       	11094956	       212.8 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=4194304-16
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=4194304 actualN=3901197
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=4194304 actualN=3901197
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=4194304 actualN=3901197
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=4194304 actualN=3901197
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=4194304 actualN=3901197
+[setup] dist=sosd_wiki/n=16777216: actualN=14060704 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=16777216-16      	10313480	       230.9 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=16777216-16
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=16777216 actualN=14060704
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=16777216 actualN=14060704
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=16777216 actualN=14060704
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=16777216 actualN=14060704
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=16777216 actualN=14060704
+[setup] dist=sosd_wiki/n=67108864: actualN=39896992 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=67108864-16      	 9925651	       245.3 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_wiki/n=67108864-16
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=67108864 actualN=39896992
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=67108864 actualN=39896992
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=67108864 actualN=39896992
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=67108864 actualN=39896992
+    ere_query_latency_bench_test.go:92: dist=sosd_wiki requested_n=67108864 actualN=39896992
+[setup] dist=sosd_osm/n=1048576: actualN=1048576 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=1048576-16        	10620698	       226.2 ns/op	       5 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=1048576-16
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=1048576 actualN=1048576
+[setup] dist=sosd_osm/n=4194304: actualN=4194304 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=4194304-16        	26165714	        92.61 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=4194304-16
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=4194304 actualN=4194304
+[setup] dist=sosd_osm/n=16777216: actualN=16777216 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=16777216-16       	32934121	        71.95 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=16777216-16
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=16777216 actualN=16777216
+[setup] dist=sosd_osm/n=67108864: actualN=67108864 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=67108864-16       	30551210	        80.02 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_osm/n=67108864-16
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_osm requested_n=67108864 actualN=67108864
+[setup] dist=sosd_books/n=1048576: actualN=1048576 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=1048576-16      	 5960581	       388.6 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=1048576-16
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=1048576 actualN=1048576
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=1048576 actualN=1048576
+[setup] dist=sosd_books/n=4194304: actualN=4194304 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=4194304-16      	 9478624	       253.6 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=4194304-16
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=4194304 actualN=4194304
+[setup] dist=sosd_books/n=16777216: actualN=16777216 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=16777216-16     	 7525658	       322.0 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=16777216-16
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=16777216 actualN=16777216
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=16777216 actualN=16777216
+[setup] dist=sosd_books/n=67108864: actualN=67108864 ready
+BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=67108864-16     	 7686290	       308.9 ns/op	      16 B/op	       2 allocs/op
+--- BENCH: BenchmarkEREQueryLatency_Distributions/dist=sosd_books/n=67108864-16
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=67108864 actualN=67108864
+    ere_query_latency_bench_test.go:92: dist=sosd_books requested_n=67108864 actualN=67108864
+PASS
+ok  	Thesis-bench-industry/bench	115.088s
+      115.76 real       107.63 user         3.19 sys
+          3994992640  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              283348  page reclaims
+                6890  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                8838  signals received
+                4051  voluntary context switches
+              143404  involuntary context switches
+          2034178436  instructions retired
+          2065596962  cycles elapsed
+            21250696  peak memory footprint
+EXIT=0

@@ -1,0 +1,27 @@
+goos: darwin
+goarch: arm64
+pkg: Thesis/emptiness/ere
+cpu: Apple M4 Max
+BenchmarkBucketSearch_Dense/w=15/n=4096/binary-16         	64463348	        36.93 ns/op
+BenchmarkBucketSearch_Dense/w=15/n=4096/linear-16         	 3385262	       712.1 ns/op
+BenchmarkBucketSearch_Dense/w=15/n=16384/binary-16        	51872965	        79.69 ns/op
+BenchmarkBucketSearch_Dense/w=15/n=16384/linear-16        	  854253	      2825 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=4096/binary-16         	60092266	        39.64 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=4096/linear-16         	 3412278	       707.7 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=16384/binary-16        	51706029	        46.50 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=16384/linear-16        	  842726	      2763 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=65536/binary-16        	43396760	        54.13 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=65536/linear-16        	  218758	     10981 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=131072/binary-16       	41389924	        57.97 ns/op
+BenchmarkBucketSearch_Dense/w=17/n=131072/linear-16       	  109426	     22079 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=4096/binary-16         	42757882	        81.75 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=4096/linear-16         	 3428064	       703.5 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=16384/binary-16        	53324098	        44.90 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=16384/linear-16        	  863348	      2758 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=65536/binary-16        	45976681	        52.29 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=65536/linear-16        	  224847	     10957 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=131072/binary-16       	42356864	        56.18 ns/op
+BenchmarkBucketSearch_Dense/w=20/n=131072/linear-16       	  108888	     22246 ns/op
+PASS
+ok  	Thesis/emptiness/ere	60.076s
+EXIT=0
