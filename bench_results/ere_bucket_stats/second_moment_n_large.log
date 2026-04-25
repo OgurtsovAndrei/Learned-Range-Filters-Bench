@@ -1,0 +1,74 @@
+# Thesis-bench-industry/bench.test
+ld: warning: ignoring duplicate libraries: '-lc++', '-lm'
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large
+distribution n            L      B            M            X_50       X_90       X_95       X_99       max        avg_unif     second_moment    ratio      wall_s    
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/uniform/n=1073741824/L=16
+uniform      1073741824   16     536870912    464213367    3          5          6          7          16         2.3125       2.9990           1.2969     465.60    
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/clustered/n=1073741824/L=16
+clustered    470832294    16     268435456    89508024     344        4065       4096       4096       4096       5.2598       1079.0979        205.1606   222.37    
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/clustered/n=1073741824/L=256
+clustered    470832294    256    268435456    88570682     5513       65026      65532      65536      65536      5.3159       17245.7461       3244.2038  217.89    
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/clustered/n=1073741824/L=4096
+clustered    470832294    4096   268435456    88504831     88200      1039504    1048517    1048576    1048576    5.3198       275610.0131      51807.8885 209.70    
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_fb/n=134217728/L=16
+sosd_fb      134217728    16     134217728    14751796     27         103        136        208        463        9.0984       42.6303          4.6855     15.14     
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_fb/n=134217728/L=256
+sosd_fb      134217728    256    134217728    1540315      208        545        660        886        1589       87.1365      258.3991         2.9655     11.80     
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_fb/n=134217728/L=4096
+sosd_fb      134217728    4096   134217728    99155        1759       2947       3336       4063       6176       1353.6153    1834.9384        1.3556     11.11     
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_wiki/n=134217728/L=16
+sosd_wiki    65492346     16     33554432     48512        3240       3843       3906       3972       4054       1350.0236    2822.7309        2.0909     3.79      
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_wiki/n=134217728/L=256
+sosd_wiki    65492346     256    33554432     3174         52565      58855      59721      60925      62037      20634.0095   44582.6310       2.1606     3.63      
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_wiki/n=134217728/L=4096
+sosd_wiki    65492346     4096   33554432     199          847135     938217     939041     956498     956498     329107.2663  708934.9703      2.1541     3.63      
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_books/n=134217728/L=16
+sosd_books   134217728    16     134217728    185309       812        875        888        911        978        724.2915     753.6175         1.0405     11.32     
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_books/n=134217728/L=256
+sosd_books   134217728    256    134217728    11582        13215      13670      13728      13826      14039      11588.4759   12009.7971       1.0364     11.36     
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_books/n=134217728/L=4096
+sosd_books   134217728    4096   134217728    724          211319     217641     217893     218144     218469     185383.6022  192094.6210      1.0362     11.03     
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_osm/n=536870912/L=16
+sosd_osm     536870912    16     268435456    231999951    3          5          6          7          35         2.3130       3.0020           1.2979     146.35    
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_osm/n=536870912/L=256
+sosd_osm     536870912    256    268435456    231629855    3          5          6          7          85         2.3177       3.0186           1.3024     139.57    
+=== RUN   TestEREBucketSecondMoment_SodaARE_Large/sosd_osm/n=536870912/L=4096
+sosd_osm     536870912    4096   268435456    228350787    3          5          6          8          502        2.3511       3.1391           1.3352     129.35    
+--- PASS: TestEREBucketSecondMoment_SodaARE_Large (1613.63s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/uniform/n=1073741824/L=16 (465.60s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/clustered/n=1073741824/L=16 (222.37s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/clustered/n=1073741824/L=256 (217.89s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/clustered/n=1073741824/L=4096 (209.70s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_fb/n=134217728/L=16 (15.14s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_fb/n=134217728/L=256 (11.80s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_fb/n=134217728/L=4096 (11.11s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_wiki/n=134217728/L=16 (3.79s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_wiki/n=134217728/L=256 (3.63s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_wiki/n=134217728/L=4096 (3.64s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_books/n=134217728/L=16 (11.32s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_books/n=134217728/L=256 (11.36s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_books/n=134217728/L=4096 (11.03s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_osm/n=536870912/L=16 (146.35s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_osm/n=536870912/L=256 (139.58s)
+    --- PASS: TestEREBucketSecondMoment_SodaARE_Large/sosd_osm/n=536870912/L=4096 (129.35s)
+PASS
+ok  	Thesis-bench-industry/bench	1614.248s
+     1614.55 real      1592.89 user        18.65 sys
+         24074682368  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+             1511997  page reclaims
+                1289  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+               67978  signals received
+                2824  voluntary context switches
+              874411  involuntary context switches
+          2172353686  instructions retired
+          2005993705  cycles elapsed
+            21348976  peak memory footprint
