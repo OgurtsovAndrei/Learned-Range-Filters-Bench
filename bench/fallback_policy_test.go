@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	mathbits "math/bits"
 	"math/rand"
 	"os"
 	"sort"
@@ -293,7 +294,7 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 			}
 			svgPath := fmt.Sprintf("%s/L%d.svg", plotDir, rangeLen)
 			err := testutils.GenerateTradeoffSVG(
-				fmt.Sprintf("FallbackPolicy — %s (60-bit keys, n=%d, L=%d)", distName, len(keys), rangeLen),
+				fmt.Sprintf("FallbackPolicy — %s (%d-bit keys, n=%d, L=%d)", distName, max(1, mathbits.Len64(keys[len(keys)-1])), len(keys), rangeLen),
 				"Bits per Key (BPK)",
 				"False Positive Rate (FPR)",
 				seriesList,

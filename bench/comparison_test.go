@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	mathbits "math/bits"
 	"math/rand"
 	"os"
 	"runtime"
@@ -107,6 +108,16 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				richData[name] = &richSeries{Name: name, FilterFamily: family}
 			}
 
+			// Actual key bit-width (max key value, ceil log2). Distribution-
+			// specific: SOSD-Books n=2^20 ≈ 22 bits, SOSD-OSM ≈ 56 bits,
+			// synthetic uniform/zipfian/temporal capped at 60 bits by their
+			// generators. Reported in plot title and terminal print so the
+			// reader knows the universe each filter operated on.
+			keyBits := mathbits.Len64(cfg.keys[len(cfg.keys)-1])
+			if keyBits == 0 {
+				keyBits = 1
+			}
+
 			dataDir := BenchResultsDataDir(cfg.n, cfg.distName)
 			os.MkdirAll(dataDir, 0755)
 			dataPath := fmt.Sprintf("%s/L%d.json", dataDir, rangeLen)
@@ -171,7 +182,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					}
 				}
 
-				fmt.Printf("\n=== Industry Comparison — %s (60-bit keys, %d keys, L=%d, %d runs) ===\n", cfg.distName, len(cfg.keys), rangeLen, nRuns)
+				fmt.Printf("\n=== Industry Comparison — %s (%d-bit keys, n=%d, L=%d, %d runs) ===\n", cfg.distName, keyBits, len(cfg.keys), rangeLen, nRuns)
 				fmt.Printf("%-16s | %8s | %14s\n", "Series", "BPK", "FPR(avg)")
 				fmt.Println(strings.Repeat("-", 45))
 
@@ -579,7 +590,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 			svgPath := fmt.Sprintf("%s/L%d.svg", BenchResultsPlotsDir(cfg.n, cfg.distName), rangeLen)
 			err := testutils.GenerateTradeoffSVG(
-				fmt.Sprintf("FPR vs BPK — %s (60-bit keys, n=%d, L=%d)", cfg.distName, len(cfg.keys), rangeLen),
+				fmt.Sprintf("FPR vs BPK — %s (%d-bit keys, n=%d, L=%d)", cfg.distName, keyBits, len(cfg.keys), rangeLen),
 				"Bits per Key (BPK)",
 				"False Positive Rate (FPR)",
 				orderedSeries,
