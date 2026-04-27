@@ -538,6 +538,21 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 			}
 
+			// ---- Annotate Grafite saturation if its library guard would clip
+			// inside the plot range. The X-marker + caption signal that
+			// Grafite cannot be measured beyond log2(U/n)+2 — not that we
+			// stopped sweeping prematurely.
+			if g := allSeries["Grafite"]; g != nil && len(cfg.keys) >= 2 {
+				universe := cfg.keys[len(cfg.keys)-1] - cfg.keys[0]
+				if universe > 0 {
+					maxBPK := math.Log2(float64(universe)/float64(len(cfg.keys))) + 2
+					if maxBPK < DefaultXMax {
+						g.EndStop = true
+						g.EndCaption = "(library limit)"
+					}
+				}
+			}
+
 			// ---- Generate SVG ----
 			orderedSeries := []testutils.SeriesData{
 				*allSeries["Theoretical"],
