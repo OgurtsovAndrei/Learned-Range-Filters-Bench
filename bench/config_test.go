@@ -41,16 +41,21 @@ type SeriesStyle struct {
 }
 
 // DefaultSeriesStyles is the unified 8-series set used on FPR-vs-BPK plots.
-// Mirrors the entries currently in comparison_test.go's allSeries map.
+// The palette uses brightness/temperature contrast to separate three groups:
+//   - This work (Greedy+Merge, Scan-ARE) — WARM and VIVID (orange, fuchsia).
+//     Scan-ARE is the headline so it gets the brightest accent.
+//   - Industry/baselines (Grafite, SNARF, SuRF, SODA) — COOL and DARK
+//     (teal, navy, near-black, violet). Reads as one "establishment" family.
+//   - References (Theoretical lower bound, BloomARE trivial) — MUTED DASHED.
 var DefaultSeriesStyles = map[string]SeriesStyle{
 	"Theoretical":  {Name: "Theoretical", Color: "#ef4444", Dashed: true, Marker: "circle"},
-	"Grafite":      {Name: "Grafite", Color: "#1a6b3c", Marker: "diamond"},
-	"SNARF":        {Name: "SNARF", Color: "#1a3a6b", Marker: "star"},
-	"SuRFReal(8)":  {Name: "SuRFReal(8)", Color: "#111111", Marker: "diamond"},
-	"SODA":         {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
-	"Scan-ARE":     {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
-	"Greedy+Merge": {Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"},
-	"BloomARE":     {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
+	"Grafite":      {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
+	"SNARF":        {Name: "SNARF", Color: "#1e3a8a", Marker: "star"},
+	"SuRFReal(8)":  {Name: "SuRFReal(8)", Color: "#0f172a", Marker: "diamond"},
+	"SODA":         {Name: "SODA", Color: "#6d28d9", Marker: "diamond"},
+	"Scan-ARE":     {Name: "Scan-ARE", Color: "#d946ef", Marker: "star"},
+	"Greedy+Merge": {Name: "Greedy+Merge", Color: "#ea580c", Marker: "diamond"},
+	"BloomARE":     {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
 }
 
 // ---- Helpers ----
