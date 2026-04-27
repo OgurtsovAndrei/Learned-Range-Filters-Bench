@@ -35,7 +35,18 @@ type benchConfig struct {
 	queryStrategyParams map[string]interface{} // e.g. smart_mix weights
 }
 
-// tryGrafite returns nil when the requested bpk exceeds what the key universe can support.
+// tryGrafite returns nil when the requested bpk exceeds what the Grafite
+// C++ library can physically accommodate. The library encodes the filter
+// using Elias-Fano on an array of size ~ bpk*n bits over a universe of
+// ~ log2(universe/n) bits per element; once bpk grows past
+// log2(universe/n) + ~2, the internal sizing asserts and the process is
+// SIGABRT'd from inside the C++ library (verified empirically on
+// SOSD-FB @ n=2^20 at bpk=12 with universe/n=357). The guard is therefore
+// not an aesthetic skip — it prevents a hard library crash.
+//
+// Visually the consequence is that Grafite curves on the FPR-vs-BPK plot
+// terminate around bpk = log2(universe/n) + 2, which is also the regime
+// where the filter's marginal FPR gain has flattened to ~0 anyway.
 func tryGrafite(keys []uint64, bpk float64) *grafite.GrafiteFilter {
 	if len(keys) < 2 {
 		return nil
