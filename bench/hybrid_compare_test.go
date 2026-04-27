@@ -427,6 +427,7 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		YLabel: "Build Time (ns/key)",
 		XScale: testutils.Log10,
 		YScale: testutils.Log10,
+		XMax:   25,
 	}, svgSeries, svgPath)
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)

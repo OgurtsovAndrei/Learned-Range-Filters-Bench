@@ -901,6 +901,7 @@ func TestDistributionVisualization(t *testing.T) {
 		Title:  fmt.Sprintf("CDF of Key Distributions (n=%d, normalized)", n),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
+		XMax:   25,
 	}, cdfSeries, "../bench_results/plots/distributions/cdf_all.svg")
 	if err != nil {
 		t.Errorf("CDF SVG failed: %v", err)
@@ -922,6 +923,7 @@ func TestDistributionVisualization(t *testing.T) {
 		Title:  fmt.Sprintf("Key Density — All Distributions (n=%d, 200 bins)", n),
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
+		XMax:   25,
 	}, histAllSeries, "../bench_results/plots/distributions/hist_all.svg")
 	if err != nil {
 		t.Errorf("combined histogram SVG failed: %v", err)
@@ -942,6 +944,7 @@ func TestDistributionVisualization(t *testing.T) {
 			Title:  fmt.Sprintf("Key Density — %s (n=%d, 200 bins)", d.name, n),
 			XLabel: "Normalized Key Position",
 			YLabel: "Relative Density",
+			XMax:   25,
 		}, histSeries, path)
 		if err != nil {
 			t.Errorf("histogram SVG failed for %s: %v", d.name, err)

@@ -148,6 +148,7 @@ func TestBuildTimePerKey(t *testing.T) {
 		YLabel: "Build Time (ns/key)",
 		XScale: testutils.Log10,
 		YScale: testutils.Log10,
+		XMax:   25,
 	}, allSeries, "../bench_results/plots/build_time_per_key.svg")
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)
@@ -358,6 +359,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 		YLabel: "Query Time (ns/op)",
 		XScale: testutils.Log10,
 		YScale: testutils.Linear,
+		XMax:   25,
 	}, allSeries, "../bench_results/plots/query_time_vs_rangelen.svg")
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)

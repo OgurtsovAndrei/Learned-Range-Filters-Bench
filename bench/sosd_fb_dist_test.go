@@ -72,6 +72,7 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -91,6 +92,7 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 		Title:  fmt.Sprintf("CDF — sosd_fb (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
+		XMax:   25,
 	}, cdfSeries, cdfPath)
 	if err != nil {
 		t.Errorf("CDF SVG failed: %v", err)
@@ -120,6 +122,7 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -138,6 +141,7 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 		Title:  fmt.Sprintf("CDF — sosd_wiki (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
+		XMax:   25,
 	}, cdfSeries, cdfPath)
 	if err != nil {
 		t.Errorf("CDF SVG failed: %v", err)
@@ -167,6 +171,7 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -185,6 +190,7 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 		Title:  fmt.Sprintf("CDF — sosd_osm (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
+		XMax:   25,
 	}, cdfSeries, cdfPath)
 	if err != nil {
 		t.Errorf("CDF SVG failed: %v", err)
@@ -214,6 +220,7 @@ func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -232,6 +239,7 @@ func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
 		Title:  fmt.Sprintf("CDF — sosd_books (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
+		XMax:   25,
 	}, cdfSeries, cdfPath)
 	if err != nil {
 		t.Errorf("CDF SVG failed: %v", err)
