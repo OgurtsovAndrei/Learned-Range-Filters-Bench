@@ -7,7 +7,7 @@ import (
 func generateUniformQueries(count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
 	queries := make([][2]uint64, count)
 	for i := range queries {
-		a := rng.Uint64() & mask60
+		a := rng.Uint64() & Mask60
 		queries[i] = [2]uint64{a, a + rangeLen - 1}
 	}
 	return queries
@@ -20,11 +20,11 @@ func generateZipfianQueries(count int, prefixes []uint64, rangeLen uint64, rng *
 	for i := 0; i < nHotQ; i++ {
 		pref := prefixes[rng.Intn(nTop)]
 		a := (pref << 20) | (rng.Uint64() & ((1 << 20) - 1))
-		a &= mask60
+		a &= Mask60
 		queries[i] = [2]uint64{a, a + rangeLen - 1}
 	}
 	for i := nHotQ; i < count; i++ {
-		a := rng.Uint64() & mask60
+		a := rng.Uint64() & Mask60
 		queries[i] = [2]uint64{a, a + rangeLen - 1}
 	}
 	return queries
@@ -42,7 +42,7 @@ func generateTemporalQueries(count int, keys []uint64, rangeLen uint64, rng *ran
 		} else {
 			a = minK + uint64(rng.Int63n(int64(spread)))
 		}
-		a &= mask60
+		a &= Mask60
 		queries[i] = [2]uint64{a, a + rangeLen - 1}
 	}
 	return queries

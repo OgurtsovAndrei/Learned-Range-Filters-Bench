@@ -123,10 +123,9 @@ func TestBuildTimePerKey(t *testing.T) {
 			for i, v := range keysU64 {
 				keysBS[i] = testutils.TrieBS(v)
 			}
-			maskedKeys := mask60Keys(keysU64)
 
 			start := time.Now()
-			err := fd.build(keysBS, keysU64, maskedKeys)
+			err := fd.build(keysBS, keysU64, keysU64)
 			dur := time.Since(start)
 
 			if err != nil {
@@ -206,7 +205,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 	for i, v := range keysU64 {
 		keysBS[i] = testutils.TrieBS(v)
 	}
-	maskedKeys := mask60Keys(keysU64)
+	maskedKeys := keysU64
 
 	type filterDef struct {
 		name   string
@@ -325,12 +324,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 				continue
 			}
 
-			// CGo filters use masked queries
 			queries := rawQueries
-			isCGo := batchQuery != nil
-			if isCGo {
-				queries = mask60Queries(rawQueries)
-			}
 
 			var dur time.Duration
 			if batchQuery != nil {
@@ -510,11 +504,11 @@ func TestScalability(t *testing.T) {
 			for i, v := range keysU64 {
 				keysBS[i] = testutils.TrieBS(v)
 			}
-			maskedKeys := mask60Keys(keysU64)
+			maskedKeys := keysU64
 
 			qrng := rand.New(rand.NewSource(12345))
 			rawQueries := testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng)
-			maskedQueries := mask60Queries(rawQueries)
+			maskedQueries := rawQueries
 
 			fmt.Printf("\n=== n=%d (ε=%.3f, rangeLen=%d, %d queries) ===\n", n, eps, rangeLen, queryCount)
 			fmt.Printf("%-16s | %8s | %12s | %12s | %12s | %s\n",

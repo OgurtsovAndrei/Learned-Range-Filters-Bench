@@ -341,7 +341,7 @@ func TestFallbackPolicy_Clustered(t *testing.T) {
 	if keys == nil {
 		rng := rand.New(rand.NewSource(99))
 		raw, cls := testutils.GenerateClusterDistribution(n, nClusters, unifFrac, rng)
-		keys = mask60Keys(raw)
+		keys = raw
 		clusters = cls
 		saveSyntheticKeys(keysPath, keys)
 		meta := make([]clusterMeta, len(clusters))
@@ -355,7 +355,7 @@ func TestFallbackPolicy_Clustered(t *testing.T) {
 
 	runFallbackPolicyBench(t, "clustered", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
-		return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng))
+		return testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng)
 	})
 }
 
@@ -420,7 +420,6 @@ func TestFallbackPolicy_SOSD_Facebook(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
-	keys = mask60Keys(keys)
 	runFallbackPolicyBench(t, "sosd_fb", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
@@ -432,7 +431,6 @@ func TestFallbackPolicy_SOSD_Wiki(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
-	keys = mask60Keys(keys)
 	runFallbackPolicyBench(t, "sosd_wiki", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
@@ -444,7 +442,6 @@ func TestFallbackPolicy_SOSD_OSM(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
-	keys = mask60Keys(keys)
 	runFallbackPolicyBench(t, "sosd_osm", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
@@ -456,7 +453,6 @@ func TestFallbackPolicy_SOSD_OSM_UnifQueries(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
-	keys = mask60Keys(keys)
 	runFallbackPolicyBench(t, "sosd_osm_unifq", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateUniformQueries(queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})
@@ -468,7 +464,6 @@ func TestFallbackPolicy_SOSD_Books(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
-	keys = mask60Keys(keys)
 	runFallbackPolicyBench(t, "sosd_books", keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
 	})

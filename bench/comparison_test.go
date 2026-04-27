@@ -605,7 +605,7 @@ func TestTradeoff_Clustered(t *testing.T) {
 			if keys == nil {
 				rng := rand.New(rand.NewSource(99))
 				rawKeys, cls := testutils.GenerateClusterDistribution(n, nClusters, unifFrac, rng)
-				keys = mask60Keys(rawKeys)
+				keys = rawKeys
 				clusters = cls
 
 				if err := saveSyntheticKeys(keysPath, keys); err != nil {
@@ -633,7 +633,7 @@ func TestTradeoff_Clustered(t *testing.T) {
 				queryCount: queryCount,
 				queryFunc: func(rangeLen uint64, seed int64) [][2]uint64 {
 					qrng := rand.New(rand.NewSource(seed))
-					return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng))
+					return testutils.GenerateClusterQueries(queryCount, clusters, unifFrac, rangeLen, qrng)
 				},
 				keySource:     "synthetic",
 				keyFile:       fmt.Sprintf("clustered_%d.bin", n),
@@ -887,7 +887,7 @@ func TestDistributionVisualization(t *testing.T) {
 		{"clustered", func() []uint64 {
 			rng := rand.New(rand.NewSource(99))
 			raw, _ := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
-			return mask60Keys(raw)
+			return raw
 		}(), "#2a7fff"},
 		{"uniform", generateUniformKeys(n, rand.New(rand.NewSource(42))), "#22a06b"},
 		{"spread", generateSpreadKeys(n), "#e05d10"},

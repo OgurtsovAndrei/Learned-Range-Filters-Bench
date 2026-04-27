@@ -60,7 +60,7 @@ func TestGenerateSyntheticKeys(t *testing.T) {
 			func() []uint64 {
 				rng := rand.New(rand.NewSource(99))
 				raw, _ := testutils.GenerateClusterDistribution(1<<24, 5, 0.15, rng)
-				return mask60Keys(raw)
+				return raw
 			},
 		},
 		{

@@ -18,36 +18,6 @@ import (
 	"time"
 )
 
-const mask60 = (uint64(1) << 60) - 1
-
-func mask60Keys(raw []uint64) []uint64 {
-	seen := make(map[uint64]bool, len(raw))
-	masked := make([]uint64, 0, len(raw))
-	for _, k := range raw {
-		k &= mask60
-		if !seen[k] {
-			seen[k] = true
-			masked = append(masked, k)
-		}
-	}
-	sort.Slice(masked, func(i, j int) bool { return masked[i] < masked[j] })
-	return masked
-}
-
-func mask60Queries(queries [][2]uint64) [][2]uint64 {
-	out := make([][2]uint64, len(queries))
-	for i, q := range queries {
-		a := q[0] & mask60
-		b := q[1] & mask60
-		if b < a {
-			// rangeLen crossed the mask boundary; just use a single-point query
-			b = a
-		}
-		out[i] = [2]uint64{a, b}
-	}
-	return out
-}
-
 // benchConfig parameterises a single distribution benchmark.
 type benchConfig struct {
 	distName   string

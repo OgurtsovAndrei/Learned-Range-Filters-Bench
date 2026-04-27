@@ -14,7 +14,7 @@ func TestBatchConsistency(t *testing.T) {
 	seen := make(map[uint64]bool)
 	raw := make([]uint64, 0, 1000)
 	for len(raw) < 1000 {
-		v := rng.Uint64() & mask60
+		v := rng.Uint64() & Mask60
 		if !seen[v] {
 			seen[v] = true
 			raw = append(raw, v)
@@ -24,10 +24,10 @@ func TestBatchConsistency(t *testing.T) {
 
 	queries := make([][2]uint64, 2048)
 	for i := range queries {
-		lo := rng.Uint64() & mask60
+		lo := rng.Uint64() & Mask60
 		hi := lo + uint64(rng.Intn(1000))
-		if hi > mask60 {
-			hi = mask60
+		if hi > Mask60 {
+			hi = Mask60
 		}
 		queries[i] = [2]uint64{lo, hi}
 	}

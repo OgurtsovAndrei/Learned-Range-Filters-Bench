@@ -446,7 +446,7 @@ func TestHybridCompare_FPR_Clustered(t *testing.T) {
 	keys := cacheOrGenerate("../bench/synthetic_data", "clustered", n, func() []uint64 {
 		rng := rand.New(rand.NewSource(99))
 		raw, _ := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
-		return mask60Keys(raw)
+		return raw
 	})
 
 	rng := rand.New(rand.NewSource(99))
@@ -454,7 +454,7 @@ func TestHybridCompare_FPR_Clustered(t *testing.T) {
 
 	runHybridCompareFPR(t, "clustered", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
-		return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, 0.15, rangeLen, qrng))
+		return testutils.GenerateClusterQueries(queryCount, clusters, 0.15, rangeLen, qrng)
 	})
 }
 
@@ -545,7 +545,6 @@ func TestHybridCompare_FPR_SOSD_Facebook(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_fb", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -562,7 +561,6 @@ func TestHybridCompare_FPR_SOSD_Wiki(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_wiki", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -579,7 +577,6 @@ func TestHybridCompare_FPR_SOSD_OSM(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_osm", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -596,7 +593,6 @@ func TestHybridCompare_FPR_SOSD_Books(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_books", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -613,7 +609,7 @@ func TestHybridCompare_FPR_1M_Clustered(t *testing.T) {
 	keys := cacheOrGenerate("../bench/synthetic_data", "clustered", n, func() []uint64 {
 		rng := rand.New(rand.NewSource(99))
 		raw, _ := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
-		return mask60Keys(raw)
+		return raw
 	})
 
 	rng := rand.New(rand.NewSource(99))
@@ -621,7 +617,7 @@ func TestHybridCompare_FPR_1M_Clustered(t *testing.T) {
 
 	runHybridCompareFPR(t, "clustered", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		qrng := rand.New(rand.NewSource(seed))
-		return mask60Queries(testutils.GenerateClusterQueries(queryCount, clusters, 0.15, rangeLen, qrng))
+		return testutils.GenerateClusterQueries(queryCount, clusters, 0.15, rangeLen, qrng)
 	})
 }
 
@@ -712,7 +708,6 @@ func TestHybridCompare_FPR_1M_SOSD_Facebook(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_fb", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -729,7 +724,6 @@ func TestHybridCompare_FPR_1M_SOSD_Wiki(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_wiki", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -746,7 +740,6 @@ func TestHybridCompare_FPR_1M_SOSD_OSM(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_osm", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -763,7 +756,6 @@ func TestHybridCompare_FPR_1M_SOSD_Books(t *testing.T) {
 	if err != nil {
 		t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 	}
-	keys = mask60Keys(keys)
 
 	runHybridCompareFPR(t, "sosd_books", n, keys, func(rangeLen uint64, seed int64) [][2]uint64 {
 		return generateSmartQueries(keys, queryCount, rangeLen, rand.New(rand.NewSource(seed)))
@@ -778,9 +770,8 @@ func TestHybridCompare_BuildTime_Clustered(t *testing.T) {
 	runHybridCompareBuildTime(t, "clustered", hybridBuildNValues, func(n int) []uint64 {
 		rng := rand.New(rand.NewSource(99))
 		raw, _ := testutils.GenerateClusterDistribution(n, 5, 0.15, rng)
-		keys := mask60Keys(raw)
-		sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-		return keys
+		sort.Slice(raw, func(i, j int) bool { return raw[i] < raw[j] })
+		return raw
 	})
 }
 
@@ -829,7 +820,7 @@ func TestHybridCompare_BuildTime_SOSD_Facebook(t *testing.T) {
 			t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 			return nil
 		}
-		return mask60Keys(keys)
+		return keys
 	})
 }
 
@@ -841,7 +832,7 @@ func TestHybridCompare_BuildTime_SOSD_Wiki(t *testing.T) {
 			t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 			return nil
 		}
-		return mask60Keys(keys)
+		return keys
 	})
 }
 
@@ -853,7 +844,7 @@ func TestHybridCompare_BuildTime_SOSD_OSM(t *testing.T) {
 			t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 			return nil
 		}
-		return mask60Keys(keys)
+		return keys
 	})
 }
 
@@ -865,6 +856,6 @@ func TestHybridCompare_BuildTime_SOSD_Books(t *testing.T) {
 			t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 			return nil
 		}
-		return mask60Keys(keys)
+		return keys
 	})
 }

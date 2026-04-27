@@ -70,7 +70,7 @@ func generateUniformKeys(n int, rng *rand.Rand) []uint64 {
 	seen := make(map[uint64]bool, n)
 	keys := make([]uint64, 0, n)
 	for len(keys) < n {
-		k := rng.Uint64() & mask60
+		k := rng.Uint64() & Mask60
 		if !seen[k] {
 			seen[k] = true
 			keys = append(keys, k)
@@ -104,7 +104,7 @@ func generateZipfianKeys(n, nPrefixes int, rng *rand.Rand) ([]uint64, []uint64) 
 	for len(keys) < nHot {
 		pref := prefixes[rng.Intn(nTop)]
 		k := (pref << 20) | (rng.Uint64() & ((1 << 20) - 1))
-		k &= mask60
+		k &= Mask60
 		if !seen[k] {
 			seen[k] = true
 			keys = append(keys, k)
@@ -113,7 +113,7 @@ func generateZipfianKeys(n, nPrefixes int, rng *rand.Rand) ([]uint64, []uint64) 
 	for len(keys) < n {
 		pref := prefixes[nTop+rng.Intn(nPrefixes-nTop)]
 		k := (pref << 20) | (rng.Uint64() & ((1 << 20) - 1))
-		k &= mask60
+		k &= Mask60
 		if !seen[k] {
 			seen[k] = true
 			keys = append(keys, k)
@@ -133,7 +133,7 @@ func generateTemporalKeys(n int, rng *rand.Rand) []uint64 {
 	for len(raw) < n*3/2 {
 		offset := int64(rng.NormFloat64() * jitter)
 		k := uint64(int64(pos) + offset)
-		k &= mask60
+		k &= Mask60
 		raw = append(raw, k)
 		pos += step
 	}
