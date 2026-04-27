@@ -174,13 +174,16 @@ type seriesParamsEpsilon struct {
 
 // seriesParamsBPKSweep holds hyperparameters for BPK-sweep CGo filters.
 type seriesParamsBPKSweep struct {
-	Type       string    `json:"type"`
-	BPKSweep   []float64 `json:"bpkSweep"`
-	RangeLen   uint64    `json:"rangeLen"`
-	NKeys      int       `json:"nKeys"`
-	QuerySeeds []int64   `json:"querySeeds"`
-	QueryCount int       `json:"queryCount"`
-	NRuns      int       `json:"nRuns"`
+	Type               string    `json:"type"`
+	BPKSweep           []float64 `json:"bpkSweep"`
+	RangeLen           uint64    `json:"rangeLen"`
+	NKeys              int       `json:"nKeys"`
+	QuerySeeds         []int64   `json:"querySeeds"`
+	QueryCount         int       `json:"queryCount"`
+	NRuns              int       `json:"nRuns"`
+	AdaptiveBPKGap     float64   `json:"adaptiveBPKGap"`
+	AdaptiveLogFPRDrop float64   `json:"adaptiveLogFPRDrop"`
+	AdaptiveTailStep   float64   `json:"adaptiveTailStep"`
 }
 
 // seriesParamsTheoretical holds hyperparameters for the Theoretical series.
@@ -220,13 +223,16 @@ func buildParamsEpsilon(epsilons []float64, rangeLen uint64, nKeys, queryCount i
 
 func buildParamsBPKSweep(bpkSweep []float64, rangeLen uint64, nKeys, queryCount int, seeds []int64, nRuns int) json.RawMessage {
 	p := seriesParamsBPKSweep{
-		Type:       "bpksweep",
-		BPKSweep:   bpkSweep,
-		RangeLen:   rangeLen,
-		NKeys:      nKeys,
-		QuerySeeds: seeds,
-		QueryCount: queryCount,
-		NRuns:      nRuns,
+		Type:               "bpksweep",
+		BPKSweep:           bpkSweep,
+		RangeLen:           rangeLen,
+		NKeys:              nKeys,
+		QuerySeeds:         seeds,
+		QueryCount:         queryCount,
+		NRuns:              nRuns,
+		AdaptiveBPKGap:     AdaptiveBPKGap,
+		AdaptiveLogFPRDrop: AdaptiveLogFPRDrop,
+		AdaptiveTailStep:   AdaptiveTailStep,
 	}
 	b, _ := json.Marshal(p)
 	return b

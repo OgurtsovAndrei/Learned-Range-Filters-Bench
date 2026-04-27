@@ -16,10 +16,50 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
 )
+
+// computeRefinedBPK returns the additional BPK values to measure for one CGo
+// series after its initial DefaultBPKSweep is complete. One refinement pass.
+//
+// points: existing (BPK, FPR) measurements for the series, sorted by BPK ascending.
+// floor:  the noise floor computed via DefaultYFloor (below which FPR can't be observed).
+// xMax:   hard X-axis cap (DefaultXMax).
+//
+// Returns: BPK values to additionally measure; empty if the curve is already
+// well-resolved or has reached the floor below xMax.
+func computeRefinedBPK(points []testutils.Point, floor, xMax float64) []float64 {
+	if len(points) < 2 {
+		return nil
+	}
+	var extra []float64
+	// Mid-point insertion for steep drops.
+	for i := 0; i < len(points)-1; i++ {
+		bpkDelta := points[i+1].X - points[i].X
+		if bpkDelta < AdaptiveBPKGap {
+			continue
+		}
+		// Skip if either FPR is already at or below floor (no signal in the gap).
+		if points[i].Y <= floor || points[i+1].Y <= floor {
+			continue
+		}
+		logDrop := math.Abs(math.Log10(points[i].Y) - math.Log10(points[i+1].Y))
+		if logDrop < AdaptiveLogFPRDrop {
+			continue
+		}
+		mid := (points[i].X + points[i+1].X) / 2
+		extra = append(extra, mid)
+	}
+	// Tail extension: one probe past the last measurement.
+	last := points[len(points)-1]
+	if last.Y > floor && last.X+AdaptiveTailStep <= xMax {
+		extra = append(extra, last.X+AdaptiveTailStep)
+	}
+	return extra
+}
 
 func runTradeoffBench(t *testing.T, cfg benchConfig) {
 	nRuns := DefaultNRuns
@@ -390,6 +430,50 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 								richPoint{SweepParam: bpk, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
 							fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.0f)", bpk), actualBPK, fpr)
 						}
+					}
+
+					// ---- Adaptive single-pass midpoint refinement (Grafite, SNARF) ----
+					floor := DefaultYFloor(cfg.queryCount, nRuns)
+					for _, name := range []string{"Grafite", "SNARF"} {
+						if !rebuildCGoSeries[name] {
+							continue
+						}
+						sort.Slice(allSeries[name].Points, func(i, j int) bool {
+							return allSeries[name].Points[i].X < allSeries[name].Points[j].X
+						})
+						extraBPK := computeRefinedBPK(allSeries[name].Points, floor, DefaultXMax)
+						for _, bpk := range extraBPK {
+							switch name {
+							case "Grafite":
+								if f := tryGrafite(cfg.keys, bpk); f != nil {
+									sizeBits := f.SizeInBits()
+									actualBPK := float64(sizeBits) / float64(len(cfg.keys))
+									fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
+									allSeries["Grafite"].Points = append(allSeries["Grafite"].Points,
+										testutils.Point{X: actualBPK, Y: fpr})
+									richData["Grafite"].Points = append(richData["Grafite"].Points,
+										richPoint{SweepParam: bpk, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
+									fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite(bpk=%.2f)*", bpk), actualBPK, fpr)
+								}
+							case "SNARF":
+								f := snarf.New(cfg.keys, bpk)
+								sizeBits := f.SizeInBits()
+								actualBPK := float64(sizeBits) / float64(len(cfg.keys))
+								fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
+								allSeries["SNARF"].Points = append(allSeries["SNARF"].Points,
+									testutils.Point{X: actualBPK, Y: fpr})
+								richData["SNARF"].Points = append(richData["SNARF"].Points,
+									richPoint{SweepParam: bpk, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
+								fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("SNARF(bpk=%.2f)*", bpk), actualBPK, fpr)
+							}
+						}
+						// Re-sort by BPK so plots render correctly.
+						sort.Slice(allSeries[name].Points, func(i, j int) bool {
+							return allSeries[name].Points[i].X < allSeries[name].Points[j].X
+						})
+						sort.Slice(richData[name].Points, func(i, j int) bool {
+							return richData[name].Points[i].BPK < richData[name].Points[j].BPK
+						})
 					}
 
 					type surfVariant struct {

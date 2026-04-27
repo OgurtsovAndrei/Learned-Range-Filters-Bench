@@ -71,3 +71,18 @@ func BenchResultsPlotsDir(n int, distName string) string {
 func DefaultYFloor(queryCount, runs int) float64 {
 	return 1.0 / float64(queryCount*runs)
 }
+
+// ---- Adaptive refinement thresholds ----
+//
+// After the initial DefaultBPKSweep is measured for a CGo filter, we add a
+// midpoint between adjacent measurements when:
+//   ΔBPK ≥ AdaptiveBPKGap AND
+//   |Δlog10(FPR)| ≥ AdaptiveLogFPRDrop
+//
+// We also extend the tail with a single +AdaptiveTailStep BPK probe while the
+// last measured FPR is still above the noise floor and BPK < DefaultXMax.
+const (
+	AdaptiveBPKGap     = 2.0 // BPK units
+	AdaptiveLogFPRDrop = 1.5 // log10 units
+	AdaptiveTailStep   = 2.0 // BPK units appended per tail extension
+)
