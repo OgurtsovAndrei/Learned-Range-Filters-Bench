@@ -41,20 +41,23 @@ type SeriesStyle struct {
 }
 
 // DefaultSeriesStyles is the unified 8-series set used on FPR-vs-BPK plots.
-// Two-axis visual contrast separates three semantic groups:
+// Two-axis visual contrast separates the academic line (this work + its
+// baseline) from the industry alternative:
 //
-//	                    Colour                          Marker
-//	This work           WARM, VIVID (orange, fuchsia)   circle (solid line)
-//	Industry/baselines  COOL, DARK (teal, navy, ...)    diamond
-//	References          MUTED DASHED (slate, gray)      circle (dashed line)
+//	                          Colour                              Marker
+//	This work + Goswami SODA  WARM (mustard, orange, fuchsia)     circle
+//	Industry baselines        COOL DARK (teal, navy, near-black)  diamond
+//	References                MUTED DASHED (slate, gray)          circle
 //
 // Scan-ARE is the headline so it gets the brightest accent (fuchsia).
+// SODA is the academic predecessor this work builds upon — same shape as
+// Greedy+Merge / Scan-ARE, distinct (warmer) hue.
 var DefaultSeriesStyles = map[string]SeriesStyle{
 	"Theoretical":  {Name: "Theoretical", Color: "#374151", Dashed: true, Marker: "circle"},
 	"Grafite":      {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
 	"SNARF":        {Name: "SNARF", Color: "#1e3a8a", Marker: "diamond"},
 	"SuRFReal(8)":  {Name: "SuRFReal(8)", Color: "#0f172a", Marker: "diamond"},
-	"SODA":         {Name: "SODA", Color: "#6d28d9", Marker: "diamond"},
+	"SODA":         {Name: "SODA", Color: "#ca8a04", Marker: "circle"},
 	"Scan-ARE":     {Name: "Scan-ARE", Color: "#d946ef", Marker: "circle"},
 	"Greedy+Merge": {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
 	"BloomARE":     {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
