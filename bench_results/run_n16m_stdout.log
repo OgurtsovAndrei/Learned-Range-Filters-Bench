@@ -1,5 +1,0 @@
-[13:25:58] N=16M sequential runs (sequential K, BloomARE skip, PGM skip)
-[13:25:58] 
-[13:25:58] START sosd_fb_N16777216
-[14:28:01] PASS  sosd_fb_N16777216
-[14:28:01] START sosd_osm_N16777216
