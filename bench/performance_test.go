@@ -148,7 +148,7 @@ func TestBuildTimePerKey(t *testing.T) {
 		YLabel: "Build Time (ns/key)",
 		XScale: testutils.Log10,
 		YScale: testutils.Log10,
-		XMax:   25,
+		XMax:   DefaultXMax,
 	}, allSeries, "../bench_results/plots/build_time_per_key.svg")
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)
@@ -359,7 +359,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 		YLabel: "Query Time (ns/op)",
 		XScale: testutils.Log10,
 		YScale: testutils.Linear,
-		XMax:   25,
+		XMax:   DefaultXMax,
 	}, allSeries, "../bench_results/plots/query_time_vs_rangelen.svg")
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)
@@ -605,7 +605,7 @@ func TestTradeoff_Full(t *testing.T) {
 		queryCount = 100_000
 	)
 
-	epsilons := []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001}
+	epsilons := EpsilonsVariant
 
 	rng := rand.New(rand.NewSource(42))
 	seen := make(map[uint64]bool)
@@ -772,7 +772,7 @@ func TestTradeoff_Full(t *testing.T) {
 		"False Positive Rate (FPR)",
 		orderedSeries,
 		"../bench_results/plots/are_full_comparison.svg",
-		1.0/float64(queryCount),
+		DefaultYFloor(queryCount, 1),
 	)
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)

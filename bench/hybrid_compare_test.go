@@ -200,8 +200,8 @@ func runHybridCompareFPR(t *testing.T, distName string, n int, keys []uint64, qu
 	t.Helper()
 
 	rangeLens := []uint64{16, 128, 1024}
-	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48, 52, 56}
-	seeds := []int64{12345, 54321, 99999}
+	kGrid := DefaultKGridExtended
+	seeds := DefaultSeeds
 
 	const maxBPKForSVG = 35.0
 
@@ -294,7 +294,7 @@ func runHybridCompareFPR(t *testing.T, distName string, n int, keys []uint64, qu
 				"False Positive Rate (FPR)",
 				svgSeries,
 				svgPath,
-				1.0/float64((1<<18)*len(seeds)),
+				DefaultYFloor(DefaultQueryCount, len(seeds)),
 			)
 			if err != nil {
 				t.Errorf("SVG generation failed: %v", err)
@@ -427,7 +427,7 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		YLabel: "Build Time (ns/key)",
 		XScale: testutils.Log10,
 		YScale: testutils.Log10,
-		XMax:   25,
+		XMax:   DefaultXMax,
 	}, svgSeries, svgPath)
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)

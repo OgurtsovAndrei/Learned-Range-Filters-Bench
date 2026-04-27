@@ -380,7 +380,7 @@ func TestBuildThroughput(t *testing.T) {
 				YLabel: "Build Throughput (M keys/sec)",
 				XScale: testutils.Log10,
 				YScale: testutils.Log10,
-				XMax:   25,
+				XMax:   DefaultXMax,
 			}, orderedSeries, svgPath); err != nil {
 				t.Errorf("SVG generation failed: %v", err)
 			} else {

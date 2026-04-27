@@ -73,12 +73,12 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 	t.Helper()
 	const (
 		n          = 1 << 18
-		queryCount = 1 << 18
-		nRuns      = 3
+		queryCount = DefaultQueryCount
+		nRuns      = DefaultNRuns
 	)
 	rangeLens := []uint64{128, 1024}
-	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48}
-	seeds := []int64{12345, 54321, 99999}
+	kGrid := DefaultKGrid
+	seeds := DefaultSeeds
 
 	keysBS := make([]bits.BitString, len(keys))
 	for i, v := range keys {
@@ -298,7 +298,7 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 				"False Positive Rate (FPR)",
 				seriesList,
 				svgPath,
-				1.0/float64(queryCount*len(seeds)),
+				DefaultYFloor(queryCount, len(seeds)),
 			)
 			if err != nil {
 				t.Errorf("SVG failed: %v", err)

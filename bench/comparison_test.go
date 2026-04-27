@@ -22,12 +22,12 @@ import (
 )
 
 func runTradeoffBench(t *testing.T, cfg benchConfig) {
-	const nRuns = 3
+	nRuns := DefaultNRuns
 
-	rangeLens := []uint64{1, 16, 128, 1024, 4096, 16384, 65536}
-	kGrid := []uint32{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48}
-	bpkSweep := []float64{4, 6, 8, 10, 12, 14, 16, 18, 20}
-	epsilons := []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001}
+	rangeLens := DefaultRangeLens
+	kGrid := DefaultKGrid
+	bpkSweep := DefaultBPKSweep
+	epsilons := DefaultEpsilons
 
 	keysBS := make([]bits.BitString, len(cfg.keys))
 	for i, v := range cfg.keys {
@@ -36,7 +36,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 	keySHA := sha256Keys(cfg.keys)
 
-	os.MkdirAll(fmt.Sprintf("../bench_results/plots/N%d/%s", cfg.n, cfg.distName), 0755)
+	os.MkdirAll(BenchResultsPlotsDir(cfg.n, cfg.distName), 0755)
 
 	// Parse ONLY/SKIP env vars once (shared across all range lengths).
 	onlySet := parseEnvSet("ONLY")
@@ -44,16 +44,12 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 	for _, rangeLen := range rangeLens {
 		t.Run(fmt.Sprintf("L=%d", rangeLen), func(t *testing.T) {
-			// ---- series map ----
-			allSeries := map[string]*testutils.SeriesData{
-				"Theoretical":  {Name: "Theoretical", Color: "#ef4444", Dashed: true, Marker: "circle"},
-				"Grafite":      {Name: "Grafite", Color: "#1a6b3c", Marker: "diamond"},
-				"SNARF":        {Name: "SNARF", Color: "#1a3a6b", Marker: "star"},
-				"SuRFReal(8)":  {Name: "SuRFReal(8)", Color: "#111111", Marker: "diamond"},
-				"SODA":         {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
-				"Scan-ARE":     {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
-				"Greedy+Merge": {Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"},
-				"BloomARE":     {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
+			// ---- series map (constructed from DefaultSeriesStyles) ----
+			allSeries := make(map[string]*testutils.SeriesData, len(DefaultSeriesStyles))
+			for name, style := range DefaultSeriesStyles {
+				allSeries[name] = &testutils.SeriesData{
+					Name: style.Name, Color: style.Color, Marker: style.Marker, Dashed: style.Dashed,
+				}
 			}
 
 			// v2 rich data tracking (parallel to allSeries for SVG).
@@ -71,7 +67,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				richData[name] = &richSeries{Name: name, FilterFamily: family}
 			}
 
-			dataDir := fmt.Sprintf("../bench_results/data/N%d/%s", cfg.n, cfg.distName)
+			dataDir := BenchResultsDataDir(cfg.n, cfg.distName)
 			os.MkdirAll(dataDir, 0755)
 			dataPath := fmt.Sprintf("%s/L%d.json", dataDir, rangeLen)
 			plotOnly := os.Getenv("PLOT_ONLY") != ""
@@ -83,7 +79,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				}
 				fmt.Printf("\n=== Plot-only mode — %s L=%d (loaded from %s) ===\n", cfg.distName, rangeLen, dataPath)
 			} else {
-				seeds := []int64{12345, 54321, 99999}
+				seeds := DefaultSeeds
 
 				// Load existing cache for per-series skip logic.
 				cached := loadCachedSeries(dataPath)
@@ -470,14 +466,14 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				*allSeries["BloomARE"],
 			}
 
-			svgPath := fmt.Sprintf("../bench_results/plots/N%d/%s/L%d.svg", cfg.n, cfg.distName, rangeLen)
+			svgPath := fmt.Sprintf("%s/L%d.svg", BenchResultsPlotsDir(cfg.n, cfg.distName), rangeLen)
 			err := testutils.GenerateTradeoffSVG(
 				fmt.Sprintf("FPR vs BPK — %s (60-bit keys, n=%d, L=%d)", cfg.distName, len(cfg.keys), rangeLen),
 				"Bits per Key (BPK)",
 				"False Positive Rate (FPR)",
 				orderedSeries,
 				svgPath,
-				1.0/float64(cfg.queryCount*nRuns),
+				DefaultYFloor(cfg.queryCount, nRuns),
 			)
 			if err != nil {
 				t.Errorf("SVG generation failed: %v", err)
@@ -835,7 +831,7 @@ func TestDistributionVisualization(t *testing.T) {
 		Title:  fmt.Sprintf("CDF of Key Distributions (n=%d, normalized)", n),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
-		XMax:   25,
+		XMax:   DefaultXMax,
 	}, cdfSeries, "../bench_results/plots/distributions/cdf_all.svg")
 	if err != nil {
 		t.Errorf("CDF SVG failed: %v", err)
@@ -857,7 +853,7 @@ func TestDistributionVisualization(t *testing.T) {
 		Title:  fmt.Sprintf("Key Density — All Distributions (n=%d, 200 bins)", n),
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
-		XMax:   25,
+		XMax:   DefaultXMax,
 	}, histAllSeries, "../bench_results/plots/distributions/hist_all.svg")
 	if err != nil {
 		t.Errorf("combined histogram SVG failed: %v", err)
@@ -878,7 +874,7 @@ func TestDistributionVisualization(t *testing.T) {
 			Title:  fmt.Sprintf("Key Density — %s (n=%d, 200 bins)", d.name, n),
 			XLabel: "Normalized Key Position",
 			YLabel: "Relative Density",
-			XMax:   25,
+			XMax:   DefaultXMax,
 		}, histSeries, path)
 		if err != nil {
 			t.Errorf("histogram SVG failed for %s: %v", d.name, err)
