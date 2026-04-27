@@ -5,13 +5,9 @@ import (
 	"Thesis-bench-industry/snarf"
 	"Thesis-bench-industry/surf"
 	"Thesis/bits"
-	"Thesis/emptiness/are_trunc"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_greedy_scan"
-	"Thesis/emptiness/are_hybrid"
 	"Thesis/emptiness/are_hybrid_scan"
-	"Thesis/emptiness/are_adaptive"
-	"Thesis/emptiness/are_pgm"
 	"Thesis/emptiness/are_soda_hash"
 	"Thesis/testutils"
 	"encoding/json"
@@ -50,20 +46,14 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 		t.Run(fmt.Sprintf("L=%d", rangeLen), func(t *testing.T) {
 			// ---- series map ----
 			allSeries := map[string]*testutils.SeriesData{
-				"Theoretical":    {Name: "Theoretical", Color: "#ef4444", Dashed: true, Marker: "circle"},
-				"Grafite":        {Name: "Grafite", Color: "#1a6b3c", Marker: "diamond"},
-				"SNARF":          {Name: "SNARF", Color: "#1a3a6b", Marker: "star"},
-				"SuRF":           {Name: "SuRF", Color: "#111111", Marker: "square"},
-				"SuRFHash(8)":    {Name: "SuRFHash(8)", Color: "#111111", Marker: "triangle"},
-				"SuRFReal(8)":    {Name: "SuRFReal(8)", Color: "#111111", Marker: "diamond"},
-				"Truncation":     {Name: "Truncation", Color: "#9b59b6", Marker: "triangle"},
-				"Adaptive (t=0)": {Name: "Adaptive (t=0)", Color: "#2a7fff", Marker: "square"},
-				"SODA":           {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
-				"Hybrid":         {Name: "Hybrid", Color: "#ff6b6b", Marker: "star"},
-				"Scan-ARE":       {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
-				"Greedy+Merge":   {Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"},
-				"CDF-ARE":        {Name: "CDF-ARE", Color: "#ff922b", Marker: "circle"},
-				"BloomARE":       {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
+				"Theoretical":  {Name: "Theoretical", Color: "#ef4444", Dashed: true, Marker: "circle"},
+				"Grafite":      {Name: "Grafite", Color: "#1a6b3c", Marker: "diamond"},
+				"SNARF":        {Name: "SNARF", Color: "#1a3a6b", Marker: "star"},
+				"SuRFReal(8)":  {Name: "SuRFReal(8)", Color: "#111111", Marker: "diamond"},
+				"SODA":         {Name: "SODA", Color: "#4dd88a", Marker: "diamond"},
+				"Scan-ARE":     {Name: "Scan-ARE", Color: "#06b6d4", Marker: "star"},
+				"Greedy+Merge": {Name: "Greedy+Merge", Color: "#22c55e", Marker: "diamond"},
+				"BloomARE":     {Name: "BloomARE", Color: "#888888", Dashed: true, Marker: "circle"},
 			}
 
 			// v2 rich data tracking (parallel to allSeries for SVG).
@@ -73,9 +63,9 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				switch name {
 				case "Theoretical":
 					family = "theoretical"
-				case "CDF-ARE", "BloomARE":
+				case "BloomARE":
 					family = "epsilon"
-				case "Grafite", "SNARF", "SuRF", "SuRFHash(8)", "SuRFReal(8)":
+				case "Grafite", "SNARF", "SuRFReal(8)":
 					family = "bpksweep"
 				}
 				richData[name] = &richSeries{Name: name, FilterFamily: family}
@@ -109,20 +99,14 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 				// Determine per-series params mapping (used for saving).
 				seriesParams := map[string]json.RawMessage{
-					"Theoretical":    paramsTheoretical,
-					"Truncation":     paramsKGrid,
-					"Adaptive (t=0)": paramsKGrid,
-					"SODA":           paramsKGrid,
-					"Hybrid":         paramsKGrid,
-					"Scan-ARE":       paramsKGrid,
-					"Greedy+Merge":   paramsKGrid,
-					"CDF-ARE":        paramsEpsilon,
-					"BloomARE":       paramsEpsilon,
-					"Grafite":        paramsBPKSweep,
-					"SNARF":          paramsBPKSweep,
-					"SuRF":           paramsBPKSweep,
-					"SuRFHash(8)":    paramsBPKSweep,
-					"SuRFReal(8)":    paramsBPKSweep,
+					"Theoretical":  paramsTheoretical,
+					"SODA":         paramsKGrid,
+					"Scan-ARE":     paramsKGrid,
+					"Greedy+Merge": paramsKGrid,
+					"BloomARE":     paramsEpsilon,
+					"Grafite":      paramsBPKSweep,
+					"SNARF":        paramsBPKSweep,
+					"SuRFReal(8)":  paramsBPKSweep,
 				}
 
 				// Store params in richData for v2 cache compatibility.
@@ -198,7 +182,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					filterStats    map[string]interface{}
 				}
 				// Determine which K-grid series to rebuild (logs [CACHED]/[BUILD] once per series).
-				kgridSeriesNames := []string{"Truncation", "Adaptive (t=0)", "SODA", "Hybrid", "Scan-ARE", "Greedy+Merge"}
+				kgridSeriesNames := []string{"SODA", "Scan-ARE", "Greedy+Merge"}
 				rebuildKGridSeries := make(map[string]bool)
 				for _, name := range kgridSeriesNames {
 					if d := decideSkip(name, paramsKGrid); !d.skip {
@@ -231,24 +215,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						K := K
 						var kTasks []fprTask
 
-						if rebuildKGridSeries["Truncation"] {
-							if f, err := are_trunc.NewTruncAREFromK(keysBS, K); err == nil {
-								sizeBits := f.SizeInBits()
-								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								kTasks = append(kTasks, fprTask{"Truncation", fmt.Sprintf("Truncation(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
-									float64(K), sizeBits, nil})
-							}
-						}
-						if rebuildKGridSeries["Adaptive (t=0)"] {
-							if f, err := are_adaptive.NewAdaptiveAREFromK(keysBS, rangeLen, K, 0); err == nil {
-								sizeBits := f.SizeInBits()
-								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								kTasks = append(kTasks, fprTask{"Adaptive (t=0)", fmt.Sprintf("Adaptive(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
-									float64(K), sizeBits, nil})
-							}
-						}
 						if rebuildKGridSeries["SODA"] {
 							if f, err := are_soda_hash.NewSodaAREFromK(cfg.keys, rangeLen, K); err == nil {
 								sizeBits := f.SizeInBits()
@@ -256,21 +222,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 								kTasks = append(kTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,
 									func(a, b uint64) bool { return f.IsEmpty(a, b) },
 									float64(K), sizeBits, nil})
-							}
-						}
-						if rebuildKGridSeries["Hybrid"] {
-							if f, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
-								sizeBits := f.SizeInBits()
-								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								nc, nf, nt := f.Stats()
-								stats := map[string]interface{}{
-									"numClusters":  nc,
-									"fallbackKeys": nf,
-									"totalKeys":    nt,
-								}
-								kTasks = append(kTasks, fprTask{"Hybrid", fmt.Sprintf("Hybrid(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
-									float64(K), sizeBits, stats})
 							}
 						}
 						if rebuildKGridSeries["Scan-ARE"] {
@@ -337,9 +288,9 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					}
 				}
 
-				// ---- Epsilon-loop filters (CDF-ARE, BloomARE) ----
+				// ---- Epsilon-loop filters (BloomARE) ----
 				rebuildEpsilonSeries := make(map[string]bool)
-				for _, name := range []string{"CDF-ARE", "BloomARE"} {
+				for _, name := range []string{"BloomARE"} {
 					if d := decideSkip(name, paramsEpsilon); !d.skip {
 						rebuildEpsilonSeries[name] = true
 					}
@@ -358,15 +309,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					}
 					var epsilonTasks []fprTaskEps
 					for _, eps := range epsilons {
-						if rebuildEpsilonSeries["CDF-ARE"] {
-							if f, err := are_pgm.NewPGMApproximateRangeEmptiness(cfg.keys, rangeLen, eps, 64); err == nil {
-								sizeBits := f.TotalSizeInBits()
-								bpk := float64(sizeBits) / float64(len(cfg.keys))
-								epsilonTasks = append(epsilonTasks, fprTaskEps{fprTask{"CDF-ARE", "CDF-ARE", bpk,
-									func(a, b uint64) bool { return f.IsEmpty(a, b) },
-									eps, sizeBits, nil}, eps})
-							}
-						}
 						if rebuildEpsilonSeries["BloomARE"] && rangeLen < 1<<16 {
 							if f, err := are_bloom.NewBloomARE(cfg.keys, rangeLen, eps); err == nil {
 								sizeBits := f.SizeInBits()
@@ -412,7 +354,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 
 				// ---- CGo filters: build & measure sequentially (not thread-safe) ----
 				// Determine which CGo series to rebuild.
-				cgoSeries := []string{"Grafite", "SNARF", "SuRF", "SuRFHash(8)", "SuRFReal(8)"}
+				cgoSeries := []string{"Grafite", "SNARF", "SuRFReal(8)"}
 				rebuildCGoSeries := make(map[string]bool)
 				for _, name := range cgoSeries {
 					if d := decideSkip(name, paramsBPKSweep); !d.skip {
@@ -461,8 +403,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						realBits int
 					}
 					for _, sv := range []surfVariant{
-						{"SuRF", surf.SuffixNone, 0, 0},
-						{"SuRFHash(8)", surf.SuffixHash, 8, 0},
 						{"SuRFReal(8)", surf.SuffixReal, 0, 8},
 					} {
 						if rebuildCGoSeries[sv.name] {
@@ -487,9 +427,9 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					Queries:   newQueriesMeta(cfg, seeds, nRuns),
 				}
 				for _, name := range []string{
-					"Theoretical", "Grafite", "SNARF", "SuRF", "SuRFHash(8)", "SuRFReal(8)",
-					"Adaptive (t=0)", "Truncation", "SODA", "Hybrid", "Scan-ARE", "Greedy+Merge",
-					"CDF-ARE", "BloomARE",
+					"Theoretical", "Grafite", "SNARF", "SuRFReal(8)",
+					"SODA", "Scan-ARE", "Greedy+Merge",
+					"BloomARE",
 				} {
 					rs := *richData[name]
 					// For series not rebuilt this run, preserve existing v2 data.
@@ -523,16 +463,10 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				*allSeries["Theoretical"],
 				*allSeries["Grafite"],
 				*allSeries["SNARF"],
-				*allSeries["SuRF"],
-				*allSeries["SuRFHash(8)"],
 				*allSeries["SuRFReal(8)"],
-				*allSeries["Adaptive (t=0)"],
-				*allSeries["Truncation"],
 				*allSeries["SODA"],
-				*allSeries["Hybrid"],
 				*allSeries["Scan-ARE"],
 				*allSeries["Greedy+Merge"],
-				*allSeries["CDF-ARE"],
 				*allSeries["BloomARE"],
 			}
 
@@ -728,10 +662,10 @@ func TestTradeoff_Zipfian(t *testing.T) {
 					qrng := rand.New(rand.NewSource(seed))
 					return generateZipfianQueries(queryCount, prefixes, rangeLen, qrng)
 				},
-				keySource:    "synthetic",
-				keyFile:      fmt.Sprintf("zipfian_%d.bin", n),
-				keySeed:      &keySeed,
-				keyGenParams: map[string]interface{}{"nPrefixes": nPrefixes},
+				keySource:     "synthetic",
+				keyFile:       fmt.Sprintf("zipfian_%d.bin", n),
+				keySeed:       &keySeed,
+				keyGenParams:  map[string]interface{}{"nPrefixes": nPrefixes},
 				queryStrategy: "zipfian",
 			})
 		})
