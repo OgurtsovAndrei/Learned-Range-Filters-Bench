@@ -542,11 +542,23 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 			// inside the plot range. The X-marker + caption signal that
 			// Grafite cannot be measured beyond log2(U/n)+2 — not that we
 			// stopped sweeping prematurely.
+			//
+			// Two cases:
+			//   * Some sweep points succeed: the last measured point gets
+			//     replaced by an X (last.X < maxBPK <= last.X + sweepStep).
+			//   * No sweep point is below maxBPK (small-universe distros
+			//     like Books): seed a single phantom point at (maxBPK, 1.0)
+			//     so the X lands on the X-axis at exactly the library
+			//     boundary. Without this, the series is empty and the
+			//     plot silently omits Grafite.
 			if g := allSeries["Grafite"]; g != nil && len(cfg.keys) >= 2 {
 				universe := cfg.keys[len(cfg.keys)-1] - cfg.keys[0]
 				if universe > 0 {
 					maxBPK := math.Log2(float64(universe)/float64(len(cfg.keys))) + 2
 					if maxBPK < DefaultXMax {
+						if len(g.Points) == 0 {
+							g.Points = []testutils.Point{{X: maxBPK, Y: 1.0}}
+						}
 						g.EndStop = true
 						g.EndCaption = "(library limit)"
 					}
