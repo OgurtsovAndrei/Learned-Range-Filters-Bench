@@ -46,7 +46,11 @@ func (f *SNARFFilter) IsEmpty(lo, hi uint64) bool {
 	if f.ptr == nil {
 		return true
 	}
-	return C.snarf_query(f.ptr, C.uint64_t(lo&snarfKeyMask), C.uint64_t(hi&snarfKeyMask)) == 0
+	loM, hiM := lo&snarfKeyMask, hi&snarfKeyMask
+	if hiM < loM {
+		hiM = loM
+	}
+	return C.snarf_query(f.ptr, C.uint64_t(loM), C.uint64_t(hiM)) == 0
 }
 
 const queryBatchSize = 1024
@@ -62,7 +66,11 @@ func (f *SNARFFilter) QueryBatch(queries [][2]uint64) []bool {
 	}
 	masked := make([][2]uint64, n)
 	for i, q := range queries {
-		masked[i] = [2]uint64{q[0] & snarfKeyMask, q[1] & snarfKeyMask}
+		loM, hiM := q[0]&snarfKeyMask, q[1]&snarfKeyMask
+		if hiM < loM {
+			hiM = loM
+		}
+		masked[i] = [2]uint64{loM, hiM}
 	}
 	buf := make([]C.uint8_t, n)
 	for off := 0; off < n; off += queryBatchSize {
