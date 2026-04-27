@@ -298,6 +298,7 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 				"False Positive Rate (FPR)",
 				seriesList,
 				svgPath,
+				1.0/float64(queryCount*len(seeds)),
 			)
 			if err != nil {
 				t.Errorf("SVG failed: %v", err)

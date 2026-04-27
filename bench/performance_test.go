@@ -772,6 +772,7 @@ func TestTradeoff_Full(t *testing.T) {
 		"False Positive Rate (FPR)",
 		orderedSeries,
 		"../bench_results/plots/are_full_comparison.svg",
+		1.0/float64(queryCount),
 	)
 	if err != nil {
 		t.Errorf("SVG generation failed: %v", err)
