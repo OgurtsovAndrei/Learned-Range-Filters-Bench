@@ -128,9 +128,9 @@ func TestB6IndustryLatency(t *testing.T) {
 		n := n
 		t.Run(fmt.Sprintf("N=2^%d", mathbits.TrailingZeros(uint(n))), func(t *testing.T) {
 			store := newB6Store(n, queryCount, eps)
-			fmt.Printf("\n=== B6: Build + Query latency + actual BPK + FPR, n=%d, ε=%.3f ===\n",
+			b6Logf("\n=== B6: Build + Query latency + actual BPK + FPR, n=%d, ε=%.3f ===\n",
 				n, eps)
-			fmt.Printf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s\n",
+			b6Logf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s\n",
 				"Distribution", "Filter", "L", "sweep", "build_ms", "build_Mkeys/s", "query_ns/op", "bpk", "fpr")
 
 			for _, ds := range distributions {
@@ -414,6 +414,32 @@ type b6Store struct {
 	doc b6Doc
 }
 
+// b6ProgressLog is the package-level append-only progress logger. Lines
+// are written immediately (OS write buffer flushes via newline) so a
+// concurrent `tail -f bench_results/b6_progress.log` shows real-time
+// per-cell progress, regardless of `go test`'s end-of-test stdout
+// buffering.
+var (
+	b6ProgressMu  sync.Mutex
+	b6ProgressLog *os.File
+)
+
+func b6Logf(format string, args ...any) {
+	b6ProgressMu.Lock()
+	defer b6ProgressMu.Unlock()
+	if b6ProgressLog == nil {
+		f, err := os.OpenFile("../bench_results/b6_progress.log",
+			os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			return
+		}
+		b6ProgressLog = f
+		fmt.Fprintf(b6ProgressLog, "\n=== b6 run start %s pid=%d ===\n",
+			time.Now().Format(time.RFC3339), os.Getpid())
+	}
+	fmt.Fprintf(b6ProgressLog, format, args...)
+}
+
 func newB6Store(nKeys, queryCount int, eps float64) *b6Store {
 	s := &b6Store{
 		doc: b6Doc{
@@ -533,7 +559,7 @@ func runB6Filter(
 			if !force {
 				if cached := store.cachedRow(dist, fd.name, L, fd.sweepName, sweep, paramsHash); cached != nil {
 					rows = append(rows, *cached)
-					fmt.Printf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  (cached)\n",
+					b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  (cached)\n",
 						dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—")
 					// Adaptive K-grid early-exit also applies to cached
 					// rows: if we already know FPR=0 or BPK>25 from a
@@ -569,7 +595,7 @@ func runB6Filter(
 					ParamsHash:   paramsHash,
 					Note:         err.Error(),
 				})
-				fmt.Printf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  %s\n",
+				b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  %s\n",
 					dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—", err.Error())
 				continue
 			}
@@ -610,7 +636,7 @@ func runB6Filter(
 				Parallelism:   parallelism,
 				ParamsHash:    paramsHash,
 			})
-			fmt.Printf("%-11s | %-14s | L=%-5d | %s=%-9.4g | P=%-2d | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4f\n",
+			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | P=%-2d | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4f\n",
 				dist, fd.name, L, fd.sweepName, sweep, parallelism,
 				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr)
 
