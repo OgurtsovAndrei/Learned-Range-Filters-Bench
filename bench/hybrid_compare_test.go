@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	mathbits "math/bits"
 	"math/rand"
 	"os"
 	"sort"
@@ -55,6 +56,8 @@ func hybridMeasureK(
 		isEmpty func(a, b uint64) bool
 	}
 
+	keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+
 	var tasks []task
 
 	if fh, err := are_hybrid.NewHybridAREFromK(keysBS, rangeLen, K); err == nil {
@@ -64,25 +67,19 @@ func hybridMeasureK(
 		}})
 	}
 
-	if fs, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
+	if fs, err := are_hybrid_scan.NewHybridScanAREFromK(keys, keyBits, are_hybrid_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
 		bpk := float64(fs.SizeInBits()) / float64(len(keys))
-		tasks = append(tasks, task{"Scan-ARE", bpk, func(a, b uint64) bool {
-			return fs.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
-		}})
+		tasks = append(tasks, task{"Scan-ARE", bpk, fs.IsEmpty})
 	}
 
-	if fg, err := are_greedy_scan.NewGreedyScanAREFromKRaw(keysBS, rangeLen, K); err == nil {
+	if fg, err := are_greedy_scan.NewGreedyScanAREFromKRaw(keys, keyBits, are_greedy_scan.ConfigFromKRaw{RangeLen: float64(rangeLen), K: K}); err == nil {
 		bpk := float64(fg.SizeInBits()) / float64(len(keys))
-		tasks = append(tasks, task{"Greedy-raw", bpk, func(a, b uint64) bool {
-			return fg.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
-		}})
+		tasks = append(tasks, task{"Greedy-raw", bpk, fg.IsEmpty})
 	}
 
-	if fg, err := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K); err == nil {
+	if fg, err := are_greedy_scan.NewGreedyScanAREFromK(keys, keyBits, are_greedy_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
 		bpk := float64(fg.SizeInBits()) / float64(len(keys))
-		tasks = append(tasks, task{"Greedy+Merge", bpk, func(a, b uint64) bool {
-			return fg.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
-		}})
+		tasks = append(tasks, task{"Greedy+Merge", bpk, fg.IsEmpty})
 	}
 
 	if includDP {
@@ -338,21 +335,22 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		keys := genKeys(n)
 		keysBS := toTrieBS(keys)
 		K := greedyKFromEpsilon(n, rangeLen, epsilon)
+		keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
 
 		start := time.Now()
 		_, hybErr := are_hybrid.NewHybridARE(keysBS, rangeLen, epsilon)
 		hybTime := time.Since(start)
 
 		start = time.Now()
-		_, scanErr := are_hybrid_scan.NewHybridScanARE(keysBS, rangeLen, epsilon)
+		_, scanErr := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: epsilon})
 		scanTime := time.Since(start)
 
 		start = time.Now()
-		_, greedyRawErr := are_greedy_scan.NewGreedyScanAREFromKRaw(keysBS, rangeLen, K)
+		_, greedyRawErr := are_greedy_scan.NewGreedyScanAREFromKRaw(keys, keyBits, are_greedy_scan.ConfigFromKRaw{RangeLen: float64(rangeLen), K: K})
 		greedyRawTime := time.Since(start)
 
 		start = time.Now()
-		_, greedyMergeErr := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K)
+		_, greedyMergeErr := are_greedy_scan.NewGreedyScanAREFromK(keys, keyBits, are_greedy_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K})
 		greedyMergeTime := time.Since(start)
 
 		hybNs := float64(hybTime.Nanoseconds()) / float64(n)

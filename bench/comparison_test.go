@@ -4,7 +4,6 @@ import (
 	"Thesis-bench-industry/grafite"
 	"Thesis-bench-industry/snarf"
 	"Thesis-bench-industry/surf"
-	"Thesis/bits"
 	"Thesis/emptiness/are_bloom"
 	"Thesis/emptiness/are_greedy_scan"
 	"Thesis/emptiness/are_hybrid_scan"
@@ -69,11 +68,6 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 	kGrid := DefaultKGrid
 	bpkSweep := DefaultBPKSweep
 	epsilons := DefaultEpsilons
-
-	keysBS := make([]bits.BitString, len(cfg.keys))
-	for i, v := range cfg.keys {
-		keysBS[i] = testutils.TrieBS(v)
-	}
 
 	keySHA := sha256Keys(cfg.keys)
 
@@ -272,7 +266,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							}
 						}
 						if rebuildKGridSeries["Scan-ARE"] {
-							if f, err := are_hybrid_scan.NewHybridScanAREFromK(keysBS, rangeLen, K); err == nil {
+							if f, err := are_hybrid_scan.NewHybridScanAREFromK(cfg.keys, uint32(keyBits), are_hybrid_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								nc, nf, nt := f.Stats()
@@ -282,12 +276,12 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 									"totalKeys":    nt,
 								}
 								kTasks = append(kTasks, fprTask{"Scan-ARE", fmt.Sprintf("Scan-ARE(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									f.IsEmpty,
 									float64(K), sizeBits, stats})
 							}
 						}
 						if rebuildKGridSeries["Greedy+Merge"] {
-							if f, err := are_greedy_scan.NewGreedyScanAREFromK(keysBS, rangeLen, K); err == nil {
+							if f, err := are_greedy_scan.NewGreedyScanAREFromK(cfg.keys, uint32(keyBits), are_greedy_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								nc, nf, nt := f.Stats()
@@ -297,7 +291,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 									"totalKeys":    nt,
 								}
 								kTasks = append(kTasks, fprTask{"Greedy+Merge", fmt.Sprintf("Greedy+Merge(K=%d)", K), bpk,
-									func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) },
+									f.IsEmpty,
 									float64(K), sizeBits, stats})
 							}
 						}

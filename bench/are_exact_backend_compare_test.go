@@ -1,14 +1,13 @@
 package bench_test
 
 import (
-	"Thesis/bits"
 	"Thesis/emptiness/are_greedy_scan"
 	"Thesis/emptiness/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
-	"Thesis/testutils"
 	"bytes"
 	"fmt"
 	"math"
+	mathbits "math/bits"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,9 +25,7 @@ const (
 type areLoadedDataset struct {
 	name       string
 	keysU64    []uint64
-	keysBS     []bits.BitString
 	rawQueries [][2]uint64
-	bsQueries  [][2]bits.BitString
 }
 
 type areVariantMetrics struct {
@@ -60,24 +57,11 @@ func loadAREDatasets(tb testing.TB) []areLoadedDataset {
 			}
 			tb.Fatalf("load %s: %v", loader.name, err)
 		}
-		keysBS := make([]bits.BitString, len(keys))
-		for i, k := range keys {
-			keysBS[i] = testutils.TrieBS(k)
-		}
 		rawQueries := generateARERawQueries(keys, areCompareQueryCount, areCompareRangeLen, 424242)
-		bsQueries := make([][2]bits.BitString, len(rawQueries))
-		for i, q := range rawQueries {
-			bsQueries[i] = [2]bits.BitString{
-				testutils.TrieBS(q[0]),
-				testutils.TrieBS(q[1]),
-			}
-		}
 		out = append(out, areLoadedDataset{
 			name:       loader.name,
 			keysU64:    keys,
-			keysBS:     keysBS,
 			rawQueries: rawQueries,
-			bsQueries:  bsQueries,
 		})
 	}
 	if len(out) == 0 {
@@ -90,7 +74,7 @@ func generateARERawQueries(keys []uint64, count int, rangeLen uint64, seed int64
 	bitQueries := generateEREMixedQueries(keys, count, rangeLen, seed)
 	raw := make([][2]uint64, len(bitQueries))
 	for i, q := range bitQueries {
-		raw[i] = [2]uint64{q.a.TrieUint64(), q.b.TrieUint64()}
+		raw[i] = [2]uint64{q.a, q.b}
 	}
 	return raw
 }
@@ -127,19 +111,6 @@ func timeAREQueriesU64(queries [][2]uint64, rounds int, fn func(a, b uint64) boo
 	return float64(total.Nanoseconds()) / float64(count)
 }
 
-func timeAREQueriesBS(queries [][2]bits.BitString, rounds int, fn func(a, b bits.BitString) bool) float64 {
-	total := time.Duration(0)
-	count := 0
-	for r := 0; r < rounds; r++ {
-		start := time.Now()
-		for _, q := range queries {
-			ereQuerySink = fn(q[0], q[1])
-		}
-		total += time.Since(start)
-		count += len(queries)
-	}
-	return float64(total.Nanoseconds()) / float64(count)
-}
 
 func measureSODA(tb testing.TB, ds areLoadedDataset, variant exactbackend.Variant) areVariantMetrics {
 	tb.Helper()
@@ -168,9 +139,10 @@ func measureGreedyMerge(tb testing.TB, ds areLoadedDataset, variant exactbackend
 	if err := exactbackend.SetVariant(variant); err != nil {
 		tb.Fatalf("set variant: %v", err)
 	}
-	K := greedyK(len(ds.keysBS), areCompareRangeLen, areCompareEpsilon)
+	K := greedyK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon)
+	keyBits := uint32(max(1, mathbits.Len64(ds.keysU64[len(ds.keysU64)-1])))
 	start := time.Now()
-	filter, err := are_greedy_scan.NewGreedyScanAREFromK(ds.keysBS, areCompareRangeLen, K)
+	filter, err := are_greedy_scan.NewGreedyScanAREFromK(ds.keysU64, keyBits, are_greedy_scan.ConfigFromK{RangeLen: float64(areCompareRangeLen), K: K})
 	if err != nil {
 		tb.Fatalf("build greedy/%s/%s: %v", variant.String(), ds.name, err)
 	}
@@ -179,8 +151,8 @@ func measureGreedyMerge(tb testing.TB, ds areLoadedDataset, variant exactbackend
 
 	return areVariantMetrics{
 		buildMS: float64(buildDur.Microseconds()) / 1000.0,
-		queryNS: timeAREQueriesBS(ds.bsQueries, areQueryRounds, filter.IsEmpty),
-		bpk:     float64(filter.SizeInBits()) / float64(len(ds.keysBS)),
+		queryNS: timeAREQueriesU64(ds.rawQueries, areQueryRounds, filter.IsEmpty),
+		bpk:     float64(filter.SizeInBits()) / float64(len(ds.keysU64)),
 		extra:   fmt.Sprintf("K=%d clusters=%d fallback=%d", K, nc, nf),
 	}
 }

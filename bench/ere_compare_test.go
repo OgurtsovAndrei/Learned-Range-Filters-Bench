@@ -1,7 +1,6 @@
 package bench_test
 
 import (
-	"Thesis/bits"
 	"Thesis/emptiness/ere"
 	"Thesis/emptiness/ere_one_d"
 	"Thesis/testutils"
@@ -23,14 +22,14 @@ const (
 )
 
 type ereExactFilter interface {
-	IsEmpty(a, b bits.BitString) bool
+	IsEmpty(a, b uint64) bool
 	ByteSize() int
 	SizeInBits() uint64
 }
 
 type ereQuery struct {
-	a bits.BitString
-	b bits.BitString
+	a uint64
+	b uint64
 }
 
 type ereLoadedDataset struct {
@@ -197,10 +196,7 @@ func generateEREMixedQueries(keys []uint64, count int, rangeLen uint64, seed int
 
 	queries := make([]ereQuery, len(rawQueries))
 	for i, q := range rawQueries {
-		queries[i] = ereQuery{
-			a: bits.NewFromTrieUint64(q[0], 64),
-			b: bits.NewFromTrieUint64(q[1], 64),
-		}
+		queries[i] = ereQuery{a: q[0], b: q[1]}
 	}
 	return queries
 }
@@ -351,11 +347,11 @@ func randUint64n(rng *rand.Rand, n uint64) uint64 {
 }
 
 func buildEREFilter(keys []uint64) (ereExactFilter, error) {
-	return ere.NewExactRangeEmptinessUint64(keys, 64)
+	return ere.NewExactRangeEmptiness(keys, 64)
 }
 
 func buildEREOneDFilter(keys []uint64) (ereExactFilter, error) {
-	return ere_one_d.NewExactRangeEmptinessUint64(keys, 64)
+	return ere_one_d.NewExactRangeEmptiness(keys, 64)
 }
 
 func measureEREBuild(tb testing.TB, keys []uint64, build func([]uint64) (ereExactFilter, error)) ereBuildResult {

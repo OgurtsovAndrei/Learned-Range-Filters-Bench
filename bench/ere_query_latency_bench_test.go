@@ -1,9 +1,7 @@
 package bench
 
 import (
-	"Thesis/bits"
 	"Thesis/emptiness/ere"
-	"Thesis/testutils"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -11,14 +9,14 @@ import (
 	"testing"
 )
 
-// ereQueryLatencyFixture pre-builds the ERE structure and pre-converts query
+// ereQueryLatencyFixture pre-builds the ERE structure and pre-generates query
 // endpoints so the benchmark harness can re-run the timed loop at different
 // b.N without re-loading data or rebuilding the ERE.
 type ereQueryLatencyFixture struct {
 	actualN int
 	ere     *ere.ExactRangeEmptiness
-	queryA  []bits.BitString
-	queryB  []bits.BitString
+	queryA  []uint64
+	queryB  []uint64
 }
 
 func BenchmarkEREQueryLatency_Distributions(b *testing.B) {
@@ -177,14 +175,14 @@ func buildEREQueryLatencyFixture(load func(n int) ([]uint64, error), n int) (*er
 		return nil, fmt.Errorf("zero keys after load")
 	}
 
-	ereStruct, err := ere.NewExactRangeEmptinessUint64(keys, 64)
+	ereStruct, err := ere.NewExactRangeEmptiness(keys, 64)
 	if err != nil {
 		return nil, fmt.Errorf("ere build: %w", err)
 	}
 
 	const numQueries = 100
-	queryA := make([]bits.BitString, numQueries)
-	queryB := make([]bits.BitString, numQueries)
+	queryA := make([]uint64, numQueries)
+	queryB := make([]uint64, numQueries)
 	for i := 0; i < numQueries; i++ {
 		idxA := i * actualN / numQueries
 		idxB := (i + 1) * actualN / numQueries
@@ -194,8 +192,8 @@ func buildEREQueryLatencyFixture(load func(n int) ([]uint64, error), n int) (*er
 		if idxB >= actualN {
 			idxB = actualN - 1
 		}
-		queryA[i] = testutils.TrieBS(keys[idxA])
-		queryB[i] = testutils.TrieBS(keys[idxB])
+		queryA[i] = keys[idxA]
+		queryB[i] = keys[idxB]
 	}
 
 	keys = nil

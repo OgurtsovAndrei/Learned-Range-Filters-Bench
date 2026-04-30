@@ -1,7 +1,6 @@
 package bench_test
 
 import (
-	"Thesis/bits"
 	"Thesis/emptiness/are_hybrid_scan"
 	"Thesis/testutils"
 	"encoding/json"
@@ -80,11 +79,6 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 	rangeLens := []uint64{128, 1024}
 	kGrid := DefaultKGrid
 	seeds := DefaultSeeds
-
-	keysBS := make([]bits.BitString, len(keys))
-	for i, v := range keys {
-		keysBS[i] = testutils.TrieBS(v)
-	}
 
 	dataDir := fmt.Sprintf("../bench_results/data/fallback_policy/%s", distName)
 	plotDir := fmt.Sprintf("../bench_results/plots/fallback_policy/%s", distName)
@@ -204,15 +198,13 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 						epsilon = 0.01
 					}
 
-					f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keysBS, rangeLen, K, pe.policy(epsilon))
+					keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+					f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits, are_hybrid_scan.ConfigWithPolicy{RangeLen: float64(rangeLen), K: K, Policy: pe.policy(epsilon)})
 					if err != nil {
 						continue
 					}
 					bpk := float64(f.SizeInBits()) / float64(len(keys))
-					f2 := f // capture
-					tasks = append(tasks, fprTask{name, bpk, func(a, b uint64) bool {
-						return f2.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b))
-					}})
+					tasks = append(tasks, fprTask{name, bpk, f.IsEmpty})
 				}
 			}
 

@@ -40,7 +40,7 @@ func TestEREMetadataBPK(t *testing.T) {
 		t.Run(fmt.Sprintf("N=2^%d", log2(n)), func(t *testing.T) {
 			keys := generateUniformSortedUint64(n, int64(0xC0FFEE^n))
 
-			eClassic, err := ere.NewExactRangeEmptinessUint64(keys, 64)
+			eClassic, err := ere.NewExactRangeEmptiness(keys, 64)
 			if err != nil {
 				t.Fatalf("ere build failed: %v", err)
 			}
@@ -49,7 +49,7 @@ func TestEREMetadataBPK(t *testing.T) {
 			eClassic = nil
 			runtime.GC()
 
-			eOneD, err := ere_one_d.NewExactRangeEmptinessUint64(keys, 64)
+			eOneD, err := ere_one_d.NewExactRangeEmptiness(keys, 64)
 			if err != nil {
 				t.Fatalf("ere_one_d build failed: %v", err)
 			}

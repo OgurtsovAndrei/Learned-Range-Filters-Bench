@@ -15,6 +15,7 @@ import (
 	"Thesis/testutils"
 	"fmt"
 	"math"
+	mathbits "math/bits"
 	"math/rand"
 	"os"
 	"sort"
@@ -43,28 +44,32 @@ func TestBuildTimePerKey(t *testing.T) {
 	}
 
 	filters := []filterDef{
-		{"Adaptive(t=0)", "#2a7fff", "square", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
-			_, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
+		{"Adaptive(t=0)", "#2a7fff", "square", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			_, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
 			return err
 		}},
 		{"SODA", "#22a06b", "diamond", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
 			_, err := are_soda_hash.NewSodaARE(u64, rangeLen, eps)
 			return err
 		}},
-		{"Truncation", "#e6a800", "triangle", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
-			_, err := are_trunc.NewTruncARE(bs, eps)
+		{"Truncation", "#e6a800", "triangle", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			_, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{Eps: eps})
 			return err
 		}},
 		{"Hybrid", "#9b59b6", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
 			_, err := are_hybrid.NewHybridARE(bs, rangeLen, eps)
 			return err
 		}},
-		{"Scan-ARE", "#06b6d4", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
-			_, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
+		{"Scan-ARE", "#06b6d4", "star", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			_, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 			return err
 		}},
-		{"Greedy+Merge", "#22c55e", "diamond", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
-			_, err := are_greedy_scan.NewGreedyScanARE(bs, rangeLen, eps)
+		{"Greedy+Merge", "#22c55e", "diamond", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			_, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 			return err
 		}},
 		{"CDF-ARE", "#e05d10", "circle", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
@@ -205,6 +210,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 	for i, v := range keysU64 {
 		keysBS[i] = testutils.TrieBS(v)
 	}
+	keyBits := uint32(max(1, mathbits.Len64(keysU64[len(keysU64)-1])))
 	maskedKeys := keysU64
 
 	type filterDef struct {
@@ -217,25 +223,25 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 
 	filters := []filterDef{
 		{"Adaptive(t=0)", "#2a7fff", "square", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_adaptive.NewAdaptiveARE(keysBS, L, eps, 0)
+			f, err := are_adaptive.NewAdaptiveARE(keysU64, keyBits, are_adaptive.Config{RangeLen: float64(L), Eps: eps, Threshold: 0})
 			if err != nil {
 				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
+			return f.IsEmpty, nil, nil
 		}},
 		{"SODA", "#22a06b", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_soda_hash.NewSodaARE(keysU64, L, eps)
 			if err != nil {
 				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, nil
+			return f.IsEmpty, nil, nil
 		}},
 		{"Truncation", "#e6a800", "triangle", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_trunc.NewTruncARE(keysBS, eps)
+			f, err := are_trunc.NewTruncARE(keysU64, keyBits, are_trunc.Config{Eps: eps})
 			if err != nil {
 				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
+			return f.IsEmpty, nil, nil
 		}},
 		{"Hybrid", "#9b59b6", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_hybrid.NewHybridARE(keysBS, L, eps)
@@ -245,18 +251,18 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
 		{"Scan-ARE", "#06b6d4", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_hybrid_scan.NewHybridScanARE(keysBS, L, eps)
+			f, err := are_hybrid_scan.NewHybridScanARE(keysU64, keyBits, are_hybrid_scan.Config{RangeLen: float64(L), Eps: eps})
 			if err != nil {
 				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
+			return f.IsEmpty, nil, nil
 		}},
 		{"Greedy+Merge", "#22c55e", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_greedy_scan.NewGreedyScanARE(keysBS, L, eps)
+			f, err := are_greedy_scan.NewGreedyScanARE(keysU64, keyBits, are_greedy_scan.Config{RangeLen: float64(L), Eps: eps})
 			if err != nil {
 				return nil, nil, err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
+			return f.IsEmpty, nil, nil
 		}},
 		{"CDF-ARE", "#e05d10", "circle", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_pgm.NewPGMApproximateRangeEmptiness(keysU64, L, eps, 64)
@@ -410,25 +416,27 @@ func TestScalability(t *testing.T) {
 
 	filters := []filterEntry{
 		{"Adaptive(t=0)", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
-			f, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			f, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), "-", nil
+			return f.IsEmpty, nil, f.SizeInBits(), "-", nil
 		}},
 		{"SODA", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_soda_hash.NewSodaARE(u64, rangeLen, eps)
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, f.SizeInBits(), "-", nil
+			return f.IsEmpty, nil, f.SizeInBits(), "-", nil
 		}},
-		{"Truncation", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
-			f, err := are_trunc.NewTruncARE(bs, eps)
+		{"Truncation", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			f, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{Eps: eps})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), "-", nil
+			return f.IsEmpty, nil, f.SizeInBits(), "-", nil
 		}},
 		{"Hybrid", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_hybrid.NewHybridARE(bs, rangeLen, eps)
@@ -439,23 +447,25 @@ func TestScalability(t *testing.T) {
 			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), info, nil
 		}},
-		{"Scan-ARE", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
-			f, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
+		{"Scan-ARE", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			f, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
 			nc, nf, nt := f.Stats()
 			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), info, nil
+			return f.IsEmpty, nil, f.SizeInBits(), info, nil
 		}},
-		{"Greedy+Merge", func(bs []bits.BitString, _ []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
-			f, err := are_greedy_scan.NewGreedyScanARE(bs, rangeLen, eps)
+		{"Greedy+Merge", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
+			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
+			f, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
 			nc, nf, nt := f.Stats()
 			info := fmt.Sprintf("%dc/%d%%fb", nc, 100*nf/nt)
-			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, f.SizeInBits(), info, nil
+			return f.IsEmpty, nil, f.SizeInBits(), info, nil
 		}},
 		{"CDF-ARE", func(_ []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			f, err := are_pgm.NewPGMApproximateRangeEmptiness(u64, rangeLen, eps, 64)
@@ -616,6 +626,7 @@ func TestTradeoff_Full(t *testing.T) {
 	for i, v := range unifU64 {
 		unifBS[i] = testutils.TrieBS(v)
 	}
+	unifKeyBits := uint32(max(1, mathbits.Len64(unifU64[len(unifU64)-1])))
 
 	qrng := rand.New(rand.NewSource(12345))
 	queries := make([][2]uint64, queryCount)
@@ -633,6 +644,7 @@ func TestTradeoff_Full(t *testing.T) {
 		seqU64[i] = v
 		seqBS[i] = testutils.TrieBS(v)
 	}
+	seqKeyBits := uint32(max(1, mathbits.Len64(seqU64[len(seqU64)-1])))
 
 	qrngS := rand.New(rand.NewSource(12345))
 	seqQueries := make([][2]uint64, queryCount)
@@ -676,18 +688,18 @@ func TestTradeoff_Full(t *testing.T) {
 		fmt.Fprintf(csvF, "%f,Theoretical,%f,%f\n", eps, thBPK, eps)
 		fmt.Printf("%-6.3f | %-20s | %8.2f | %12.6f\n", eps, "Theoretical", thBPK, eps)
 
-		fOptU, errOptU := are_adaptive.NewAdaptiveARE(unifBS, rangeLen, eps, 0)
-		fOptS, errOptS := are_adaptive.NewAdaptiveARE(seqBS, rangeLen, eps, 0)
+		fOptU, errOptU := are_adaptive.NewAdaptiveARE(unifU64, unifKeyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
+		fOptS, errOptS := are_adaptive.NewAdaptiveARE(seqU64, seqKeyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
 		fSodaU, errSodaU := are_soda_hash.NewSodaARE(unifU64, rangeLen, eps)
 		fSodaS, errSodaS := are_soda_hash.NewSodaARE(seqU64, rangeLen, eps)
-		fTruncU, errTruncU := are_trunc.NewTruncARE(unifBS, eps)
-		fTruncS, errTruncS := are_trunc.NewTruncARE(seqBS, eps)
+		fTruncU, errTruncU := are_trunc.NewTruncARE(unifU64, unifKeyBits, are_trunc.Config{Eps: eps})
+		fTruncS, errTruncS := are_trunc.NewTruncARE(seqU64, seqKeyBits, are_trunc.Config{Eps: eps})
 		fHybridU, errHybridU := are_hybrid.NewHybridARE(unifBS, rangeLen, eps)
 		fHybridS, errHybridS := are_hybrid.NewHybridARE(seqBS, rangeLen, eps)
-		fScanU, errScanU := are_hybrid_scan.NewHybridScanARE(unifBS, rangeLen, eps)
-		fScanS, errScanS := are_hybrid_scan.NewHybridScanARE(seqBS, rangeLen, eps)
-		fGreedyU, errGreedyU := are_greedy_scan.NewGreedyScanARE(unifBS, rangeLen, eps)
-		fGreedyS, errGreedyS := are_greedy_scan.NewGreedyScanARE(seqBS, rangeLen, eps)
+		fScanU, errScanU := are_hybrid_scan.NewHybridScanARE(unifU64, unifKeyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+		fScanS, errScanS := are_hybrid_scan.NewHybridScanARE(seqU64, seqKeyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+		fGreedyU, errGreedyU := are_greedy_scan.NewGreedyScanARE(unifU64, unifKeyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+		fGreedyS, errGreedyS := are_greedy_scan.NewGreedyScanARE(seqU64, seqKeyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 		fCdfU, errCdfU := are_pgm.NewPGMApproximateRangeEmptiness(unifU64, rangeLen, eps, 64)
 		fCdfS, errCdfS := are_pgm.NewPGMApproximateRangeEmptiness(seqU64, rangeLen, eps, 64)
 		fBloomU, errBloomU := are_bloom.NewBloomARE(unifU64, rangeLen, eps)
@@ -711,22 +723,22 @@ func TestTradeoff_Full(t *testing.T) {
 			ms = append(ms, mm{name, err, bpk, keys, qs, fn})
 		}
 
-		add("Adaptive (Unif)", errOptU, perfSafeSize(fOptU), unifU64, queries, func(a, b uint64) bool { return fOptU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("Adaptive (Seq)", errOptS, perfSafeSize(fOptS), seqU64, seqQueries, func(a, b uint64) bool { return fOptS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("SODA (Unif)", errSodaU, perfSafeSizeSoda(fSodaU), unifU64, queries, func(a, b uint64) bool { return fSodaU.IsEmpty(a, b) })
-		add("SODA (Seq)", errSodaS, perfSafeSizeSoda(fSodaS), seqU64, seqQueries, func(a, b uint64) bool { return fSodaS.IsEmpty(a, b) })
-		add("Truncation (Unif)", errTruncU, perfSafeSizeTrunc(fTruncU), unifU64, queries, func(a, b uint64) bool { return fTruncU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("Truncation (Seq)", errTruncS, perfSafeSizeTrunc(fTruncS), seqU64, seqQueries, func(a, b uint64) bool { return fTruncS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
+		add("Adaptive (Unif)", errOptU, perfSafeSize(fOptU), unifU64, queries, fOptU.IsEmpty)
+		add("Adaptive (Seq)", errOptS, perfSafeSize(fOptS), seqU64, seqQueries, fOptS.IsEmpty)
+		add("SODA (Unif)", errSodaU, perfSafeSizeSoda(fSodaU), unifU64, queries, fSodaU.IsEmpty)
+		add("SODA (Seq)", errSodaS, perfSafeSizeSoda(fSodaS), seqU64, seqQueries, fSodaS.IsEmpty)
+		add("Truncation (Unif)", errTruncU, perfSafeSizeTrunc(fTruncU), unifU64, queries, fTruncU.IsEmpty)
+		add("Truncation (Seq)", errTruncS, perfSafeSizeTrunc(fTruncS), seqU64, seqQueries, fTruncS.IsEmpty)
 		add("Hybrid (Unif)", errHybridU, perfSafeSizeHybrid(fHybridU), unifU64, queries, func(a, b uint64) bool { return fHybridU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
 		add("Hybrid (Seq)", errHybridS, perfSafeSizeHybrid(fHybridS), seqU64, seqQueries, func(a, b uint64) bool { return fHybridS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("Scan-ARE (Unif)", errScanU, perfSafeSizeScan(fScanU), unifU64, queries, func(a, b uint64) bool { return fScanU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("Scan-ARE (Seq)", errScanS, perfSafeSizeScan(fScanS), seqU64, seqQueries, func(a, b uint64) bool { return fScanS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("Greedy+Merge (Unif)", errGreedyU, perfSafeSizeGreedy(fGreedyU), unifU64, queries, func(a, b uint64) bool { return fGreedyU.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("Greedy+Merge (Seq)", errGreedyS, perfSafeSizeGreedy(fGreedyS), seqU64, seqQueries, func(a, b uint64) bool { return fGreedyS.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) })
-		add("CDF-ARE (Unif)", errCdfU, perfSafeSizeCdf(fCdfU), unifU64, queries, func(a, b uint64) bool { return fCdfU.IsEmpty(a, b) })
-		add("CDF-ARE (Seq)", errCdfS, perfSafeSizeCdf(fCdfS), seqU64, seqQueries, func(a, b uint64) bool { return fCdfS.IsEmpty(a, b) })
-		add("Bloom V3 (Unif)", errBloomU, perfSafeSizeBloom(fBloomU), unifU64, queries, func(a, b uint64) bool { return fBloomU.IsEmpty(a, b) })
-		add("Bloom V3 (Seq)", errBloomS, perfSafeSizeBloom(fBloomS), seqU64, seqQueries, func(a, b uint64) bool { return fBloomS.IsEmpty(a, b) })
+		add("Scan-ARE (Unif)", errScanU, perfSafeSizeScan(fScanU), unifU64, queries, fScanU.IsEmpty)
+		add("Scan-ARE (Seq)", errScanS, perfSafeSizeScan(fScanS), seqU64, seqQueries, fScanS.IsEmpty)
+		add("Greedy+Merge (Unif)", errGreedyU, perfSafeSizeGreedy(fGreedyU), unifU64, queries, fGreedyU.IsEmpty)
+		add("Greedy+Merge (Seq)", errGreedyS, perfSafeSizeGreedy(fGreedyS), seqU64, seqQueries, fGreedyS.IsEmpty)
+		add("CDF-ARE (Unif)", errCdfU, perfSafeSizeCdf(fCdfU), unifU64, queries, fCdfU.IsEmpty)
+		add("CDF-ARE (Seq)", errCdfS, perfSafeSizeCdf(fCdfS), seqU64, seqQueries, fCdfS.IsEmpty)
+		add("Bloom V3 (Unif)", errBloomU, perfSafeSizeBloom(fBloomU), unifU64, queries, fBloomU.IsEmpty)
+		add("Bloom V3 (Seq)", errBloomS, perfSafeSizeBloom(fBloomS), seqU64, seqQueries, fBloomS.IsEmpty)
 
 		for _, me := range ms {
 			if me.err != nil {
@@ -776,7 +788,7 @@ func TestTradeoff_Full(t *testing.T) {
 }
 
 // Safe size helpers for TestTradeoff_Full (prefixed to avoid conflict with comparison_test.go)
-func perfSafeSize(f *are_adaptive.AdaptiveApproximateRangeEmptiness) uint64 {
+func perfSafeSize(f *are_adaptive.AdaptiveARE) uint64 {
 	if f == nil {
 		return 0
 	}

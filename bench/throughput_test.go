@@ -16,6 +16,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	mathbits "math/bits"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -146,11 +147,8 @@ func TestBuildThroughput(t *testing.T) {
 		{
 			name: "Adaptive(t=0)", color: "#2a7fff", marker: "square", dashed: false,
 			build: func(keys []uint64) error {
-				bs := make([]bits.BitString, len(keys))
-				for i, v := range keys {
-					bs[i] = testutils.TrieBS(v)
-				}
-				_, err := are_adaptive.NewAdaptiveARE(bs, rangeLen, eps, 0)
+				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+				_, err := are_adaptive.NewAdaptiveARE(keys, keyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
 				return err
 			},
 		},
@@ -164,11 +162,8 @@ func TestBuildThroughput(t *testing.T) {
 		{
 			name: "Truncation", color: "#9b59b6", marker: "triangle", dashed: false,
 			build: func(keys []uint64) error {
-				bs := make([]bits.BitString, len(keys))
-				for i, v := range keys {
-					bs[i] = testutils.TrieBS(v)
-				}
-				_, err := are_trunc.NewTruncARE(bs, eps)
+				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+				_, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{Eps: eps})
 				return err
 			},
 		},
@@ -186,22 +181,16 @@ func TestBuildThroughput(t *testing.T) {
 		{
 			name: "Scan-ARE", color: "#06b6d4", marker: "star", dashed: false,
 			build: func(keys []uint64) error {
-				bs := make([]bits.BitString, len(keys))
-				for i, v := range keys {
-					bs[i] = testutils.TrieBS(v)
-				}
-				_, err := are_hybrid_scan.NewHybridScanARE(bs, rangeLen, eps)
+				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+				_, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 				return err
 			},
 		},
 		{
 			name: "Greedy+Merge", color: "#22c55e", marker: "diamond", dashed: false,
 			build: func(keys []uint64) error {
-				bs := make([]bits.BitString, len(keys))
-				for i, v := range keys {
-					bs[i] = testutils.TrieBS(v)
-				}
-				_, err := are_greedy_scan.NewGreedyScanARE(bs, rangeLen, eps)
+				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+				_, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
 				return err
 			},
 		},
