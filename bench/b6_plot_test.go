@@ -24,14 +24,19 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 		m[k] = v
 	}
 	m["Truncation"] = SeriesStyle{Name: "Truncation", Color: "#b91c1c", Marker: "circle"}
-	// SuRFReal is the SuRF series for the K-sweep schema (suffix bits are
-	// now a sweep dimension, so the trailing "(8)" is gone). Inherit the
+	// SuRF is one family rendered as a marker-only point cloud across all
+	// three structural variants (None / Hash / Real). Inherit the
 	// SuRFReal(8) palette so plots stay consistent with comparison_test.go.
+	surfColor := "#0f172a"
+	surfMarker := "diamond"
 	if s, ok := DefaultSeriesStyles["SuRFReal(8)"]; ok {
-		m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: s.Color, Marker: s.Marker, Dashed: s.Dashed}
-	} else {
-		m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: "#0f172a", Marker: "diamond"}
+		surfColor = s.Color
+		surfMarker = s.Marker
 	}
+	m["SuRF"] = SeriesStyle{Name: "SuRF", Color: surfColor, Marker: surfMarker}
+	// Keep SuRFReal entry as a fallback used only by the per-(metric, dist)
+	// plots that pick a single representative cell; same palette as SuRF.
+	m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: surfColor, Marker: surfMarker}
 	return m
 }()
 
@@ -42,7 +47,7 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 var b6PlotOrder = []string{
 	"Grafite",
 	"SNARF",
-	"SuRFReal",
+	"SuRF",
 	"SODA",
 	"Truncation",
 	"Scan-ARE",
@@ -314,16 +319,7 @@ func buildB6TradeoffSeries(
 ) []testutils.SeriesData {
 	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
 	for _, fname := range b6PlotOrder {
-		all := byCell[struct{ dist, filter string }{dist, fname}]
-		if len(all) == 0 {
-			continue
-		}
-		rows := make([]b6Row, 0, len(all))
-		for _, r := range all {
-			if matchesHeadlineSweep(r) {
-				rows = append(rows, r)
-			}
-		}
+		rows := collectHeadlineRows(byCell, dist, fname)
 		if len(rows) == 0 {
 			continue
 		}
@@ -343,9 +339,33 @@ func buildB6TradeoffSeries(
 	return out
 }
 
+// collectHeadlineRows returns rows for (dist, fname) whose sweep matches the
+// headline value. For the special "SuRF" key the headline picks the
+// (SuRFReal, real_bits=8) representative since SuRF has no single tunable.
+func collectHeadlineRows(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist, fname string,
+) []b6Row {
+	srcNames := []string{fname}
+	if fname == "SuRF" {
+		srcNames = []string{"SuRFReal"}
+	}
+	var rows []b6Row
+	for _, src := range srcNames {
+		for _, r := range byCell[struct{ dist, filter string }{dist, src}] {
+			if matchesHeadlineSweep(r) {
+				rows = append(rows, r)
+			}
+		}
+	}
+	return rows
+}
+
 // buildB6TradeoffPerLSeries builds, per filter and fixed L, a curve of
 // (BPK, FPR) points traced through the K-sweep grid. Points are sorted
-// by BPK so the curve renders monotonically left-to-right.
+// by BPK so the curve renders monotonically left-to-right. The "SuRF"
+// slot folds all three structural variants into a single marker-only
+// (NoLine) series since the parameter space is 2D.
 func buildB6TradeoffPerLSeries(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dist string,
@@ -353,19 +373,16 @@ func buildB6TradeoffPerLSeries(
 ) []testutils.SeriesData {
 	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
 	for _, fname := range b6PlotOrder {
-		all := byCell[struct{ dist, filter string }{dist, fname}]
-		rows := make([]b6Row, 0, len(all))
-		for _, r := range all {
-			if r.RangeLen == L {
-				rows = append(rows, r)
-			}
-		}
+		rows := collectAtL(byCell, dist, fname, L, false)
 		if len(rows) == 0 {
 			continue
 		}
 		sort.Slice(rows, func(i, j int) bool { return rows[i].BPKUsed < rows[j].BPKUsed })
 
 		s := newB6Series(fname)
+		if fname == "SuRF" {
+			s.NoLine = true
+		}
 		for _, r := range rows {
 			if r.BPKUsed <= 0 {
 				continue
@@ -381,7 +398,8 @@ func buildB6TradeoffPerLSeries(
 
 // buildB6CachePressureSeries builds, per filter and fixed L, a curve of
 // (BPK, query_ns) points traced through the K-sweep grid. Points are
-// sorted by BPK.
+// sorted by BPK. SuRF is rendered as a marker-only point cloud (see
+// buildB6TradeoffPerLSeries).
 func buildB6CachePressureSeries(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dist string,
@@ -389,19 +407,16 @@ func buildB6CachePressureSeries(
 ) []testutils.SeriesData {
 	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
 	for _, fname := range b6PlotOrder {
-		all := byCell[struct{ dist, filter string }{dist, fname}]
-		rows := make([]b6Row, 0, len(all))
-		for _, r := range all {
-			if r.RangeLen == L && r.QueryNsPerOp > 0 && r.BPKUsed > 0 {
-				rows = append(rows, r)
-			}
-		}
+		rows := collectAtL(byCell, dist, fname, L, true)
 		if len(rows) == 0 {
 			continue
 		}
 		sort.Slice(rows, func(i, j int) bool { return rows[i].BPKUsed < rows[j].BPKUsed })
 
 		s := newB6Series(fname)
+		if fname == "SuRF" {
+			s.NoLine = true
+		}
 		for _, r := range rows {
 			s.Points = append(s.Points, testutils.Point{X: r.BPKUsed, Y: r.QueryNsPerOp})
 		}
@@ -412,9 +427,38 @@ func buildB6CachePressureSeries(
 	return out
 }
 
+// collectAtL gathers rows at the given L for fname (or the full SuRF
+// family when fname == "SuRF"). When requireQueryNs is true, rows must
+// also have a positive QueryNsPerOp and BPKUsed (cache-pressure filter).
+func collectAtL(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist, fname string,
+	L uint64,
+	requireQueryNs bool,
+) []b6Row {
+	srcNames := []string{fname}
+	if fname == "SuRF" {
+		srcNames = []string{"SuRFNone", "SuRFHash", "SuRFReal"}
+	}
+	var rows []b6Row
+	for _, src := range srcNames {
+		for _, r := range byCell[struct{ dist, filter string }{dist, src}] {
+			if r.RangeLen != L {
+				continue
+			}
+			if requireQueryNs && (r.QueryNsPerOp <= 0 || r.BPKUsed <= 0) {
+				continue
+			}
+			rows = append(rows, r)
+		}
+	}
+	return rows
+}
+
 // buildB6PlotSeries builds a per-(metric, dist) curve for each filter,
 // using only headline-sweep rows so each filter renders as one curve
-// through L.
+// through L. The "SuRF" slot uses (SuRFReal, real_bits=8) as the
+// single representative since SuRF has no headline tunable.
 func buildB6PlotSeries(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dist string,
@@ -422,16 +466,7 @@ func buildB6PlotSeries(
 ) []testutils.SeriesData {
 	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
 	for _, fname := range b6PlotOrder {
-		all := byCell[struct{ dist, filter string }{dist, fname}]
-		if len(all) == 0 {
-			continue
-		}
-		rows := make([]b6Row, 0, len(all))
-		for _, r := range all {
-			if matchesHeadlineSweep(r) {
-				rows = append(rows, r)
-			}
-		}
+		rows := collectHeadlineRows(byCell, dist, fname)
 		if len(rows) == 0 {
 			continue
 		}

@@ -159,6 +159,8 @@ var (
 	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22}
 	b6SweepBPK      = []float64{4, 6, 8, 10, 12, 14, 16, 18}
 	b6SweepRealBits = []float64{0, 2, 4, 8, 12, 16}
+	b6SweepHashBits = []float64{2, 4, 8, 12, 16}
+	b6SweepNoneBits = []float64{0}
 )
 
 type b6FilterDef struct {
@@ -229,6 +231,20 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 		{"SNARF", "bpk", b6SweepBPK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := snarf.New(keys, sweep)
+				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
+			}},
+		// SuRF is one filter family with three structural variants. We sweep
+		// each variant's bit budget so the FPR-vs-BPK plots get a SuRF point
+		// cloud across (suffixType, bitCount); the plotter folds all three
+		// names into a single marker-only "SuRF" series.
+		{"SuRFNone", "real_bits", b6SweepNoneBits,
+			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+				f := surf.New(keys, surf.SuffixNone, 0, 0)
+				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
+			}},
+		{"SuRFHash", "hash_bits", b6SweepHashBits,
+			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+				f := surf.New(keys, surf.SuffixHash, int(sweep), 0)
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
 			}},
 		{"SuRFReal", "real_bits", b6SweepRealBits,
