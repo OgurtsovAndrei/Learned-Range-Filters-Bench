@@ -151,7 +151,12 @@ func TestB6IndustryLatency(t *testing.T) {
 // Per-filter sweep grids. Top-level vars so they are easy to tune for
 // individual reruns without touching the filter table.
 var (
+	// SODA and BloomARE keep their eps-based public APIs; Truncation/Scan-ARE/
+	// Greedy+Merge are now K-driven (see TruncARE/HybridScanARE/GreedyScanARE
+	// Config). The K grid spans approximately the same BPK range the eps grid
+	// covered (BPK ≈ K under exact-mode regimes).
 	b6SweepEps      = []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005}
+	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22}
 	b6SweepBPK      = []float64{4, 6, 8, 10, 12, 14, 16, 18}
 	b6SweepRealBits = []float64{0, 2, 4, 8, 12, 16}
 )
@@ -179,27 +184,27 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
 			}},
-		{"Truncation", "eps", b6SweepEps,
+		{"Truncation", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{Eps: sweep})
+				f, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{K: uint32(sweep)})
 				if err != nil {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
 			}},
-		{"Scan-ARE", "eps", b6SweepEps,
+		{"Scan-ARE", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits,
-					are_hybrid_scan.Config{RangeLen: float64(L), Eps: sweep})
+					are_hybrid_scan.Config{K: uint32(sweep)})
 				if err != nil {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
 			}},
-		{"Greedy+Merge", "eps", b6SweepEps,
+		{"Greedy+Merge", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits,
-					are_greedy_scan.Config{RangeLen: float64(L), Eps: sweep})
+					are_greedy_scan.Config{K: uint32(sweep)})
 				if err != nil {
 					return nil, 0, err
 				}

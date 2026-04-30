@@ -199,7 +199,7 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 					}
 
 					keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
-					f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits, are_hybrid_scan.ConfigWithPolicy{RangeLen: float64(rangeLen), K: K, Policy: pe.policy(epsilon)})
+					f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits, are_hybrid_scan.ConfigWithPolicy{K: K, RangeLen: rangeLen, Policy: pe.policy(epsilon)})
 					if err != nil {
 						continue
 					}

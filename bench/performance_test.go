@@ -24,6 +24,34 @@ import (
 	"time"
 )
 
+// kFromEps maps the legacy ARE target (n, L, eps) to the K it would have produced
+// in the old API: K = ceil(log2(n*(L+1)/eps)). Adaptive/Scan/Greedy used this exact
+// formula. Trunc used K = ceil(log2(2n/eps)); for L >> 1 the two agree to within 1
+// bit, so we use the L+1 form uniformly across our filters.
+func kFromEps(n int, rangeLen uint64, eps float64) uint32 {
+	k := uint32(math.Ceil(math.Log2(float64(n) * (float64(rangeLen) + 1) / eps)))
+	if k == 0 {
+		k = 1
+	}
+	if k > 64 {
+		k = 64
+	}
+	return k
+}
+
+// kFromEpsTrunc preserves Trunc's specific formula K = ceil(log2(2n/eps)) so
+// callers that previously used Trunc with a given eps reproduce the same BPK.
+func kFromEpsTrunc(n int, eps float64) uint32 {
+	k := uint32(math.Ceil(math.Log2(2.0 * float64(n) / eps)))
+	if k == 0 {
+		k = 1
+	}
+	if k > 64 {
+		k = 64
+	}
+	return k
+}
+
 func TestBuildTimePerKey(t *testing.T) {
 	sizes := []int{1 << 10, 1 << 12, 1 << 14, 1 << 16, 1 << 18, 1 << 20}
 	const (
@@ -46,7 +74,7 @@ func TestBuildTimePerKey(t *testing.T) {
 	filters := []filterDef{
 		{"Adaptive(t=0)", "#2a7fff", "square", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			_, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
+			_, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{K: kFromEps(len(u64), rangeLen, eps), Threshold: 0})
 			return err
 		}},
 		{"SODA", "#22a06b", "diamond", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
@@ -55,7 +83,7 @@ func TestBuildTimePerKey(t *testing.T) {
 		}},
 		{"Truncation", "#e6a800", "triangle", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			_, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{Eps: eps})
+			_, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{K: kFromEpsTrunc(len(u64), eps)})
 			return err
 		}},
 		{"Hybrid", "#9b59b6", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
@@ -64,12 +92,12 @@ func TestBuildTimePerKey(t *testing.T) {
 		}},
 		{"Scan-ARE", "#06b6d4", "star", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			_, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+			_, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{K: kFromEps(len(u64), rangeLen, eps)})
 			return err
 		}},
 		{"Greedy+Merge", "#22c55e", "diamond", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			_, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+			_, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{K: kFromEps(len(u64), rangeLen, eps)})
 			return err
 		}},
 		{"CDF-ARE", "#e05d10", "circle", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
@@ -223,7 +251,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 
 	filters := []filterDef{
 		{"Adaptive(t=0)", "#2a7fff", "square", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_adaptive.NewAdaptiveARE(keysU64, keyBits, are_adaptive.Config{RangeLen: float64(L), Eps: eps, Threshold: 0})
+			f, err := are_adaptive.NewAdaptiveARE(keysU64, keyBits, are_adaptive.Config{K: kFromEps(len(keysU64), L, eps), Threshold: 0})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -237,7 +265,7 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 			return f.IsEmpty, nil, nil
 		}},
 		{"Truncation", "#e6a800", "triangle", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_trunc.NewTruncARE(keysU64, keyBits, are_trunc.Config{Eps: eps})
+			f, err := are_trunc.NewTruncARE(keysU64, keyBits, are_trunc.Config{K: kFromEpsTrunc(len(keysU64), eps)})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -251,14 +279,14 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
 		{"Scan-ARE", "#06b6d4", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_hybrid_scan.NewHybridScanARE(keysU64, keyBits, are_hybrid_scan.Config{RangeLen: float64(L), Eps: eps})
+			f, err := are_hybrid_scan.NewHybridScanARE(keysU64, keyBits, are_hybrid_scan.Config{K: kFromEps(len(keysU64), L, eps)})
 			if err != nil {
 				return nil, nil, err
 			}
 			return f.IsEmpty, nil, nil
 		}},
 		{"Greedy+Merge", "#22c55e", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
-			f, err := are_greedy_scan.NewGreedyScanARE(keysU64, keyBits, are_greedy_scan.Config{RangeLen: float64(L), Eps: eps})
+			f, err := are_greedy_scan.NewGreedyScanARE(keysU64, keyBits, are_greedy_scan.Config{K: kFromEps(len(keysU64), L, eps)})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -417,7 +445,7 @@ func TestScalability(t *testing.T) {
 	filters := []filterEntry{
 		{"Adaptive(t=0)", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			f, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
+			f, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{K: kFromEps(len(u64), rangeLen, eps), Threshold: 0})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
@@ -432,7 +460,7 @@ func TestScalability(t *testing.T) {
 		}},
 		{"Truncation", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			f, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{Eps: eps})
+			f, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{K: kFromEpsTrunc(len(u64), eps)})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
@@ -449,7 +477,7 @@ func TestScalability(t *testing.T) {
 		}},
 		{"Scan-ARE", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			f, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+			f, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{K: kFromEps(len(u64), rangeLen, eps)})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
@@ -459,7 +487,7 @@ func TestScalability(t *testing.T) {
 		}},
 		{"Greedy+Merge", func(bs []bits.BitString, u64 []uint64, _ []uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, uint64, string, error) {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
-			f, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+			f, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{K: kFromEps(len(u64), rangeLen, eps)})
 			if err != nil {
 				return nil, nil, 0, "", err
 			}
@@ -688,18 +716,22 @@ func TestTradeoff_Full(t *testing.T) {
 		fmt.Fprintf(csvF, "%f,Theoretical,%f,%f\n", eps, thBPK, eps)
 		fmt.Printf("%-6.3f | %-20s | %8.2f | %12.6f\n", eps, "Theoretical", thBPK, eps)
 
-		fOptU, errOptU := are_adaptive.NewAdaptiveARE(unifU64, unifKeyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
-		fOptS, errOptS := are_adaptive.NewAdaptiveARE(seqU64, seqKeyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
+		kU := kFromEps(len(unifU64), rangeLen, eps)
+		kS := kFromEps(len(seqU64), rangeLen, eps)
+		kTruncU := kFromEpsTrunc(len(unifU64), eps)
+		kTruncS := kFromEpsTrunc(len(seqU64), eps)
+		fOptU, errOptU := are_adaptive.NewAdaptiveARE(unifU64, unifKeyBits, are_adaptive.Config{K: kU, Threshold: 0})
+		fOptS, errOptS := are_adaptive.NewAdaptiveARE(seqU64, seqKeyBits, are_adaptive.Config{K: kS, Threshold: 0})
 		fSodaU, errSodaU := are_soda_hash.NewSodaARE(unifU64, rangeLen, eps)
 		fSodaS, errSodaS := are_soda_hash.NewSodaARE(seqU64, rangeLen, eps)
-		fTruncU, errTruncU := are_trunc.NewTruncARE(unifU64, unifKeyBits, are_trunc.Config{Eps: eps})
-		fTruncS, errTruncS := are_trunc.NewTruncARE(seqU64, seqKeyBits, are_trunc.Config{Eps: eps})
+		fTruncU, errTruncU := are_trunc.NewTruncARE(unifU64, unifKeyBits, are_trunc.Config{K: kTruncU})
+		fTruncS, errTruncS := are_trunc.NewTruncARE(seqU64, seqKeyBits, are_trunc.Config{K: kTruncS})
 		fHybridU, errHybridU := are_hybrid.NewHybridARE(unifBS, rangeLen, eps)
 		fHybridS, errHybridS := are_hybrid.NewHybridARE(seqBS, rangeLen, eps)
-		fScanU, errScanU := are_hybrid_scan.NewHybridScanARE(unifU64, unifKeyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
-		fScanS, errScanS := are_hybrid_scan.NewHybridScanARE(seqU64, seqKeyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
-		fGreedyU, errGreedyU := are_greedy_scan.NewGreedyScanARE(unifU64, unifKeyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
-		fGreedyS, errGreedyS := are_greedy_scan.NewGreedyScanARE(seqU64, seqKeyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+		fScanU, errScanU := are_hybrid_scan.NewHybridScanARE(unifU64, unifKeyBits, are_hybrid_scan.Config{K: kU})
+		fScanS, errScanS := are_hybrid_scan.NewHybridScanARE(seqU64, seqKeyBits, are_hybrid_scan.Config{K: kS})
+		fGreedyU, errGreedyU := are_greedy_scan.NewGreedyScanARE(unifU64, unifKeyBits, are_greedy_scan.Config{K: kU})
+		fGreedyS, errGreedyS := are_greedy_scan.NewGreedyScanARE(seqU64, seqKeyBits, are_greedy_scan.Config{K: kS})
 		fCdfU, errCdfU := are_pgm.NewPGMApproximateRangeEmptiness(unifU64, rangeLen, eps, 64)
 		fCdfS, errCdfS := are_pgm.NewPGMApproximateRangeEmptiness(seqU64, rangeLen, eps, 64)
 		fBloomU, errBloomU := are_bloom.NewBloomARE(unifU64, rangeLen, eps)

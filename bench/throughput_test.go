@@ -149,7 +149,7 @@ func TestBuildThroughput(t *testing.T) {
 			name: "Adaptive(t=0)", color: "#2a7fff", marker: "square", dashed: false,
 			build: func(keys []uint64) error {
 				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
-				_, err := are_adaptive.NewAdaptiveARE(keys, keyBits, are_adaptive.Config{RangeLen: float64(rangeLen), Eps: eps, Threshold: 0})
+				_, err := are_adaptive.NewAdaptiveARE(keys, keyBits, are_adaptive.Config{K: kFromEps(len(keys), rangeLen, eps), Threshold: 0})
 				return err
 			},
 		},
@@ -164,7 +164,7 @@ func TestBuildThroughput(t *testing.T) {
 			name: "Truncation", color: "#9b59b6", marker: "triangle", dashed: false,
 			build: func(keys []uint64) error {
 				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
-				_, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{Eps: eps})
+				_, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{K: kFromEpsTrunc(len(keys), eps)})
 				return err
 			},
 		},
@@ -183,7 +183,7 @@ func TestBuildThroughput(t *testing.T) {
 			name: "Scan-ARE", color: "#06b6d4", marker: "star", dashed: false,
 			build: func(keys []uint64) error {
 				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
-				_, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+				_, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{K: kFromEps(len(keys), rangeLen, eps)})
 				return err
 			},
 		},
@@ -191,7 +191,7 @@ func TestBuildThroughput(t *testing.T) {
 			name: "Greedy+Merge", color: "#22c55e", marker: "diamond", dashed: false,
 			build: func(keys []uint64) error {
 				keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
-				_, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits, are_greedy_scan.Config{RangeLen: float64(rangeLen), Eps: eps})
+				_, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits, are_greedy_scan.Config{K: kFromEps(len(keys), rangeLen, eps)})
 				return err
 			},
 		},

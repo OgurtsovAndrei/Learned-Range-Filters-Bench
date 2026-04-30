@@ -266,7 +266,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							}
 						}
 						if rebuildKGridSeries["Scan-ARE"] {
-							if f, err := are_hybrid_scan.NewHybridScanAREFromK(cfg.keys, uint32(keyBits), are_hybrid_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
+							if f, err := are_hybrid_scan.NewHybridScanARE(cfg.keys, uint32(keyBits), are_hybrid_scan.Config{K: K}); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								nc, nf, nt := f.Stats()
@@ -281,7 +281,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 							}
 						}
 						if rebuildKGridSeries["Greedy+Merge"] {
-							if f, err := are_greedy_scan.NewGreedyScanAREFromK(cfg.keys, uint32(keyBits), are_greedy_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
+							if f, err := are_greedy_scan.NewGreedyScanARE(cfg.keys, uint32(keyBits), are_greedy_scan.Config{K: K}); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								nc, nf, nt := f.Stats()

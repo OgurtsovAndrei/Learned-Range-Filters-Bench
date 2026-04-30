@@ -67,17 +67,17 @@ func hybridMeasureK(
 		}})
 	}
 
-	if fs, err := are_hybrid_scan.NewHybridScanAREFromK(keys, keyBits, are_hybrid_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
+	if fs, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{K: K}); err == nil {
 		bpk := float64(fs.SizeInBits()) / float64(len(keys))
 		tasks = append(tasks, task{"Scan-ARE", bpk, fs.IsEmpty})
 	}
 
-	if fg, err := are_greedy_scan.NewGreedyScanAREFromKRaw(keys, keyBits, are_greedy_scan.ConfigFromKRaw{RangeLen: float64(rangeLen), K: K}); err == nil {
+	if fg, err := are_greedy_scan.NewGreedyScanARERaw(keys, keyBits, are_greedy_scan.ConfigRaw{K: K}); err == nil {
 		bpk := float64(fg.SizeInBits()) / float64(len(keys))
 		tasks = append(tasks, task{"Greedy-raw", bpk, fg.IsEmpty})
 	}
 
-	if fg, err := are_greedy_scan.NewGreedyScanAREFromK(keys, keyBits, are_greedy_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K}); err == nil {
+	if fg, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits, are_greedy_scan.Config{K: K}); err == nil {
 		bpk := float64(fg.SizeInBits()) / float64(len(keys))
 		tasks = append(tasks, task{"Greedy+Merge", bpk, fg.IsEmpty})
 	}
@@ -342,15 +342,15 @@ func runHybridCompareBuildTime(t *testing.T, distName string, nValues []int, gen
 		hybTime := time.Since(start)
 
 		start = time.Now()
-		_, scanErr := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{RangeLen: float64(rangeLen), Eps: epsilon})
+		_, scanErr := are_hybrid_scan.NewHybridScanARE(keys, keyBits, are_hybrid_scan.Config{K: K})
 		scanTime := time.Since(start)
 
 		start = time.Now()
-		_, greedyRawErr := are_greedy_scan.NewGreedyScanAREFromKRaw(keys, keyBits, are_greedy_scan.ConfigFromKRaw{RangeLen: float64(rangeLen), K: K})
+		_, greedyRawErr := are_greedy_scan.NewGreedyScanARERaw(keys, keyBits, are_greedy_scan.ConfigRaw{K: K})
 		greedyRawTime := time.Since(start)
 
 		start = time.Now()
-		_, greedyMergeErr := are_greedy_scan.NewGreedyScanAREFromK(keys, keyBits, are_greedy_scan.ConfigFromK{RangeLen: float64(rangeLen), K: K})
+		_, greedyMergeErr := are_greedy_scan.NewGreedyScanARE(keys, keyBits, are_greedy_scan.Config{K: K})
 		greedyMergeTime := time.Since(start)
 
 		hybNs := float64(hybTime.Nanoseconds()) / float64(n)

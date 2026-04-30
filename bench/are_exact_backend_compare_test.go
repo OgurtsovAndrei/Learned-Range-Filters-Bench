@@ -141,7 +141,7 @@ func measureGreedyMerge(tb testing.TB, ds areLoadedDataset, variant exactbackend
 	K := greedyK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon)
 	keyBits := uint32(max(1, mathbits.Len64(ds.keysU64[len(ds.keysU64)-1])))
 	start := time.Now()
-	filter, err := are_greedy_scan.NewGreedyScanAREFromK(ds.keysU64, keyBits, are_greedy_scan.ConfigFromK{RangeLen: float64(areCompareRangeLen), K: K})
+	filter, err := are_greedy_scan.NewGreedyScanARE(ds.keysU64, keyBits, are_greedy_scan.Config{K: K})
 	if err != nil {
 		tb.Fatalf("build greedy/%s/%s: %v", variant.String(), ds.name, err)
 	}

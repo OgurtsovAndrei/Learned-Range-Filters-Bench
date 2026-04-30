@@ -55,17 +55,20 @@ var b6PlotOrder = []string{
 // value per filter family so each filter renders as one curve through L.
 const (
 	b6HeadlineEps     = 0.01
+	b6HeadlineK       = 14.0 // Roughly equivalent to eps≈0.01 across our filters.
 	b6HeadlineBPK     = 10.0
 	b6HeadlineRealBit = 8.0
 )
 
 // matchesHeadlineSweep returns true if r is the headline-sweep cell for its
-// filter family — eps=0.01 for ARE/Bloom, bpk=10 for Grafite/SNARF,
-// real_bits=8 for SuRFReal.
+// filter family — eps=0.01 for SODA/Bloom, K=14 for Truncation/Scan-ARE/
+// Greedy+Merge, bpk=10 for Grafite/SNARF, real_bits=8 for SuRFReal.
 func matchesHeadlineSweep(r b6Row) bool {
 	switch r.SweepName {
 	case "eps":
 		return floatNear(r.SweepParam, b6HeadlineEps)
+	case "K":
+		return floatNear(r.SweepParam, b6HeadlineK)
 	case "bpk":
 		return floatNear(r.SweepParam, b6HeadlineBPK)
 	case "real_bits":
