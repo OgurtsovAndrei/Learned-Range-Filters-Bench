@@ -221,7 +221,7 @@ var (
 	// Config). The K grid spans approximately the same BPK range the eps grid
 	// covered (BPK ≈ K under exact-mode regimes).
 	b6SweepEps      = []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005}
-	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22}
+	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 40, 44, 47}
 	b6SweepBPK      = []float64{4, 6, 8, 10, 12, 14, 16, 18}
 	// BloomARE filter size m = n*L/eps. With the full eps grid at
 	// L=65536 / n=2^20 we already need 16 GB at eps=0.0005. We trim the
