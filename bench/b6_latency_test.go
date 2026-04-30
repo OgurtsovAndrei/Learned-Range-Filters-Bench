@@ -272,7 +272,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, nil},
 		{"Truncation", "K", b6SweepK,
 			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{K: uint32(sweep)})
@@ -280,7 +280,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, nil},
 		{"Scan-ARE", "K", b6SweepK,
 			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits,
@@ -289,7 +289,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, nil},
 		{"Greedy+Merge", "K", b6SweepK,
 			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits,
@@ -298,7 +298,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, nil},
 		{
 			// BloomARE is BPK-driven and L-independent: filter size is
 			// fixed by target bits-per-key, queries at any L just probe
@@ -338,12 +338,12 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, fmt.Errorf("grafite: target bpk=%.2f exceeds envelope", sweep)
 				}
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil},
+			}, nil, nil},
 		{"SNARF", "bpk", b6SweepBPK,
 			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := snarf.New(keys, sweep)
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil},
+			}, nil, nil},
 		// SuRF is one filter family with three structural variants. We sweep
 		// each variant's bit budget so the FPR-vs-BPK plots get a SuRF point
 		// cloud across (suffixType, bitCount); the plotter folds all three
