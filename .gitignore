@@ -9,9 +9,9 @@
 go.sum
 
 # CGo build artifacts
-grafite/build/
-surf/build/
-snarf/build/
+thirdparty/grafite/build/
+thirdparty/surf/build/
+thirdparty/snarf/build/
 
 # Benchmark outputs (regenerable)
 bench_results/
