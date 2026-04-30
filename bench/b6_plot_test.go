@@ -86,7 +86,10 @@ func floatNear(a, b float64) bool {
 	return math.Abs(a-b) <= 1e-9*math.Max(1.0, math.Abs(b))
 }
 
-// TestB6Plots regenerates SVGs from bench_results/data/b6_latency.json.
+// TestB6Plots regenerates SVGs from bench_results/data/b6_latency_N*.json.
+// Each JSON file represents one N (key count) and produces a separate
+// plots/b6_N{n}/ directory.
+//
 // Set PLOT_ONLY=1 (or B6_PLOT=1) to avoid running the heavy measurement
 // test. One SVG per (metric, distribution); filters are series within.
 func TestB6Plots(t *testing.T) {
@@ -94,7 +97,33 @@ func TestB6Plots(t *testing.T) {
 		t.Skip("set B6_PLOT=1 (or PLOT_ONLY=1) to render b6 plots from existing JSON")
 	}
 
-	jsonPath := "../bench_results/data/b6_latency.json"
+	jsonPaths, err := filepath.Glob("../bench_results/data/b6_latency_N*.json")
+	if err != nil {
+		t.Fatalf("glob b6_latency_N*.json: %v", err)
+	}
+	// Back-compat: also pick up the legacy single-N file if present.
+	if legacy := "../bench_results/data/b6_latency.json"; fileExists(legacy) {
+		jsonPaths = append(jsonPaths, legacy)
+	}
+	if len(jsonPaths) == 0 {
+		t.Fatalf("no b6_latency_N*.json found — run TestB6IndustryLatency first")
+	}
+	sort.Strings(jsonPaths)
+
+	for _, jsonPath := range jsonPaths {
+		jsonPath := jsonPath
+		t.Run(filepath.Base(jsonPath), func(t *testing.T) {
+			renderB6Plots(t, jsonPath)
+		})
+	}
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func renderB6Plots(t *testing.T, jsonPath string) {
 	buf, err := os.ReadFile(jsonPath)
 	if err != nil {
 		t.Fatalf("read %s: %v", jsonPath, err)
@@ -104,7 +133,7 @@ func TestB6Plots(t *testing.T) {
 		t.Fatalf("parse %s: %v", jsonPath, err)
 	}
 	if len(doc.Rows) == 0 {
-		t.Fatalf("no rows in %s — run TestB6IndustryLatency first", jsonPath)
+		t.Skipf("no rows in %s", jsonPath)
 	}
 
 	// Index rows by (distribution, filter). Per-(metric, dist) plots use

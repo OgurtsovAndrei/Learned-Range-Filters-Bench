@@ -64,38 +64,55 @@ import (
 // subtest, merged across runs).
 func TestB6IndustryLatency(t *testing.T) {
 	const (
-		n          = 1 << 24
 		queryCount = 1 << 18
 		eps        = 0.01
 	)
 	rangeLens := []uint64{1, 16, 128, 1024, 4096, 16384, 65536}
 
+	nValues := parseB6N()
+
 	type distSpec struct {
 		name string
-		// load returns at least n unique uint64 keys (sorted).
-		load func() ([]uint64, error)
+		// load returns at least n unique uint64 keys (sorted). The closure
+		// is built per-N because synthetic distributions have a fixed-size
+		// generator file and SOSD distributions cap by n.
+		makeLoad func(n int) func() ([]uint64, error)
 	}
 	distributions := []distSpec{
-		{"sosd_fb", func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("fb_200M_uint64"), 2*n)
+		{"sosd_fb", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint64(sosdPath("fb_200M_uint64"), 2*n)
+			}
 		}},
-		{"sosd_wiki", func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), 2*n)
+		{"sosd_wiki", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), 2*n)
+			}
 		}},
-		{"sosd_osm", func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 2*n)
+		{"sosd_osm", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 2*n)
+			}
 		}},
-		{"sosd_books", func() ([]uint64, error) {
-			return loadSOSDUint32(sosdPath("books_200M_uint32"), 2*n)
+		{"sosd_books", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint32(sosdPath("books_200M_uint32"), 2*n)
+			}
 		}},
-		{"uniform", func() ([]uint64, error) {
-			return loadSOSDUint64(syntheticDataPath("uniform_16M_uint64"), 0)
+		{"uniform", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint64(syntheticDataPath("uniform_16M_uint64"), 0)
+			}
 		}},
-		{"spread", func() ([]uint64, error) {
-			return loadSOSDUint64(syntheticDataPath("spread_16M_uint64"), 0)
+		{"spread", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint64(syntheticDataPath("spread_16M_uint64"), 0)
+			}
 		}},
-		{"clustered", func() ([]uint64, error) {
-			return loadSOSDUint64(syntheticDataPath("clustered_16M_uint64"), 0)
+		{"clustered", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadSOSDUint64(syntheticDataPath("clustered_16M_uint64"), 0)
+			}
 		}},
 	}
 
@@ -106,46 +123,82 @@ func TestB6IndustryLatency(t *testing.T) {
 		}
 	}
 
-	store := newB6Store(n, queryCount, eps)
-	fmt.Printf("\n=== B6: Build + Query latency + actual BPK + FPR, n=2^24, ε=%.3f ===\n", eps)
-	fmt.Printf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s\n",
-		"Distribution", "Filter", "L", "sweep", "build_ms", "build_Mkeys/s", "query_ns/op", "bpk", "fpr")
+	for _, n := range nValues {
+		n := n
+		t.Run(fmt.Sprintf("N=2^%d", mathbits.TrailingZeros(uint(n))), func(t *testing.T) {
+			store := newB6Store(n, queryCount, eps)
+			fmt.Printf("\n=== B6: Build + Query latency + actual BPK + FPR, n=%d, ε=%.3f ===\n",
+				n, eps)
+			fmt.Printf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s\n",
+				"Distribution", "Filter", "L", "sweep", "build_ms", "build_Mkeys/s", "query_ns/op", "bpk", "fpr")
 
-	for _, ds := range distributions {
-		ds := ds
-		t.Run(ds.name, func(t *testing.T) {
-			allKeys, err := ds.load()
-			if err != nil {
-				t.Skipf("load %s: %v", ds.name, err)
-			}
-			if len(allKeys) < n {
-				t.Skipf("not enough keys for %s: have %d, need %d", ds.name, len(allKeys), n)
-			}
-			keys := allKeys[:n]
-			keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
-			t.Logf("%s: %d keys, range [%d, %d], keyBits=%d",
-				ds.name, len(keys), keys[0], keys[n-1], keyBits)
+			for _, ds := range distributions {
+				ds := ds
+				t.Run(ds.name, func(t *testing.T) {
+					allKeys, err := ds.makeLoad(n)()
+					if err != nil {
+						t.Skipf("load %s: %v", ds.name, err)
+					}
+					if len(allKeys) < n {
+						t.Skipf("not enough keys for %s: have %d, need %d", ds.name, len(allKeys), n)
+					}
+					keys := allKeys[:n]
+					keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+					t.Logf("%s: %d keys, range [%d, %d], keyBits=%d",
+						ds.name, len(keys), keys[0], keys[n-1], keyBits)
 
-			filters := buildB6Filters(keys, keyBits)
-			for _, fd := range filters {
-				fd := fd
-				if skipSet[fd.name] {
-					t.Logf("%s/%s: skipped via SKIP_FILTERS", ds.name, fd.name)
-					continue
-				}
-				t.Run(fd.name, func(t *testing.T) {
-					rows := runB6Filter(t, store, ds.name, fd,
-						keys, rangeLens, queryCount, n, eps)
-					store.update(ds.name, fd.name, rows)
-					if err := store.flush(); err != nil {
-						t.Errorf("flush b6_latency.json: %v", err)
+					filters := buildB6Filters(keys, keyBits)
+					for _, fd := range filters {
+						fd := fd
+						if skipSet[fd.name] {
+							t.Logf("%s/%s: skipped via SKIP_FILTERS", ds.name, fd.name)
+							continue
+						}
+						t.Run(fd.name, func(t *testing.T) {
+							rows := runB6Filter(t, store, ds.name, fd,
+								keys, rangeLens, queryCount, n, eps)
+							store.update(ds.name, fd.name, rows)
+							if err := store.flush(); err != nil {
+								t.Errorf("flush %s: %v", store.path(), err)
+							}
+						})
 					}
 				})
 			}
+
+			t.Logf("wrote %s", store.path())
 		})
 	}
+}
 
-	t.Logf("wrote %s", store.path())
+// parseB6N reads the B6_N env var as a comma-separated list of N values.
+// Each value may be a decimal integer or a 2^k notation. Default 2^24.
+//
+//	B6_N=1048576           → [1048576]
+//	B6_N=2^20,2^24,2^26    → [1048576, 16777216, 67108864]
+func parseB6N() []int {
+	v := os.Getenv("B6_N")
+	if v == "" {
+		return []int{1 << 24}
+	}
+	out := []int{}
+	for _, tok := range strings.Split(v, ",") {
+		tok = strings.TrimSpace(tok)
+		if strings.HasPrefix(tok, "2^") {
+			k, err := strconv.Atoi(tok[2:])
+			if err != nil || k < 0 || k > 32 {
+				panic(fmt.Sprintf("B6_N: bad token %q", tok))
+			}
+			out = append(out, 1<<k)
+			continue
+		}
+		n, err := strconv.Atoi(tok)
+		if err != nil || n < 1 {
+			panic(fmt.Sprintf("B6_N: bad token %q", tok))
+		}
+		out = append(out, n)
+	}
+	return out
 }
 
 // Per-filter sweep grids. Top-level vars so they are easy to tune for
@@ -341,7 +394,7 @@ func newB6Store(nKeys, queryCount int, eps float64) *b6Store {
 }
 
 func (s *b6Store) path() string {
-	return "../bench_results/data/b6_latency.json"
+	return fmt.Sprintf("../bench_results/data/b6_latency_N%d.json", s.doc.NKeys)
 }
 
 func (s *b6Store) update(dist, filter string, rows []b6Row) {
