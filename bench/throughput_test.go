@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -247,20 +248,49 @@ func TestBuildThroughput(t *testing.T) {
 		},
 	}
 
-	distDefs := []struct{ name, file string }{
-		{"clustered", "clustered_16M_uint64"},
-		{"uniform", "uniform_16M_uint64"},
-		{"spread", "spread_16M_uint64"},
-		{"zipfian", "zipfian_16M_uint64"},
+	maxN := nSizes[len(nSizes)-1]
+	loadOvershoot := 2 * maxN // overshoot to absorb SOSD dedup losses
+
+	type distDef struct {
+		name string
+		load func() ([]uint64, error)
+	}
+
+	distDefs := []distDef{
+		{"clustered", func() ([]uint64, error) {
+			return loadSOSDUint64(syntheticDataPath("clustered_16M_uint64"), 0)
+		}},
+		{"uniform", func() ([]uint64, error) {
+			return loadSOSDUint64(syntheticDataPath("uniform_16M_uint64"), 0)
+		}},
+		{"spread", func() ([]uint64, error) {
+			return loadSOSDUint64(syntheticDataPath("spread_16M_uint64"), 0)
+		}},
+		{"sosd_books", func() ([]uint64, error) {
+			return loadSOSDUint32(sosdPath("books_200M_uint32"), loadOvershoot)
+		}},
+		{"sosd_fb", func() ([]uint64, error) {
+			return loadSOSDUint64(sosdPath("fb_200M_uint64"), loadOvershoot)
+		}},
+		{"sosd_wiki", func() ([]uint64, error) {
+			return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), loadOvershoot)
+		}},
+		{"sosd_osm", func() ([]uint64, error) {
+			return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), loadOvershoot)
+		}},
 	}
 
 	for _, dist := range distDefs {
 		dist := dist
 		t.Run(dist.name, func(t *testing.T) {
-			allKeys, err := loadSOSDUint64(syntheticDataPath(dist.file), 0)
+			allKeys, err := dist.load()
 			if err != nil {
-				t.Skipf("run TestGenerateSyntheticKeys first: %v", err)
+				t.Skipf("load %s: %v", dist.name, err)
 			}
+			if len(allKeys) < maxN {
+				t.Skipf("not enough unique keys for %s: have %d, need %d", dist.name, len(allKeys), maxN)
+			}
+			allKeys = allKeys[:maxN]
 
 			allSeries := map[string]*testutils.SeriesData{
 				"Adaptive(t=0)": {Name: "Adaptive(t=0)", Color: "#2a7fff", Marker: "square"},
@@ -292,7 +322,49 @@ func TestBuildThroughput(t *testing.T) {
 				fmt.Printf("\n=== Build Throughput — %s (ε=%.2f, L=%d) ===\n", dist.name, eps, rangeLen)
 				fmt.Printf("%-16s | %-8s | %-16s | %-10s\n", "Filter", "N", "Throughput", "Time")
 
+				skipSet := map[string]bool{}
+				if skip := os.Getenv("SKIP_FILTERS"); skip != "" {
+					for _, name := range strings.Split(skip, ",") {
+						skipSet[strings.TrimSpace(name)] = true
+					}
+				}
+
+				saveSnapshot := func() {
+					v2Result := &benchResult{
+						Version: 2,
+						Benchmark: benchMeta{
+							Type:         "build_throughput",
+							Distribution: dist.name,
+							NKeys:        nSizes[len(nSizes)-1],
+							RangeLen:     rangeLen,
+							Timestamp:    time.Now().UTC().Format(time.RFC3339),
+							GitCommit:    gitCommitShort(),
+						},
+					}
+					for name, sd := range allSeries {
+						rs := richSeries{Name: name, FilterFamily: "build_throughput", SweepValues: nSizes}
+						for _, p := range sd.Points {
+							buildNs := int64(p.X / p.Y * 1e3) // back-compute ns from M keys/sec
+							rs.Points = append(rs.Points, richPoint{
+								SweepParam:  p.X,
+								BPK:         p.Y,
+								BuildTimeNs: &buildNs,
+							})
+						}
+						if len(rs.Points) > 0 {
+							v2Result.Series = append(v2Result.Series, rs)
+						}
+					}
+					if err := saveBenchResult(dataPath, v2Result); err != nil {
+						t.Logf("warning: failed to save data: %v", err)
+					}
+				}
+
 				for _, fd := range filters {
+					if skipSet[fd.name] {
+						fmt.Printf("%-16s | (skipped via SKIP_FILTERS)\n", fd.name)
+						continue
+					}
 					// warm-up
 					fd.build(allKeys[:1<<10])
 					runtime.GC()
@@ -311,36 +383,10 @@ func TestBuildThroughput(t *testing.T) {
 						fmt.Printf("%-16s | N=%-8d | %.2f M keys/sec | %.1f ms\n",
 							fd.name, n, mPerSec, dur.Seconds()*1000)
 					}
-				}
-
-				// Save v2 benchResult
-				v2Result := &benchResult{
-					Version: 2,
-					Benchmark: benchMeta{
-						Type:         "build_throughput",
-						Distribution: dist.name,
-						NKeys:        nSizes[len(nSizes)-1],
-						RangeLen:     rangeLen,
-						Timestamp:    time.Now().UTC().Format(time.RFC3339),
-						GitCommit:    gitCommitShort(),
-					},
-				}
-				for name, sd := range allSeries {
-					rs := richSeries{Name: name, FilterFamily: "build_throughput", SweepValues: nSizes}
-					for _, p := range sd.Points {
-						buildNs := int64(p.X / p.Y * 1e3) // back-compute ns from M keys/sec
-						rs.Points = append(rs.Points, richPoint{
-							SweepParam:  p.X,
-							BPK:         p.Y,
-							BuildTimeNs: &buildNs,
-						})
-					}
-					if len(rs.Points) > 0 {
-						v2Result.Series = append(v2Result.Series, rs)
-					}
-				}
-				if err := saveBenchResult(dataPath, v2Result); err != nil {
-					t.Logf("warning: failed to save data: %v", err)
+					// Snapshot after each filter so a CGo SIGSEGV in the next
+					// filter (we've seen SuRF wrappers crash on certain SOSD
+					// distributions at N=2^24) doesn't lose all earlier data.
+					saveSnapshot()
 				}
 			}
 
