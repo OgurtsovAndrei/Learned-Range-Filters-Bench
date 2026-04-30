@@ -154,6 +154,11 @@ func TestB6IndustryLatency(t *testing.T) {
 							t.Logf("%s/%s: skipped via SKIP_FILTERS", ds.name, fd.name)
 							continue
 						}
+						if fd.skipDists[ds.name] {
+							t.Logf("%s/%s: skipped — known unsafe combination",
+								ds.name, fd.name)
+							continue
+						}
 						t.Run(fd.name, func(t *testing.T) {
 							rows := runB6Filter(t, store, ds.name, fd,
 								keys, rangeLens, queryCount, n, eps)
@@ -227,6 +232,11 @@ type b6FilterDef struct {
 	// sweep value replaces whatever default the filter would otherwise use
 	// for sweepName (eps/bpk/real_bits).
 	build func(L uint64, sweep float64) (isEmpty func(a, b uint64) bool, sizeBits uint64, err error)
+	// skipDists is the set of distribution names for which this filter is
+	// known to be unsafe (e.g. SuRF SIGSEGVs on sosd_wiki due to upstream
+	// efficient/SuRF#8). The runner skips these cells without attempting
+	// the build, preserving the rest of the sweep.
+	skipDists map[string]bool
 }
 
 func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
@@ -238,7 +248,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}},
+			}, nil},
 		{"Truncation", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{K: uint32(sweep)})
@@ -246,7 +256,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}},
+			}, nil},
 		{"Scan-ARE", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits,
@@ -255,7 +265,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}},
+			}, nil},
 		{"Greedy+Merge", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits,
@@ -264,7 +274,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}},
+			}, nil},
 		{"BloomARE", "eps", b6SweepEps,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_bloom.NewBloomARE(keys, L, sweep)
@@ -272,7 +282,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}},
+			}, nil},
 		{"Grafite", "bpk", b6SweepBPK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := tryGrafite(keys, sweep)
@@ -280,31 +290,46 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, fmt.Errorf("grafite: target bpk=%.2f exceeds envelope", sweep)
 				}
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}},
+			}, nil},
 		{"SNARF", "bpk", b6SweepBPK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := snarf.New(keys, sweep)
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}},
+			}, nil},
 		// SuRF is one filter family with three structural variants. We sweep
 		// each variant's bit budget so the FPR-vs-BPK plots get a SuRF point
 		// cloud across (suffixType, bitCount); the plotter folds all three
 		// names into a single marker-only "SuRF" series.
-		{"SuRFNone", "real_bits", b6SweepNoneBits,
-			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+		{
+			name:        "SuRFNone",
+			sweepName:   "real_bits",
+			sweepValues: b6SweepNoneBits,
+			build: func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := surf.New(keys, surf.SuffixNone, 0, 0)
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}},
-		{"SuRFHash", "hash_bits", b6SweepHashBits,
-			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+			},
+			skipDists: map[string]bool{"sosd_wiki": true},
+		},
+		{
+			name:        "SuRFHash",
+			sweepName:   "hash_bits",
+			sweepValues: b6SweepHashBits,
+			build: func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := surf.New(keys, surf.SuffixHash, int(sweep), 0)
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}},
-		{"SuRFReal", "real_bits", b6SweepRealBits,
-			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+			},
+			skipDists: map[string]bool{"sosd_wiki": true},
+		},
+		{
+			name:        "SuRFReal",
+			sweepName:   "real_bits",
+			sweepValues: b6SweepRealBits,
+			build: func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := surf.New(keys, surf.SuffixReal, 0, int(sweep))
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}},
+			},
+			skipDists: map[string]bool{"sosd_wiki": true},
+		},
 	}
 }
 
