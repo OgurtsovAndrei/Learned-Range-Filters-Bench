@@ -256,9 +256,9 @@ type b6FilterDef struct {
 
 func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 	return []b6FilterDef{
-		{"SODA", "eps", b6SweepEps,
+		{"SODA", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_soda_hash.NewSodaARE(keys, L, sweep)
+				f, err := are_soda_hash.NewSodaAREFromK(keys, L, uint32(sweep))
 				if err != nil {
 					return nil, 0, err
 				}
