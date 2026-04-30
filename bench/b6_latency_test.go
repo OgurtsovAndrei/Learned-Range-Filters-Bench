@@ -253,6 +253,11 @@ type b6FilterDef struct {
 	// efficient/SuRF#8). The runner skips these cells without attempting
 	// the build, preserving the rest of the sweep.
 	skipDists map[string]bool
+	// skipLs is the set of range lengths for which this filter is too
+	// expensive to measure productively (e.g. BloomARE's IsEmpty scans L
+	// hash probes per query, so L≥4096 becomes minutes/cell with no
+	// useful FPR signal anyway).
+	skipLs map[uint64]bool
 }
 
 func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
@@ -299,9 +304,17 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			// fixed by target bits-per-key, queries at any L just probe
 			// the same filter L times. Range FPR = 1 - (1-pointFPR)^L
 			// is implicit per-query.
+			//
+			// IsEmpty scans every uint64 in [a, b] against the bloom
+			// filter — query time grows linearly with L. At L >= 4096
+			// each cell costs minutes with no additional information,
+			// so we skip those L values and rely on the smaller-L
+			// trajectory plus the analytical formula
+			// FPR(L) = 1 - (1-pointFPR)^L for the rest.
 			name:        "BloomARE",
 			sweepName:   "K",
 			sweepValues: b6SweepK,
+			skipLs:      map[uint64]bool{4096: true, 16384: true, 65536: true},
 			build: func(sweep float64) (func(a, b uint64) bool, uint64, error) {
 				bpk := sweep
 				estBits := float64(len(keys)) * bpk
@@ -612,6 +625,9 @@ func runB6Filter(
 		bpkExceeded := false
 
 		for _, L := range rangeLens {
+			if fd.skipLs[L] {
+				continue
+			}
 			// Skip L values that already reached FPR=0 at a smaller
 			// K — measuring them at higher K would just duplicate.
 			if lSaturated[L] {
@@ -728,6 +744,9 @@ func runB6Filter(
 			}
 			allDone := true
 			for _, L := range rangeLens {
+				if fd.skipLs[L] {
+					continue
+				}
 				if !lSaturated[L] {
 					allDone = false
 					break
