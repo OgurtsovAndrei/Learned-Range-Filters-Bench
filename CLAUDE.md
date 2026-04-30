@@ -18,10 +18,10 @@ The root module depends on Thesis via `replace Thesis => ./Thesis` in go.mod.
 CGo wrappers require pre-built C++ libraries. Build once:
 ```bash
 for lib in grafite snarf surf; do
-  cd $lib && mkdir -p build && cd build
+  cd thirdparty/$lib && mkdir -p build && cd build
   cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ..
   make -j$(nproc)
-  cd ../..
+  cd ../../..
 done
 ```
 
@@ -80,7 +80,7 @@ The ARE/ERE filters are built on these lower-level structures:
 - `trie/` — Z-Fast Trie, hollow tries
 - `locators/` — Range locators (MMPH-based, Z-Fast Trie-based)
 
-### CGo Wrappers (grafite/, snarf/, surf/)
+### CGo Wrappers (thirdparty/{grafite,snarf,surf}/)
 
 Each wraps a C++ range filter library. Keys must be **masked to 60 bits** via `mask60Keys()` before passing to CGo filters. ~50-200ns overhead per CGo call.
 

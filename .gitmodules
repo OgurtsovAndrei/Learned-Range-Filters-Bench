@@ -1,11 +1,11 @@
 [submodule "grafite/ext/grafite"]
-	path = grafite/ext/grafite
+	path = thirdparty/grafite/ext/grafite
 	url = https://github.com/marcocosta97/grafite
 [submodule "snarf/ext/SNARF"]
-	path = snarf/ext/SNARF
+	path = thirdparty/snarf/ext/SNARF
 	url = https://github.com/kapilvaidya24/SNARF
 [submodule "surf/ext/SuRF"]
-	path = surf/ext/SuRF
+	path = thirdparty/surf/ext/SuRF
 	url = https://github.com/efficient/SuRF
 [submodule "Thesis"]
 	path = Thesis

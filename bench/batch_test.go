@@ -1,9 +1,9 @@
 package bench_test
 
 import (
-	"Thesis-bench-industry/grafite"
-	"Thesis-bench-industry/snarf"
-	"Thesis-bench-industry/surf"
+	"Thesis-bench-industry/thirdparty/grafite"
+	"Thesis-bench-industry/thirdparty/snarf"
+	"Thesis-bench-industry/thirdparty/surf"
 	"math/rand"
 	"sort"
 	"testing"

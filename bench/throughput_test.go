@@ -1,8 +1,8 @@
 package bench_test
 
 import (
-	"Thesis-bench-industry/snarf"
-	"Thesis-bench-industry/surf"
+	"Thesis-bench-industry/thirdparty/snarf"
+	"Thesis-bench-industry/thirdparty/surf"
 	"Thesis/bits"
 	"Thesis/emptiness/approx/are_adaptive"
 	"Thesis/emptiness/approx/are_bloom"

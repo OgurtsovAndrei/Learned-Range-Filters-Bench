@@ -1,7 +1,7 @@
 package bench_test
 
 import (
-	"Thesis-bench-industry/grafite"
+	"Thesis-bench-industry/thirdparty/grafite"
 	"Thesis/testutils"
 	"bytes"
 	"crypto/sha256"
