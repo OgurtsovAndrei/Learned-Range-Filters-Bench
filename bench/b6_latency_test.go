@@ -20,9 +20,9 @@ import (
 )
 
 // TestB6IndustryLatency measures build throughput and query latency for the
-// headline filter set on SOSD Books at n=2^24, across a few representative
-// range lengths. It is the data source for the `B6` defence backup slide
-// and the build/query latency table in §sec:eval-build-query-latency.
+// headline filter set at n=2^24 across a few representative range lengths.
+// It is the data source for the `B6` defence backup slide and the
+// build/query latency table in §sec:eval-build-query-latency.
 //
 // Output files:
 //   - bench_results/data/b6_latency.json (machine-readable)
@@ -31,11 +31,20 @@ import (
 // Filters covered (per Plan Task 1.2):
 //   {Grafite, SNARF, SuRFReal(8), SODA, Truncation, Scan-ARE, Greedy+Merge, BloomARE}
 //
-// SOSD Books is the headline distribution because (a) the FPR-vs-BPK plot
-// uses Books as one of the headlines, (b) Books has small universe so it
-// stresses Grafite's bpk envelope (an honest test rather than a wide-margin
-// freebie), and (c) Books is uint32, which exercises the SuRF wrapper at a
-// non-pathological key width.
+// **Distribution choice**: SOSD FB (sparse uint64 universe ~2^48) rather
+// than SOSD Books (dense uint32 universe ~2^25). Books is too dense for an
+// honest BloomARE measurement: random queries inside its key range almost
+// always hit a real key after 1-3 probes (density ~0.4), so BloomARE
+// short-circuits before walking the L positions and the L-dependence of
+// Bloom-style filters becomes invisible. FB has wide gaps, so smart-empty
+// queries actually cover the requested L. SuRF/Grafite still get exercised
+// at non-pathological universe widths.
+//
+// **Query mix**: generateSmartQueries — 80% guaranteed-empty (in-gap
+// + near-key truncated to gap), 20% uniform random. Empty queries are the
+// honest stress test: BloomARE walks the full L (or up to first
+// false positive at ~1/eps probes); ERE-based filters do their constant
+// work regardless.
 func TestB6IndustryLatency(t *testing.T) {
 	const (
 		n          = 1 << 24
@@ -44,13 +53,13 @@ func TestB6IndustryLatency(t *testing.T) {
 	)
 	rangeLens := []uint64{1, 16, 128, 1024, 4096, 16384, 65536}
 
-	t.Logf("loading SOSD Books at n=%d", n)
-	allKeys, err := loadSOSDUint32(sosdPath("books_200M_uint32"), 2*n)
+	t.Logf("loading SOSD FB at n=%d", n)
+	allKeys, err := loadSOSDUint64(sosdPath("fb_200M_uint64"), 2*n)
 	if err != nil {
-		t.Skipf("SOSD Books unavailable: %v (run bench/sosd_data/download.sh)", err)
+		t.Skipf("SOSD FB unavailable: %v (run bench/sosd_data/download.sh)", err)
 	}
 	if len(allKeys) < n {
-		t.Skipf("not enough unique Books keys: have %d, need %d", len(allKeys), n)
+		t.Skipf("not enough unique FB keys: have %d, need %d", len(allKeys), n)
 	}
 	keys := allKeys[:n]
 	keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
@@ -68,9 +77,6 @@ func TestB6IndustryLatency(t *testing.T) {
 	}
 	var rows []result
 
-	queryRng := rand.New(rand.NewSource(20260430))
-	queries := generateRangeQueries(keys, queryCount, rangeLens[0], queryRng)
-	_ = queries // ensure helper compiles; per-L queries built below
 
 	type filterDef struct {
 		name string
@@ -167,14 +173,18 @@ func TestB6IndustryLatency(t *testing.T) {
 			buildMKeys := float64(n) / buildDur.Seconds() / 1e6
 
 			qrng := rand.New(rand.NewSource(int64(L) + 7777777))
-			batch := generateRangeQueries(keys, queryCount, L, qrng)
+			batch := generateSmartQueries(keys, queryCount, L, qrng)
+			if len(batch) == 0 {
+				t.Logf("%s L=%d: smart-query generator returned 0 queries; skipping", fd.name, L)
+				continue
+			}
 
 			startQ := time.Now()
 			for _, q := range batch {
 				isEmpty(q[0], q[1])
 			}
 			qDur := time.Since(startQ)
-			nsPerQuery := float64(qDur.Nanoseconds()) / float64(queryCount)
+			nsPerQuery := float64(qDur.Nanoseconds()) / float64(len(batch))
 
 			rows = append(rows, result{
 				Filter:        fd.name,
@@ -193,25 +203,27 @@ func TestB6IndustryLatency(t *testing.T) {
 	os.MkdirAll(dataDir, 0755)
 	outPath := dataDir + "/b6_latency.json"
 	doc := struct {
-		Type         string   `json:"type"`
-		Distribution string   `json:"distribution"`
-		NKeys        int      `json:"nKeys"`
-		QueryCount   int      `json:"queryCount"`
-		Eps          float64  `json:"eps"`
-		KeyBits      uint32   `json:"keyBits"`
-		Timestamp    string   `json:"timestamp"`
-		GitCommit    string   `json:"gitCommit"`
-		Rows         []result `json:"rows"`
+		Type          string   `json:"type"`
+		Distribution  string   `json:"distribution"`
+		NKeys         int      `json:"nKeys"`
+		QueryCount    int      `json:"queryCount"`
+		QueryStrategy string   `json:"queryStrategy"`
+		Eps           float64  `json:"eps"`
+		KeyBits       uint32   `json:"keyBits"`
+		Timestamp     string   `json:"timestamp"`
+		GitCommit     string   `json:"gitCommit"`
+		Rows          []result `json:"rows"`
 	}{
-		Type:         "b6_latency",
-		Distribution: "sosd_books",
-		NKeys:        n,
-		QueryCount:   queryCount,
-		Eps:          eps,
-		KeyBits:      keyBits,
-		Timestamp:    time.Now().UTC().Format(time.RFC3339),
-		GitCommit:    gitCommitShort(),
-		Rows:         rows,
+		Type:          "b6_latency",
+		Distribution:  "sosd_fb",
+		NKeys:         n,
+		QueryCount:    queryCount,
+		QueryStrategy: "smart_mix_guaranteed_empty",
+		Eps:           eps,
+		KeyBits:       keyBits,
+		Timestamp:     time.Now().UTC().Format(time.RFC3339),
+		GitCommit:     gitCommitShort(),
+		Rows:          rows,
 	}
 	buf, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
