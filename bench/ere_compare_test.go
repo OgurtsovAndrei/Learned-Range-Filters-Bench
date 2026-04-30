@@ -1,8 +1,8 @@
 package bench_test
 
 import (
-	"Thesis/emptiness/ere"
-	"Thesis/emptiness/ere_one_d"
+	"Thesis/emptiness/exact/ere"
+	"Thesis/emptiness/exact/ere_one_d"
 	"Thesis/testutils"
 	"bytes"
 	"fmt"

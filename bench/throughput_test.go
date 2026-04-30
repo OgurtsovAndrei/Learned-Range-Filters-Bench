@@ -4,14 +4,14 @@ import (
 	"Thesis-bench-industry/snarf"
 	"Thesis-bench-industry/surf"
 	"Thesis/bits"
-	"Thesis/emptiness/are_bloom"
-	"Thesis/emptiness/are_hybrid"
-	"Thesis/emptiness/are_greedy_scan"
-	"Thesis/emptiness/are_hybrid_scan"
-	"Thesis/emptiness/are_adaptive"
-	"Thesis/emptiness/are_pgm"
-	"Thesis/emptiness/are_soda_hash"
-	"Thesis/emptiness/are_trunc"
+	"Thesis/emptiness/approx/are_adaptive"
+	"Thesis/emptiness/approx/are_bloom"
+	"Thesis/emptiness/approx/are_greedy_scan"
+	"Thesis/emptiness/approx/are_hybrid"
+	"Thesis/emptiness/approx/are_hybrid_scan"
+	"Thesis/emptiness/approx/are_pgm"
+	"Thesis/emptiness/approx/are_soda_hash"
+	"Thesis/emptiness/approx/are_trunc"
 	"Thesis/testutils"
 	"encoding/binary"
 	"fmt"
@@ -378,4 +378,3 @@ func TestBuildThroughput(t *testing.T) {
 		})
 	}
 }
-

@@ -1,7 +1,7 @@
 package bench
 
 import (
-	"Thesis/emptiness/are_soda_hash"
+	"Thesis/emptiness/approx/are_soda_hash"
 	"Thesis/testutils"
 	"fmt"
 	"math"

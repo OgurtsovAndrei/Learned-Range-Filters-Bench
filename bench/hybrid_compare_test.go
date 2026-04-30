@@ -2,10 +2,10 @@ package bench_test
 
 import (
 	"Thesis/bits"
-	"Thesis/emptiness/are_dp_scan"
-	"Thesis/emptiness/are_greedy_scan"
-	"Thesis/emptiness/are_hybrid"
-	"Thesis/emptiness/are_hybrid_scan"
+	"Thesis/emptiness/approx/are_dp_scan"
+	"Thesis/emptiness/approx/are_greedy_scan"
+	"Thesis/emptiness/approx/are_hybrid"
+	"Thesis/emptiness/approx/are_hybrid_scan"
 	"Thesis/testutils"
 	"encoding/json"
 	"fmt"
@@ -38,7 +38,7 @@ const dpMaxNBuild = 1 << 16 // 65536
 
 type hybridPoint struct {
 	hybrid, scan, greedyRaw, greedyMerge, dp testutils.Point
-	dpValid                                   bool
+	dpValid                                  bool
 }
 
 func hybridMeasureK(

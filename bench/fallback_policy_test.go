@@ -1,7 +1,7 @@
 package bench_test
 
 import (
-	"Thesis/emptiness/are_hybrid_scan"
+	"Thesis/emptiness/approx/are_hybrid_scan"
 	"Thesis/testutils"
 	"encoding/json"
 	"fmt"
@@ -92,8 +92,8 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 			// Load cached points.
 			type savedPoint struct{ X, Y float64 }
 			type savedSeries struct {
-				Name   string        `json:"name"`
-				Points []savedPoint  `json:"points"`
+				Name   string          `json:"name"`
+				Points []savedPoint    `json:"points"`
 				Params json.RawMessage `json:"params,omitempty"`
 			}
 			loadCache := func() map[string][]savedPoint {
@@ -145,8 +145,8 @@ func runFallbackPolicyBench(t *testing.T, distName string, keys []uint64, queryF
 			fmt.Printf("\n=== FallbackPolicy — %s (n=%d, L=%d, %d runs) ===\n", distName, len(keys), rangeLen, nRuns)
 
 			type fprTask struct {
-				policy string
-				bpk    float64
+				policy  string
+				bpk     float64
 				isEmpty func(a, b uint64) bool
 			}
 			var tasks []fprTask

@@ -1,8 +1,8 @@
 package bench_test
 
 import (
-	"Thesis/emptiness/are_greedy_scan"
-	"Thesis/emptiness/are_soda_hash"
+	"Thesis/emptiness/approx/are_greedy_scan"
+	"Thesis/emptiness/approx/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
 	"bytes"
 	"fmt"
@@ -110,7 +110,6 @@ func timeAREQueriesU64(queries [][2]uint64, rounds int, fn func(a, b uint64) boo
 	}
 	return float64(total.Nanoseconds()) / float64(count)
 }
-
 
 func measureSODA(tb testing.TB, ds areLoadedDataset, variant exactbackend.Variant) areVariantMetrics {
 	tb.Helper()

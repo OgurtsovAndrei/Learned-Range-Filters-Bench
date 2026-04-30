@@ -4,14 +4,14 @@ import (
 	"Thesis-bench-industry/snarf"
 	"Thesis-bench-industry/surf"
 	"Thesis/bits"
-	"Thesis/emptiness/are_bloom"
-	"Thesis/emptiness/are_hybrid"
-	"Thesis/emptiness/are_greedy_scan"
-	"Thesis/emptiness/are_hybrid_scan"
-	"Thesis/emptiness/are_adaptive"
-	"Thesis/emptiness/are_pgm"
-	"Thesis/emptiness/are_soda_hash"
-	"Thesis/emptiness/are_trunc"
+	"Thesis/emptiness/approx/are_adaptive"
+	"Thesis/emptiness/approx/are_bloom"
+	"Thesis/emptiness/approx/are_greedy_scan"
+	"Thesis/emptiness/approx/are_hybrid"
+	"Thesis/emptiness/approx/are_hybrid_scan"
+	"Thesis/emptiness/approx/are_pgm"
+	"Thesis/emptiness/approx/are_soda_hash"
+	"Thesis/emptiness/approx/are_trunc"
 	"Thesis/testutils"
 	"fmt"
 	"math"
@@ -164,12 +164,12 @@ func TestBuildTimePerKey(t *testing.T) {
 	v2Result := &benchResult{
 		Version: 2,
 		Benchmark: benchMeta{
-			Type:      "build_time",
+			Type:         "build_time",
 			Distribution: "clustered",
-			NKeys:     sizes[len(sizes)-1],
-			RangeLen:  rangeLen,
-			Timestamp: time.Now().UTC().Format(time.RFC3339),
-			GitCommit: gitCommitShort(),
+			NKeys:        sizes[len(sizes)-1],
+			RangeLen:     rangeLen,
+			Timestamp:    time.Now().UTC().Format(time.RFC3339),
+			GitCommit:    gitCommitShort(),
 		},
 	}
 	for _, s := range allSeries {
@@ -177,9 +177,9 @@ func TestBuildTimePerKey(t *testing.T) {
 		for _, p := range s.Points {
 			buildNs := int64(p.Y * p.X)
 			rs.Points = append(rs.Points, richPoint{
-				SweepParam: p.X,
-				BPK:        p.Y,
-				FPR:        0,
+				SweepParam:  p.X,
+				BPK:         p.Y,
+				FPR:         0,
 				BuildTimeNs: &buildNs,
 			})
 		}
@@ -654,23 +654,23 @@ func TestTradeoff_Full(t *testing.T) {
 	}
 
 	allSeries := map[string]*testutils.SeriesData{
-		"Theoretical":       {Name: "Theoretical", Color: "#ef4444", Dashed: true, Marker: "circle"},
-		"Adaptive (Unif)":   {Name: "Adaptive (Unif)", Color: "#2a7fff", Marker: "square"},
-		"Adaptive (Seq)":    {Name: "Adaptive (Seq)", Color: "#2a7fff", Dashed: true, Marker: "square"},
-		"SODA (Unif)":       {Name: "SODA (Unif)", Color: "#22a06b", Marker: "diamond"},
-		"SODA (Seq)":        {Name: "SODA (Seq)", Color: "#22a06b", Dashed: true, Marker: "diamond"},
-		"Truncation (Unif)": {Name: "Truncation (Unif)", Color: "#e6a800", Marker: "triangle"},
-		"Truncation (Seq)":  {Name: "Truncation (Seq)", Color: "#e6a800", Dashed: true, Marker: "triangle"},
-		"Hybrid (Unif)":     {Name: "Hybrid (Unif)", Color: "#9b59b6", Marker: "star"},
-		"Hybrid (Seq)":      {Name: "Hybrid (Seq)", Color: "#9b59b6", Dashed: true, Marker: "star"},
-		"Scan-ARE (Unif)":   {Name: "Scan-ARE (Unif)", Color: "#06b6d4", Marker: "star"},
-		"Scan-ARE (Seq)":    {Name: "Scan-ARE (Seq)", Color: "#06b6d4", Dashed: true, Marker: "star"},
+		"Theoretical":         {Name: "Theoretical", Color: "#ef4444", Dashed: true, Marker: "circle"},
+		"Adaptive (Unif)":     {Name: "Adaptive (Unif)", Color: "#2a7fff", Marker: "square"},
+		"Adaptive (Seq)":      {Name: "Adaptive (Seq)", Color: "#2a7fff", Dashed: true, Marker: "square"},
+		"SODA (Unif)":         {Name: "SODA (Unif)", Color: "#22a06b", Marker: "diamond"},
+		"SODA (Seq)":          {Name: "SODA (Seq)", Color: "#22a06b", Dashed: true, Marker: "diamond"},
+		"Truncation (Unif)":   {Name: "Truncation (Unif)", Color: "#e6a800", Marker: "triangle"},
+		"Truncation (Seq)":    {Name: "Truncation (Seq)", Color: "#e6a800", Dashed: true, Marker: "triangle"},
+		"Hybrid (Unif)":       {Name: "Hybrid (Unif)", Color: "#9b59b6", Marker: "star"},
+		"Hybrid (Seq)":        {Name: "Hybrid (Seq)", Color: "#9b59b6", Dashed: true, Marker: "star"},
+		"Scan-ARE (Unif)":     {Name: "Scan-ARE (Unif)", Color: "#06b6d4", Marker: "star"},
+		"Scan-ARE (Seq)":      {Name: "Scan-ARE (Seq)", Color: "#06b6d4", Dashed: true, Marker: "star"},
 		"Greedy+Merge (Unif)": {Name: "Greedy+Merge (Unif)", Color: "#22c55e", Marker: "diamond"},
 		"Greedy+Merge (Seq)":  {Name: "Greedy+Merge (Seq)", Color: "#22c55e", Dashed: true, Marker: "diamond"},
-		"CDF-ARE (Unif)":    {Name: "CDF-ARE (Unif)", Color: "#e05d10", Marker: "circle"},
-		"CDF-ARE (Seq)":     {Name: "CDF-ARE (Seq)", Color: "#e05d10", Dashed: true, Marker: "circle"},
-		"Bloom V3 (Unif)":   {Name: "Bloom V3 (Unif)", Color: "#888888", Marker: "circle"},
-		"Bloom V3 (Seq)":    {Name: "Bloom V3 (Seq)", Color: "#888888", Dashed: true, Marker: "circle"},
+		"CDF-ARE (Unif)":      {Name: "CDF-ARE (Unif)", Color: "#e05d10", Marker: "circle"},
+		"CDF-ARE (Seq)":       {Name: "CDF-ARE (Seq)", Color: "#e05d10", Dashed: true, Marker: "circle"},
+		"Bloom V3 (Unif)":     {Name: "Bloom V3 (Unif)", Color: "#888888", Marker: "circle"},
+		"Bloom V3 (Seq)":      {Name: "Bloom V3 (Seq)", Color: "#888888", Dashed: true, Marker: "circle"},
 	}
 
 	os.MkdirAll("../bench_results/plots", 0755)

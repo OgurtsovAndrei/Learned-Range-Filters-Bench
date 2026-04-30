@@ -1,7 +1,7 @@
 package bench
 
 import (
-	"Thesis/emptiness/ere"
+	"Thesis/emptiness/exact/ere"
 	"fmt"
 	"math/rand"
 	"runtime"
