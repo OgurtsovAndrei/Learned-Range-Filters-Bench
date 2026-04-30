@@ -535,6 +535,12 @@ func runB6Filter(
 					rows = append(rows, *cached)
 					fmt.Printf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  (cached)\n",
 						dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—")
+					// Adaptive K-grid early-exit also applies to cached
+					// rows: if we already know FPR=0 or BPK>25 from a
+					// prior run, don't measure higher K values.
+					if fd.sweepName == "K" && (cached.FPR == 0 || cached.BPKUsed > 25) {
+						break
+					}
 					continue
 				}
 			}
@@ -607,6 +613,17 @@ func runB6Filter(
 			fmt.Printf("%-11s | %-14s | L=%-5d | %s=%-9.4g | P=%-2d | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4f\n",
 				dist, fd.name, L, fd.sweepName, sweep, parallelism,
 				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr)
+
+			// Adaptive K-grid: for K-driven filters the FPR is monotone
+			// non-increasing in K and BPK is monotone non-decreasing.
+			// Once we observe FPR=0 (asymptotic floor reached) or
+			// BPK > 25 (memory budget exhausted with FPR still non-zero,
+			// meaning the filter family can't compete on this cell), we
+			// stop the K-sweep for this L. Cuts unnecessary measurements
+			// at large K where ARE filters have already saturated.
+			if fd.sweepName == "K" && (fpr == 0 || actualBPK > 25) {
+				break
+			}
 		}
 	}
 	return rows
