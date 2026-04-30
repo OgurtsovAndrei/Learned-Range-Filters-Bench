@@ -192,7 +192,7 @@ func TestEREBucketSecondMoment_SodaARE_Large(t *testing.T) {
 				t.Skipf("K=%d exceeds 64 bits", K)
 			}
 
-			are, err := are_soda_hash.NewSodaAREUint64InPlace(keys, cb.L, K)
+			are, err := are_soda_hash.NewSodaAREUint64InPlace(keys, K, int64(cb.L))
 			// keys is now consumed; release the reference so the slice can be GC'd
 			// once SortAndDedupUint64's slice (a sub-slice of keys) is also dropped
 			// via `are`.

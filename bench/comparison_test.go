@@ -257,7 +257,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 						var kTasks []fprTask
 
 						if rebuildKGridSeries["SODA"] {
-							if f, err := are_soda_hash.NewSodaAREFromK(cfg.keys, rangeLen, K); err == nil {
+							if f, err := are_soda_hash.NewSodaAREFromK(cfg.keys, K, int64(rangeLen)); err == nil {
 								sizeBits := f.SizeInBits()
 								bpk := float64(sizeBits) / float64(len(cfg.keys))
 								kTasks = append(kTasks, fprTask{"SODA", fmt.Sprintf("SODA(K=%d)", K), bpk,

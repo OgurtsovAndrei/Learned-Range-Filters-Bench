@@ -118,7 +118,7 @@ func measureSODA(tb testing.TB, ds areLoadedDataset, variant exactbackend.Varian
 		tb.Fatalf("set variant: %v", err)
 	}
 	start := time.Now()
-	filter, err := are_soda_hash.NewSodaAREFromK(ds.keysU64, areCompareRangeLen, sodaK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon))
+	filter, err := are_soda_hash.NewSodaAREFromK(ds.keysU64, sodaK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon), int64(areCompareRangeLen))
 	if err != nil {
 		tb.Fatalf("build soda/%s/%s: %v", variant.String(), ds.name, err)
 	}
