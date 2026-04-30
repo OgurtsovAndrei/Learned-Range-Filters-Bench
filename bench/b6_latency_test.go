@@ -12,6 +12,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	mathbits "math/bits"
 	"math/rand"
 	"os"
@@ -223,7 +224,7 @@ var (
 	// Config). The K grid spans approximately the same BPK range the eps grid
 	// covered (BPK ≈ K under exact-mode regimes).
 	b6SweepEps      = []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005}
-	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 40, 44, 47}
+	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 44, 48, 52, 56, 60, 64}
 	b6SweepBPK      = []float64{4, 6, 8, 10, 12, 14, 16, 18}
 	// BloomARE filter size m = n*L/eps. With the full eps grid at
 	// L=65536 / n=2^20 we already need 16 GB at eps=0.0005. We trim the
@@ -245,13 +246,21 @@ type b6FilterDef struct {
 	// build returns isEmpty closure plus the actual filter footprint (bits).
 	// sizeBits is then divided by n by the runner to get actual BPK. The
 	// sweep value replaces whatever default the filter would otherwise use
-	// for sweepName (eps/bpk/real_bits).
+	// for sweepName (eps/bpk/real_bits). For !rebuildPerL filters the
+	// runner passes L=0 — the build closure must ignore L in that case.
 	build func(L uint64, sweep float64) (isEmpty func(a, b uint64) bool, sizeBits uint64, err error)
 	// skipDists is the set of distribution names for which this filter is
 	// known to be unsafe (e.g. SuRF SIGSEGVs on sosd_wiki due to upstream
 	// efficient/SuRF#8). The runner skips these cells without attempting
 	// the build, preserving the rest of the sweep.
 	skipDists map[string]bool
+	// rebuildPerL is true when the filter's STRUCTURE depends on L (i.e.
+	// different L values produce different filter contents). BloomARE is
+	// the only such filter — its size is m = n*L/eps. K-driven ARE
+	// filters and the industrial baselines (Grafite, SNARF, SuRF) take L
+	// only at query time, so we build once per sweep value and reuse
+	// across all L. Saves a 7× factor of build time on the L-grid.
+	rebuildPerL bool
 }
 
 func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
@@ -263,7 +272,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, false},
 		{"Truncation", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{K: uint32(sweep)})
@@ -271,7 +280,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, false},
 		{"Scan-ARE", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits,
@@ -280,7 +289,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
+			}, nil, false},
 		{"Greedy+Merge", "K", b6SweepK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits,
@@ -289,22 +298,32 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil},
-		{"BloomARE", "eps", b6SweepBloomEps,
-			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
-				// Pre-flight memory guard: m = n*L/eps; cap at ~2 GB
-				// (1.6e10 bits) to avoid swap thrashing the rest of the
-				// run. The framework records this as a skipped cell.
-				estBits := float64(len(keys)) * float64(L) / sweep
+			}, nil, false},
+		{
+			// BloomARE is BPK-driven and L-independent: filter size is
+			// fixed by target bits-per-key, queries at any L just probe
+			// the same filter L times. Range FPR = 1 - (1-pointFPR)^L
+			// is implicit per-query.
+			name:        "BloomARE",
+			sweepName:   "K",
+			sweepValues: b6SweepK,
+			build: func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+				bpk := sweep
+				estBits := float64(len(keys)) * bpk
 				if estBits > 1.6e10 {
-					return nil, 0, fmt.Errorf("bloom: estimated %.2g bits exceeds 2 GB envelope at L=%d/eps=%.4g", estBits, L, sweep)
+					return nil, 0, fmt.Errorf("bloom: estimated %.2g bits exceeds 2 GB envelope at BPK=%.1f", estBits, bpk)
 				}
-				f, err := are_bloom.NewBloomARE(keys, L, sweep)
+				// pointFPR from target BPK at Bloom optimum:
+				// pointFPR ≈ exp(-BPK * ln(2)^2).
+				pointFPR := math.Exp(-bpk * 0.4804530139182014)
+				f, err := are_bloom.NewBloomAREFromPointFPR(keys, pointFPR)
 				if err != nil {
 					return nil, 0, err
 				}
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil},
+			},
+			rebuildPerL: false,
+		},
 		{"Grafite", "bpk", b6SweepBPK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := tryGrafite(keys, sweep)
@@ -312,12 +331,12 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, fmt.Errorf("grafite: target bpk=%.2f exceeds envelope", sweep)
 				}
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil},
+			}, nil, false},
 		{"SNARF", "bpk", b6SweepBPK,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
 				f := snarf.New(keys, sweep)
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil},
+			}, nil, false},
 		// SuRF is one filter family with three structural variants. We sweep
 		// each variant's bit budget so the FPR-vs-BPK plots get a SuRF point
 		// cloud across (suffixType, bitCount); the plotter folds all three
@@ -556,8 +575,57 @@ func runB6Filter(
 
 	rows := make([]b6Row, 0, len(rangeLens)*len(fd.sweepValues))
 	warmedUp := false
-	for _, L := range rangeLens {
-		for _, sweep := range fd.sweepValues {
+
+	// lSaturated tracks per-L whether we've already observed FPR=0 at
+	// a previous (smaller) K-sweep value. Once an L hits FPR=0 we skip
+	// querying it at higher K — the filter is monotone, so the cell
+	// would just record a duplicate. The K-sweep keeps running on the
+	// remaining unsaturated L values.
+	lSaturated := make(map[uint64]bool)
+
+	// Outer loop: sweep value. For !rebuildPerL filters we build the
+	// structure once per sweep value and reuse it across all L (the
+	// closure ignores L; only the query batch and FPR depend on L).
+	// rebuildPerL filters (BloomARE) keep the per-(L, sweep) build.
+	for _, sweep := range fd.sweepValues {
+		// Shared filter state across L (only used when !rebuildPerL).
+		var (
+			sharedIsEmpty  func(a, b uint64) bool
+			sharedSizeBits uint64
+			sharedBuildDur time.Duration
+			sharedBuildErr error
+			sharedBuilt    bool
+		)
+		buildShared := func() {
+			if sharedBuilt {
+				return
+			}
+			sharedBuilt = true
+			if !warmedUp {
+				warmKeys := keys[:1<<10]
+				if warmIsEmpty, _, werr := fd.build(rangeLens[0], sweep); werr == nil {
+					_ = warmIsEmpty(warmKeys[0], warmKeys[len(warmKeys)-1])
+				}
+				runtime.GC()
+				warmedUp = true
+			}
+			startBuild := time.Now()
+			sharedIsEmpty, sharedSizeBits, sharedBuildErr = fd.build(0, sweep)
+			sharedBuildDur = time.Since(startBuild)
+		}
+
+		// Per-K BPK budget exceeded → break sweep entirely (BPK is L-
+		// independent, so once filter family exceeds 25 bits/key it's
+		// out of the competitive range for any L).
+		bpkExceeded := false
+
+		for _, L := range rangeLens {
+			// Skip L values that already reached FPR=0 at a smaller
+			// K — measuring them at higher K would just duplicate.
+			if lSaturated[L] {
+				continue
+			}
+
 			params := b6Params{
 				NKeys:         n,
 				Eps:           eps,
@@ -578,31 +646,46 @@ func runB6Filter(
 					rows = append(rows, *cached)
 					b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  (cached)\n",
 						dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—")
-					// Adaptive K-grid early-exit also applies to cached
-					// rows: if we already know FPR=0 or BPK>25 from a
-					// prior run, don't measure higher K values.
-					if fd.sweepName == "K" && (cached.FPR == 0 || cached.BPKUsed > 25) {
-						break
+					if cached.FPR == 0 {
+						lSaturated[L] = true
+					}
+					if cached.BPKUsed > 25 {
+						bpkExceeded = true
 					}
 					continue
 				}
 			}
 
-			// Lazy warm-up — only flush CGo init / page faults once we know we'll
-			// actually measure something this iteration.
-			if !warmedUp {
-				warmKeys := keys[:1<<10]
-				if warmIsEmpty, _, werr := fd.build(rangeLens[0], sweep); werr == nil {
-					_ = warmIsEmpty(warmKeys[0], warmKeys[len(warmKeys)-1])
+			// Build (per-L for rebuildPerL filters, shared otherwise).
+			var (
+				isEmpty   func(a, b uint64) bool
+				sizeBits  uint64
+				buildDur  time.Duration
+				buildErr  error
+				reusedRow bool
+			)
+			if fd.rebuildPerL {
+				if !warmedUp {
+					warmKeys := keys[:1<<10]
+					if warmIsEmpty, _, werr := fd.build(rangeLens[0], sweep); werr == nil {
+						_ = warmIsEmpty(warmKeys[0], warmKeys[len(warmKeys)-1])
+					}
+					runtime.GC()
+					warmedUp = true
 				}
-				runtime.GC()
-				warmedUp = true
+				startBuild := time.Now()
+				isEmpty, sizeBits, buildErr = fd.build(L, sweep)
+				buildDur = time.Since(startBuild)
+			} else {
+				buildShared()
+				isEmpty = sharedIsEmpty
+				sizeBits = sharedSizeBits
+				buildErr = sharedBuildErr
+				buildDur = sharedBuildDur
+				reusedRow = true
 			}
 
-			startBuild := time.Now()
-			isEmpty, sizeBits, err := fd.build(L, sweep)
-			buildDur := time.Since(startBuild)
-			if err != nil {
+			if buildErr != nil {
 				rows = append(rows, b6Row{
 					Distribution: dist,
 					Filter:       fd.name,
@@ -610,10 +693,10 @@ func runB6Filter(
 					SweepName:    fd.sweepName,
 					SweepParam:   sweep,
 					ParamsHash:   paramsHash,
-					Note:         err.Error(),
+					Note:         buildErr.Error(),
 				})
 				b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  %s\n",
-					dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—", err.Error())
+					dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—", buildErr.Error())
 				continue
 			}
 			buildMKeys := float64(n) / buildDur.Seconds() / 1e6
@@ -626,13 +709,6 @@ func runB6Filter(
 					dist, fd.name, L, fd.sweepName, sweep)
 				continue
 			}
-
-			// Smart queries are guaranteed empty → any false return is a
-			// false positive. With parallelism > 1 we split the batch into
-			// `parallelism` chunks and run them in goroutines; the filter
-			// is read-only after build so this is safe. ns/op is computed
-			// against wall-clock so it shows speedup (or cache contention)
-			// at higher parallelism.
 			falsePositives, qDur := runQueriesParallel(batch, isEmpty, parallelism)
 			nsPerQuery := float64(qDur.Nanoseconds()) / float64(len(batch))
 			fpr := float64(falsePositives) / float64(len(batch))
@@ -653,18 +729,46 @@ func runB6Filter(
 				Parallelism:   parallelism,
 				ParamsHash:    paramsHash,
 			})
-			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | P=%-2d | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4f\n",
+			noteSuffix := ""
+			if reusedRow {
+				noteSuffix = "  (build reused)"
+			}
+			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | P=%-2d | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4f%s\n",
 				dist, fd.name, L, fd.sweepName, sweep, parallelism,
-				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr)
+				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr, noteSuffix)
 
-			// Adaptive K-grid: for K-driven filters the FPR is monotone
-			// non-increasing in K and BPK is monotone non-decreasing.
-			// Once we observe FPR=0 (asymptotic floor reached) or
-			// BPK > 25 (memory budget exhausted with FPR still non-zero,
-			// meaning the filter family can't compete on this cell), we
-			// stop the K-sweep for this L. Cuts unnecessary measurements
-			// at large K where ARE filters have already saturated.
-			if fd.sweepName == "K" && (fpr == 0 || actualBPK > 25) {
+			if fpr == 0 {
+				lSaturated[L] = true
+			}
+			if actualBPK > 25 {
+				bpkExceeded = true
+			}
+		}
+
+		// Release the shared filter promptly before the next sweep
+		// builds — otherwise GC may delay reclaim until the function
+		// returns, stacking memory across sweeps.
+		sharedIsEmpty = nil
+		sharedBuilt = false
+		runtime.GC()
+
+		if fd.sweepName == "K" {
+			// Two break conditions, both L-aggregate:
+			//  - bpkExceeded: filter is past its memory budget for any
+			//    L. Higher K won't help.
+			//  - all L saturated: every L hit FPR=0; nothing to learn
+			//    from larger K.
+			if bpkExceeded {
+				break
+			}
+			allDone := true
+			for _, L := range rangeLens {
+				if !lSaturated[L] {
+					allDone = false
+					break
+				}
+			}
+			if allDone {
 				break
 			}
 		}
