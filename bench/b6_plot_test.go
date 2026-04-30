@@ -4,6 +4,7 @@ import (
 	"Thesis/testutils"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,11 +19,19 @@ import (
 //
 // Filters not listed here fall through to a default gray rendering.
 var b6SeriesStyles = func() map[string]SeriesStyle {
-	m := make(map[string]SeriesStyle, len(DefaultSeriesStyles)+1)
+	m := make(map[string]SeriesStyle, len(DefaultSeriesStyles)+2)
 	for k, v := range DefaultSeriesStyles {
 		m[k] = v
 	}
 	m["Truncation"] = SeriesStyle{Name: "Truncation", Color: "#b91c1c", Marker: "circle"}
+	// SuRFReal is the SuRF series for the K-sweep schema (suffix bits are
+	// now a sweep dimension, so the trailing "(8)" is gone). Inherit the
+	// SuRFReal(8) palette so plots stay consistent with comparison_test.go.
+	if s, ok := DefaultSeriesStyles["SuRFReal(8)"]; ok {
+		m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: s.Color, Marker: s.Marker, Dashed: s.Dashed}
+	} else {
+		m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: "#0f172a", Marker: "diamond"}
+	}
 	return m
 }()
 
@@ -33,12 +42,40 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 var b6PlotOrder = []string{
 	"Grafite",
 	"SNARF",
-	"SuRFReal(8)",
+	"SuRFReal",
 	"SODA",
 	"Truncation",
 	"Scan-ARE",
 	"Greedy+Merge",
 	"BloomARE",
+}
+
+// Headline sweep values used for the existing per-(metric, distribution)
+// plots and for the L-trajectory trade-off plot. We pick a single sweep
+// value per filter family so each filter renders as one curve through L.
+const (
+	b6HeadlineEps     = 0.01
+	b6HeadlineBPK     = 10.0
+	b6HeadlineRealBit = 8.0
+)
+
+// matchesHeadlineSweep returns true if r is the headline-sweep cell for its
+// filter family — eps=0.01 for ARE/Bloom, bpk=10 for Grafite/SNARF,
+// real_bits=8 for SuRFReal.
+func matchesHeadlineSweep(r b6Row) bool {
+	switch r.SweepName {
+	case "eps":
+		return floatNear(r.SweepParam, b6HeadlineEps)
+	case "bpk":
+		return floatNear(r.SweepParam, b6HeadlineBPK)
+	case "real_bits":
+		return floatNear(r.SweepParam, b6HeadlineRealBit)
+	}
+	return false
+}
+
+func floatNear(a, b float64) bool {
+	return math.Abs(a-b) <= 1e-9*math.Max(1.0, math.Abs(b))
 }
 
 // TestB6Plots regenerates SVGs from bench_results/data/b6_latency.json.
@@ -62,10 +99,12 @@ func TestB6Plots(t *testing.T) {
 		t.Fatalf("no rows in %s — run TestB6IndustryLatency first", jsonPath)
 	}
 
-	// Index rows by (distribution, filter) so we can produce one series
-	// per filter inside each distribution-scoped plot.
+	// Index rows by (distribution, filter). Per-(metric, dist) plots use
+	// only the headline sweep values (one curve per filter through L);
+	// cache-pressure and per-L trade-off plots use all sweep values.
 	byCell := make(map[struct{ dist, filter string }][]b6Row)
 	dists := map[string]struct{}{}
+	rangeLensSeen := map[uint64]struct{}{}
 	for _, r := range doc.Rows {
 		if r.Note != "" {
 			continue // skip envelope-rejected / errored cells
@@ -73,6 +112,7 @@ func TestB6Plots(t *testing.T) {
 		k := struct{ dist, filter string }{r.Distribution, r.Filter}
 		byCell[k] = append(byCell[k], r)
 		dists[r.Distribution] = struct{}{}
+		rangeLensSeen[r.RangeLen] = struct{}{}
 	}
 
 	// Stable distribution order — synthetic first, then SOSD.
@@ -99,37 +139,44 @@ func TestB6Plots(t *testing.T) {
 		}
 	}
 
+	// Sorted unique L values — used by per-L trade-off and cache-pressure plots.
+	sortedRangeLens := make([]uint64, 0, len(rangeLensSeen))
+	for L := range rangeLensSeen {
+		sortedRangeLens = append(sortedRangeLens, L)
+	}
+	sort.Slice(sortedRangeLens, func(i, j int) bool { return sortedRangeLens[i] < sortedRangeLens[j] })
+
 	// Each metric is (subdir, Y label, Y scale, point extractor).
 	metrics := []struct {
-		subdir string
-		ylabel string
-		yScale testutils.AxisScale
-		yFloor float64
+		subdir  string
+		ylabel  string
+		yScale  testutils.AxisScale
+		yFloor  float64
 		extract func(r b6Row) (float64, bool)
 	}{
 		{
-			subdir: "query_latency",
-			ylabel: "Query Time (ns/op)",
-			yScale: testutils.Log10,
+			subdir:  "query_latency",
+			ylabel:  "Query Time (ns/op)",
+			yScale:  testutils.Log10,
 			extract: func(r b6Row) (float64, bool) { return r.QueryNsPerOp, r.QueryNsPerOp > 0 },
 		},
 		{
-			subdir: "fpr",
-			ylabel: "False Positive Rate (FPR)",
-			yScale: testutils.Log10,
-			yFloor: 1.0 / float64(doc.QueryCount), // 1/qc ≈ 3.8e-6
+			subdir:  "fpr",
+			ylabel:  "False Positive Rate (FPR)",
+			yScale:  testutils.Log10,
+			yFloor:  1.0 / float64(doc.QueryCount), // 1/qc ≈ 3.8e-6
 			extract: func(r b6Row) (float64, bool) { return r.FPR, true },
 		},
 		{
-			subdir: "bpk",
-			ylabel: "Bits per Key (BPK)",
-			yScale: testutils.Linear,
+			subdir:  "bpk",
+			ylabel:  "Bits per Key (BPK)",
+			yScale:  testutils.Linear,
 			extract: func(r b6Row) (float64, bool) { return r.BPKUsed, r.BPKUsed > 0 },
 		},
 		{
-			subdir: "build_throughput",
-			ylabel: "Build Throughput (M keys/sec)",
-			yScale: testutils.Log10,
+			subdir:  "build_throughput",
+			ylabel:  "Build Throughput (M keys/sec)",
+			yScale:  testutils.Log10,
 			extract: func(r b6Row) (float64, bool) { return r.BuildMKeysSec, r.BuildMKeysSec > 0 },
 		},
 	}
@@ -164,8 +211,207 @@ func TestB6Plots(t *testing.T) {
 			fmt.Printf("wrote %s\n", svgPath)
 		}
 	}
+
+	// L-trajectory trade-off plots — one SVG per distribution, each
+	// filter is a curve whose points are (BPK_at_L, FPR_at_L) for L in
+	// the rangeLens grid at the headline sweep value. Reuses
+	// GenerateTradeoffSVG so visual identity matches the FPR-vs-BPK
+	// headline plots from comparison_test.go.
+	tradeoffDir := filepath.Join(plotsRoot, "tradeoff")
+	if err := os.MkdirAll(tradeoffDir, 0755); err != nil {
+		t.Fatalf("mkdir %s: %v", tradeoffDir, err)
+	}
+	yFloor := 1.0 / float64(doc.QueryCount)
+	for _, dist := range finalDists {
+		ordered := buildB6TradeoffSeries(byCell, dist)
+		if !anyHasPoints(ordered) {
+			continue
+		}
+		svgPath := filepath.Join(tradeoffDir, dist+".svg")
+		title := fmt.Sprintf("FPR vs BPK trajectory across L — %s (n=2^%d, ε=%.3f)",
+			dist, log2int64(int64(doc.NKeys)), doc.Eps)
+		if err := testutils.GenerateTradeoffSVG(
+			title, "Bits per Key (BPK)", "False Positive Rate (FPR)",
+			ordered, svgPath, yFloor,
+		); err != nil {
+			t.Errorf("svg %s: %v", svgPath, err)
+			continue
+		}
+		fmt.Printf("wrote %s\n", svgPath)
+	}
+
+	// Per-L trade-off plots — one SVG per (distribution, L). Each filter
+	// is a curve whose points are (BPK_at_sweep, FPR_at_sweep) traced
+	// through the K-sweep grid, giving genuine FPR-vs-BPK curves at
+	// fixed L.
+	for _, dist := range finalDists {
+		perLDir := filepath.Join(plotsRoot, "tradeoff_per_L", dist)
+		if err := os.MkdirAll(perLDir, 0755); err != nil {
+			t.Fatalf("mkdir %s: %v", perLDir, err)
+		}
+		for _, L := range sortedRangeLens {
+			ordered := buildB6TradeoffPerLSeries(byCell, dist, L)
+			if !anyHasPoints(ordered) {
+				continue
+			}
+			svgPath := filepath.Join(perLDir, fmt.Sprintf("L%d.svg", L))
+			title := fmt.Sprintf("FPR vs BPK (K-sweep) — %s, L=%d (n=2^%d)",
+				dist, L, log2int64(int64(doc.NKeys)))
+			if err := testutils.GenerateTradeoffSVG(
+				title, "Bits per Key (BPK)", "False Positive Rate (FPR)",
+				ordered, svgPath, yFloor,
+			); err != nil {
+				t.Errorf("svg %s: %v", svgPath, err)
+				continue
+			}
+			fmt.Printf("wrote %s\n", svgPath)
+		}
+	}
+
+	// Cache-pressure plots — one SVG per (distribution, L). X = BPK
+	// (linear, capped at 25), Y = query latency (ns, log10). Each
+	// filter is a curve through its K-sweep grid; as the filter
+	// outgrows L1/L2/L3 caches the curve should kink upward.
+	for _, dist := range finalDists {
+		cacheDir := filepath.Join(plotsRoot, "cache_pressure", dist)
+		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+			t.Fatalf("mkdir %s: %v", cacheDir, err)
+		}
+		for _, L := range sortedRangeLens {
+			ordered := buildB6CachePressureSeries(byCell, dist, L)
+			if !anyHasPoints(ordered) {
+				continue
+			}
+			svgPath := filepath.Join(cacheDir, fmt.Sprintf("L%d.svg", L))
+			title := fmt.Sprintf("Query latency vs filter footprint (cache-pressure) — %s, L=%d", dist, L)
+			err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
+				Title:  title,
+				XLabel: "Bits per Key (BPK)",
+				YLabel: "Query Time (ns/op)",
+				XScale: testutils.Linear,
+				YScale: testutils.Log10,
+				XMax:   25,
+			}, ordered, svgPath)
+			if err != nil {
+				t.Errorf("svg %s: %v", svgPath, err)
+				continue
+			}
+			fmt.Printf("wrote %s\n", svgPath)
+		}
+	}
 }
 
+// buildB6TradeoffSeries builds, per filter, a curve of (BPK_at_L, FPR_at_L)
+// points sorted by L (= sorted by BPK in practice for filters whose
+// footprint scales monotonically with L). Only headline-sweep rows are
+// used so each filter renders as one curve through L.
+func buildB6TradeoffSeries(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist string,
+) []testutils.SeriesData {
+	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
+	for _, fname := range b6PlotOrder {
+		all := byCell[struct{ dist, filter string }{dist, fname}]
+		if len(all) == 0 {
+			continue
+		}
+		rows := make([]b6Row, 0, len(all))
+		for _, r := range all {
+			if matchesHeadlineSweep(r) {
+				rows = append(rows, r)
+			}
+		}
+		if len(rows) == 0 {
+			continue
+		}
+		sort.Slice(rows, func(i, j int) bool { return rows[i].RangeLen < rows[j].RangeLen })
+
+		s := newB6Series(fname)
+		for _, r := range rows {
+			if r.BPKUsed <= 0 {
+				continue
+			}
+			s.Points = append(s.Points, testutils.Point{X: r.BPKUsed, Y: floorFPR(r.FPR)})
+		}
+		if len(s.Points) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// buildB6TradeoffPerLSeries builds, per filter and fixed L, a curve of
+// (BPK, FPR) points traced through the K-sweep grid. Points are sorted
+// by BPK so the curve renders monotonically left-to-right.
+func buildB6TradeoffPerLSeries(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist string,
+	L uint64,
+) []testutils.SeriesData {
+	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
+	for _, fname := range b6PlotOrder {
+		all := byCell[struct{ dist, filter string }{dist, fname}]
+		rows := make([]b6Row, 0, len(all))
+		for _, r := range all {
+			if r.RangeLen == L {
+				rows = append(rows, r)
+			}
+		}
+		if len(rows) == 0 {
+			continue
+		}
+		sort.Slice(rows, func(i, j int) bool { return rows[i].BPKUsed < rows[j].BPKUsed })
+
+		s := newB6Series(fname)
+		for _, r := range rows {
+			if r.BPKUsed <= 0 {
+				continue
+			}
+			s.Points = append(s.Points, testutils.Point{X: r.BPKUsed, Y: floorFPR(r.FPR)})
+		}
+		if len(s.Points) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// buildB6CachePressureSeries builds, per filter and fixed L, a curve of
+// (BPK, query_ns) points traced through the K-sweep grid. Points are
+// sorted by BPK.
+func buildB6CachePressureSeries(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist string,
+	L uint64,
+) []testutils.SeriesData {
+	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
+	for _, fname := range b6PlotOrder {
+		all := byCell[struct{ dist, filter string }{dist, fname}]
+		rows := make([]b6Row, 0, len(all))
+		for _, r := range all {
+			if r.RangeLen == L && r.QueryNsPerOp > 0 && r.BPKUsed > 0 {
+				rows = append(rows, r)
+			}
+		}
+		if len(rows) == 0 {
+			continue
+		}
+		sort.Slice(rows, func(i, j int) bool { return rows[i].BPKUsed < rows[j].BPKUsed })
+
+		s := newB6Series(fname)
+		for _, r := range rows {
+			s.Points = append(s.Points, testutils.Point{X: r.BPKUsed, Y: r.QueryNsPerOp})
+		}
+		if len(s.Points) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// buildB6PlotSeries builds a per-(metric, dist) curve for each filter,
+// using only headline-sweep rows so each filter renders as one curve
+// through L.
 func buildB6PlotSeries(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dist string,
@@ -173,22 +419,22 @@ func buildB6PlotSeries(
 ) []testutils.SeriesData {
 	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
 	for _, fname := range b6PlotOrder {
-		rows := byCell[struct{ dist, filter string }{dist, fname}]
+		all := byCell[struct{ dist, filter string }{dist, fname}]
+		if len(all) == 0 {
+			continue
+		}
+		rows := make([]b6Row, 0, len(all))
+		for _, r := range all {
+			if matchesHeadlineSweep(r) {
+				rows = append(rows, r)
+			}
+		}
 		if len(rows) == 0 {
 			continue
 		}
 		sort.Slice(rows, func(i, j int) bool { return rows[i].RangeLen < rows[j].RangeLen })
 
-		style, ok := b6SeriesStyles[fname]
-		if !ok {
-			style = SeriesStyle{Name: fname, Color: "#9ca3af", Marker: "circle"}
-		}
-		s := testutils.SeriesData{
-			Name:   style.Name,
-			Color:  style.Color,
-			Marker: style.Marker,
-			Dashed: style.Dashed,
-		}
+		s := newB6Series(fname)
 		for _, r := range rows {
 			y, ok := extract(r)
 			if !ok {
@@ -201,6 +447,29 @@ func buildB6PlotSeries(
 		}
 	}
 	return out
+}
+
+func newB6Series(fname string) testutils.SeriesData {
+	style, ok := b6SeriesStyles[fname]
+	if !ok {
+		style = SeriesStyle{Name: fname, Color: "#9ca3af", Marker: "circle"}
+	}
+	return testutils.SeriesData{
+		Name:   style.Name,
+		Color:  style.Color,
+		Marker: style.Marker,
+		Dashed: style.Dashed,
+	}
+}
+
+// floorFPR pins a 0-FPR observation just below the YFloor so the log10
+// axis renders it on the floor line; the shared "0 FP" marker row in
+// GenerateTradeoffSVG conveys the real meaning.
+func floorFPR(fpr float64) float64 {
+	if fpr <= 0 {
+		return 1e-300
+	}
+	return fpr
 }
 
 func anyHasPoints(series []testutils.SeriesData) bool {
