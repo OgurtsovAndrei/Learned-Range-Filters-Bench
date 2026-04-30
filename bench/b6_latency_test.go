@@ -16,6 +16,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -167,6 +168,12 @@ func TestB6IndustryLatency(t *testing.T) {
 								t.Errorf("flush %s: %v", store.path(), err)
 							}
 						})
+						// Force release of all filter structures before the
+						// next filter builds — without this, BloomARE at
+						// L=65536/eps=0.0005 + a second large filter held alive
+						// by Go's lazy GC can push peak RSS past system RAM.
+						runtime.GC()
+						debug.FreeOSMemory()
 					}
 				})
 			}
@@ -216,6 +223,12 @@ var (
 	b6SweepEps      = []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005}
 	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22}
 	b6SweepBPK      = []float64{4, 6, 8, 10, 12, 14, 16, 18}
+	// BloomARE filter size m = n*L/eps. With the full eps grid at
+	// L=65536 / n=2^20 we already need 16 GB at eps=0.0005. We trim the
+	// smallest eps values for Bloom so peak memory stays manageable
+	// (~1.6 GB worst case at n=2^20). For n=2^24 / n=2^28 the runner
+	// will clip further if needed; this minimal grid is the safe floor.
+	b6SweepBloomEps = []float64{0.1, 0.05, 0.02, 0.01, 0.005}
 	b6SweepRealBits = []float64{0, 2, 4, 8, 12, 16}
 	b6SweepHashBits = []float64{2, 4, 8, 12, 16}
 	b6SweepNoneBits = []float64{0}
@@ -275,8 +288,15 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
 			}, nil},
-		{"BloomARE", "eps", b6SweepEps,
+		{"BloomARE", "eps", b6SweepBloomEps,
 			func(L uint64, sweep float64) (func(a, b uint64) bool, uint64, error) {
+				// Pre-flight memory guard: m = n*L/eps; cap at ~2 GB
+				// (1.6e10 bits) to avoid swap thrashing the rest of the
+				// run. The framework records this as a skipped cell.
+				estBits := float64(len(keys)) * float64(L) / sweep
+				if estBits > 1.6e10 {
+					return nil, 0, fmt.Errorf("bloom: estimated %.2g bits exceeds 2 GB envelope at L=%d/eps=%.4g", estBits, L, sweep)
+				}
 				f, err := are_bloom.NewBloomARE(keys, L, sweep)
 				if err != nil {
 					return nil, 0, err
