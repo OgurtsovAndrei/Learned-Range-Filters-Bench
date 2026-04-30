@@ -64,6 +64,8 @@ import (
 // Output: bench_results/data/b6_latency.json (incrementally updated per
 // subtest, merged across runs).
 func TestB6IndustryLatency(t *testing.T) {
+	t.Cleanup(closeB6ProgressLog)
+
 	const (
 		queryCount = 1 << 18
 		eps        = 0.01
@@ -438,6 +440,21 @@ func b6Logf(format string, args ...any) {
 			time.Now().Format(time.RFC3339), os.Getpid())
 	}
 	fmt.Fprintf(b6ProgressLog, format, args...)
+}
+
+// closeB6ProgressLog flushes and closes the progress log. Idempotent;
+// safe to call multiple times.
+func closeB6ProgressLog() {
+	b6ProgressMu.Lock()
+	defer b6ProgressMu.Unlock()
+	if b6ProgressLog == nil {
+		return
+	}
+	fmt.Fprintf(b6ProgressLog, "=== b6 run end %s pid=%d ===\n",
+		time.Now().Format(time.RFC3339), os.Getpid())
+	_ = b6ProgressLog.Sync()
+	_ = b6ProgressLog.Close()
+	b6ProgressLog = nil
 }
 
 func newB6Store(nKeys, queryCount int, eps float64) *b6Store {
