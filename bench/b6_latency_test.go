@@ -163,6 +163,14 @@ func TestB6IndustryLatency(t *testing.T) {
 								ds.name, fd.name)
 							continue
 						}
+						// CGo wrappers (Grafite/SNARF/SuRF) hold C++
+						// state that is not safe for concurrent
+						// IsEmpty calls. Skip them at parallelism > 1.
+						if parseB6Parallelism() > 1 && isCGoFilter(fd.name) {
+							t.Logf("%s/%s: skipped — CGo filter at P>1",
+								ds.name, fd.name)
+							continue
+						}
 						t.Run(fd.name, func(t *testing.T) {
 							rows := runB6Filter(t, store, ds.name, fd,
 								keys, rangeLens, queryCount, n, eps)
@@ -758,6 +766,17 @@ func runB6Filter(
 		}
 	}
 	return rows
+}
+
+// isCGoFilter returns true for filter names backed by CGo wrappers
+// (Grafite, SNARF, SuRF*). Their underlying C++ state is shared across
+// IsEmpty calls and not concurrent-safe; we skip them at P>1.
+func isCGoFilter(name string) bool {
+	switch name {
+	case "Grafite", "SNARF", "SuRFNone", "SuRFHash", "SuRFReal":
+		return true
+	}
+	return false
 }
 
 // parseB6Parallelism reads B6_PARALLEL env var. Default 1 = serial query
