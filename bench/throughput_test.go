@@ -86,6 +86,27 @@ func TestGenerateSyntheticKeys(t *testing.T) {
 				return keys
 			},
 		},
+		{
+			"clustered_256M_uint64",
+			func() []uint64 {
+				rng := rand.New(rand.NewSource(99))
+				raw, _ := testutils.GenerateClusterDistribution(1<<28, 5, 0.15, rng)
+				return raw
+			},
+		},
+		{
+			"uniform_256M_uint64",
+			func() []uint64 {
+				rng := rand.New(rand.NewSource(42))
+				return generateUniformKeys(1<<28, rng)
+			},
+		},
+		{
+			"spread_256M_uint64",
+			func() []uint64 {
+				return generateSpreadKeys(1 << 28)
+			},
+		},
 	}
 
 	type result struct {

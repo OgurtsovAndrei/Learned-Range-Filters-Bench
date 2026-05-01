@@ -105,17 +105,17 @@ func TestB6IndustryLatency(t *testing.T) {
 		}},
 		{"uniform", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint64(syntheticDataPath("uniform_16M_uint64"), 0)
+				return loadSOSDUint64(syntheticDataPath(syntheticFile("uniform", n)), 0)
 			}
 		}},
 		{"spread", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint64(syntheticDataPath("spread_16M_uint64"), 0)
+				return loadSOSDUint64(syntheticDataPath(syntheticFile("spread", n)), 0)
 			}
 		}},
 		{"clustered", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint64(syntheticDataPath("clustered_16M_uint64"), 0)
+				return loadSOSDUint64(syntheticDataPath(syntheticFile("clustered", n)), 0)
 			}
 		}},
 	}
@@ -143,13 +143,22 @@ func TestB6IndustryLatency(t *testing.T) {
 					if err != nil {
 						t.Skipf("load %s: %v", ds.name, err)
 					}
+					// If the dataset doesn't have n keys, use whatever
+					// is available and report the effective n in the
+					// row's NKeys field. Plots can annotate the dist.
+					effN := n
 					if len(allKeys) < n {
-						t.Skipf("not enough keys for %s: have %d, need %d", ds.name, len(allKeys), n)
+						effN = len(allKeys)
+						t.Logf("%s: requested n=%d, only %d available — using effective n=%d",
+							ds.name, n, len(allKeys), effN)
 					}
-					keys := allKeys[:n]
+					if effN < 1<<10 {
+						t.Skipf("dataset too small even for smallest n: %d", effN)
+					}
+					keys := allKeys[:effN]
 					keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
 					t.Logf("%s: %d keys, range [%d, %d], keyBits=%d",
-						ds.name, len(keys), keys[0], keys[n-1], keyBits)
+						ds.name, len(keys), keys[0], keys[len(keys)-1], keyBits)
 
 					filters := buildB6Filters(keys, keyBits)
 					for _, fd := range filters {
@@ -173,7 +182,7 @@ func TestB6IndustryLatency(t *testing.T) {
 						}
 						t.Run(fd.name, func(t *testing.T) {
 							rows := runB6Filter(t, store, ds.name, fd,
-								keys, rangeLens, queryCount, n, eps)
+								keys, rangeLens, queryCount, effN, eps)
 							store.update(ds.name, fd.name, rows)
 							if err := store.flush(); err != nil {
 								t.Errorf("flush %s: %v", store.path(), err)
@@ -192,6 +201,16 @@ func TestB6IndustryLatency(t *testing.T) {
 			t.Logf("wrote %s", store.path())
 		})
 	}
+}
+
+// syntheticFile picks the smallest available synthetic-keys file that
+// can serve a request for n keys. Currently we have 16M and 256M files;
+// for n > 16M we use the 256M file.
+func syntheticFile(dist string, n int) string {
+	if n > (1 << 24) {
+		return fmt.Sprintf("%s_256M_uint64", dist)
+	}
+	return fmt.Sprintf("%s_16M_uint64", dist)
 }
 
 // parseB6N reads the B6_N env var as a comma-separated list of N values.
