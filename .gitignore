@@ -12,6 +12,7 @@ go.sum
 thirdparty/grafite/build/
 thirdparty/surf/build/
 thirdparty/snarf/build/
+thirdparty/rosetta/build/
 
 # Benchmark outputs (regenerable)
 bench_results/
