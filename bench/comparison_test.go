@@ -2,6 +2,7 @@ package bench_test
 
 import (
 	"Thesis-bench-industry/thirdparty/grafite"
+	"Thesis-bench-industry/thirdparty/rosetta"
 	"Thesis-bench-industry/thirdparty/snarf"
 	"Thesis-bench-industry/thirdparty/surf"
 	"Thesis/emptiness/approx/are_bloom"
@@ -860,6 +861,48 @@ func TestSanity_Grafite(t *testing.T) {
 	}
 	if f.IsEmpty(999_999_999, 1_000_000_001) {
 		t.Error("false negative: key 1e9 is in range")
+	}
+}
+
+func TestSanity_Rosetta(t *testing.T) {
+	const (
+		n        = 1000
+		stride   = uint64(1_000_000)
+		bpk      = 10.0
+		queryN   = 100
+		rangeLen = uint64(128)
+	)
+	keys := make([]uint64, n)
+	for i := range keys {
+		keys[i] = uint64(i) * stride
+	}
+
+	rng := rand.New(rand.NewSource(42))
+	queries := generateRangeQueries(keys, queryN, rangeLen, rng)
+	sampleLeft := make([]uint64, len(queries))
+	sampleRight := make([]uint64, len(queries))
+	for i, q := range queries {
+		sampleLeft[i] = q[0]
+		sampleRight[i] = q[1]
+	}
+
+	f := rosetta.New(keys, bpk, sampleLeft, sampleRight)
+	if f.SizeInBits() == 0 {
+		t.Error("expected SizeInBits > 0")
+	}
+	// Known-positive: range [0,1] contains key 0.
+	if f.IsEmpty(0, 1) {
+		t.Error("false negative: IsEmpty(0,1) must be false — key 0 is in range")
+	}
+	// Known-positive: range straddling key 1e6.
+	if f.IsEmpty(stride-1, stride+1) {
+		t.Errorf("false negative: key %d is in range [%d,%d]", stride, stride-1, stride+1)
+	}
+	// Known-empty: a small range strictly between two stride-spaced keys.
+	if !f.IsEmpty(stride+1, stride+10) {
+		// Bloom-style false positives are possible but should be rare at bpk=10
+		// for n=1000; flag (don't fail) so the test stays deterministic.
+		t.Logf("warning: IsEmpty(%d,%d) returned false — possible Bloom FP", stride+1, stride+10)
 	}
 }
 
