@@ -1,13 +1,13 @@
 package bench_test
 
 import (
+	"Thesis-bench-industry/thirdparty/rosetta"
 	"Thesis-bench-industry/thirdparty/snarf"
 	"Thesis-bench-industry/thirdparty/surf"
 	"Thesis/emptiness/approx/are_bloom"
 	"Thesis/emptiness/approx/are_greedy_scan"
 	"Thesis/emptiness/approx/are_hybrid_scan"
 	"Thesis/emptiness/approx/are_soda_hash"
-	"Thesis/emptiness/approx/are_trunc"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -270,11 +270,23 @@ type b6FilterDef struct {
 	sweepName string
 	// sweepValues is the grid of values for the swept parameter.
 	sweepValues []float64
-	// build returns isEmpty closure plus the actual filter footprint (bits).
-	// sizeBits is then divided by n by the runner to get actual BPK. L is
-	// a query-only parameter and not part of any filter's structure;
-	// the build closure must not depend on it.
-	build func(sweep float64) (isEmpty func(a, b uint64) bool, sizeBits uint64, err error)
+	// build returns an isEmpty closure plus the actual filter footprint
+	// (bits). Used for pure-Go filters and Bloom (no CGo crossings).
+	// Exactly one of build / buildBatch must be set per filter.
+	//
+	// sampleQueries is the per-L representative query sample used by
+	// L-dependent CGo filters (Rosetta) for build-time level shaping.
+	// Pure-Go filters ignore it.
+	build func(sweep float64, sampleQueries [][2]uint64) (isEmpty func(a, b uint64) bool, sizeBits uint64, err error)
+	// buildBatch is set ONLY for CGo filters. When non-nil, the runner uses
+	// it instead of looping per-query through `isEmpty`. This avoids
+	// ~50–200 ns of CGo crossing overhead per query and is the only way to
+	// measure CGo filter latency representatively.
+	buildBatch func(sweep float64, sampleQueries [][2]uint64) (queryBatch func([][2]uint64) []bool, sizeBits uint64, err error)
+	// lDependent: when true, the runner rebuilds the filter per (sweep, L)
+	// rather than once per sweep. Used by Rosetta whose build accepts the
+	// L-specific query sample for `calc_dst` level shaping.
+	lDependent bool
 	// skipDists is the set of distribution names for which this filter is
 	// known to be unsafe (e.g. SuRF SIGSEGVs on sosd_wiki due to upstream
 	// efficient/SuRF#8). The runner skips these cells without attempting
@@ -289,8 +301,9 @@ type b6FilterDef struct {
 
 func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 	return []b6FilterDef{
-		{"SODA", "K", b6SweepK,
-			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+		{
+			name: "SODA", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				// Hash seed: derive from K so different K values still
 				// get different hash A/B (otherwise sweep cells would
 				// share hash → not independent samples).
@@ -299,33 +312,30 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil, nil},
-		{"Truncation", "K", b6SweepK,
-			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_trunc.NewTruncARE(keys, keyBits, are_trunc.Config{K: uint32(sweep)})
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil, nil},
-		{"Scan-ARE", "K", b6SweepK,
-			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+			},
+		},
+		{
+			name: "Scan-ARE", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits,
 					are_hybrid_scan.Config{K: uint32(sweep)})
 				if err != nil {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil, nil},
-		{"Greedy+Merge", "K", b6SweepK,
-			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+			},
+		},
+		{
+			name: "Greedy+Merge", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits,
 					are_greedy_scan.Config{K: uint32(sweep)})
 				if err != nil {
 					return nil, 0, err
 				}
 				return f.IsEmpty, f.SizeInBits(), nil
-			}, nil, nil},
+			},
+		},
 		{
 			// BloomARE is BPK-driven and L-independent: filter size is
 			// fixed by target bits-per-key, queries at any L just probe
@@ -342,7 +352,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			sweepName:   "K",
 			sweepValues: b6SweepK,
 			skipLs:      map[uint64]bool{4096: true, 16384: true, 65536: true},
-			build: func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				bpk := sweep
 				estBits := float64(len(keys)) * bpk
 				if estBits > 1.6e10 {
@@ -358,19 +368,53 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
 			},
 		},
-		{"Grafite", "bpk", b6SweepBPK,
-			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+		{
+			// Grafite saturates at L>=128 — its FPR floor is set by the
+			// internal log2(L/eps) sizing and at the larger L values it
+			// reports FPR ~ 1.0 across the entire bpk grid. Skip those L
+			// values so the sweep finishes quickly.
+			name: "Grafite", sweepName: "bpk", sweepValues: b6SweepBPK,
+			skipLs: map[uint64]bool{128: true, 1024: true, 4096: true, 16384: true, 65536: true},
+			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := tryGrafite(keys, sweep)
 				if f == nil {
 					return nil, 0, fmt.Errorf("grafite: target bpk=%.2f exceeds envelope", sweep)
 				}
-				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil, nil},
-		{"SNARF", "bpk", b6SweepBPK,
-			func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+				return f.QueryBatch, f.SizeInBits(), nil
+			},
+		},
+		{
+			name: "SNARF", sweepName: "bpk", sweepValues: b6SweepBPK,
+			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := snarf.New(keys, sweep)
-				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			}, nil, nil},
+				return f.QueryBatch, f.SizeInBits(), nil
+			},
+		},
+		{
+			// Rosetta is BPK-driven and uses the per-L sample query batch
+			// for `calc_dst` level shaping at build time. lDependent makes
+			// the runner rebuild it per (sweep, L) with the L-specific
+			// sample. Other filters reuse one build across all L values.
+			name: "Rosetta", sweepName: "bpk", sweepValues: b6SweepBPK,
+			lDependent: true,
+			buildBatch: func(sweep float64, sampleQueries [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
+				sampleN := len(sampleQueries)
+				var sampleLeft, sampleRight []uint64
+				if sampleN > 0 {
+					sampleLeft = make([]uint64, sampleN)
+					sampleRight = make([]uint64, sampleN)
+					for i, q := range sampleQueries {
+						sampleLeft[i] = q[0]
+						sampleRight[i] = q[1]
+					}
+				}
+				f := rosetta.New(keys, sweep, sampleLeft, sampleRight)
+				if f == nil {
+					return nil, 0, fmt.Errorf("rosetta: New returned nil for bpk=%.2f", sweep)
+				}
+				return f.QueryBatch, f.SizeInBits(), nil
+			},
+		},
 		// SuRF is one filter family with three structural variants. We sweep
 		// each variant's bit budget so the FPR-vs-BPK plots get a SuRF point
 		// cloud across (suffixType, bitCount); the plotter folds all three
@@ -379,9 +423,9 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name:        "SuRFNone",
 			sweepName:   "real_bits",
 			sweepValues: b6SweepNoneBits,
-			build: func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+			buildBatch: func(_ float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := surf.New(keys, surf.SuffixNone, 0, 0)
-				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
+				return f.QueryBatch, f.SizeInBits(), nil
 			},
 			skipDists: map[string]bool{"sosd_wiki": true},
 		},
@@ -389,9 +433,9 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name:        "SuRFHash",
 			sweepName:   "hash_bits",
 			sweepValues: b6SweepHashBits,
-			build: func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := surf.New(keys, surf.SuffixHash, int(sweep), 0)
-				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
+				return f.QueryBatch, f.SizeInBits(), nil
 			},
 			skipDists: map[string]bool{"sosd_wiki": true},
 		},
@@ -399,9 +443,9 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name:        "SuRFReal",
 			sweepName:   "real_bits",
 			sweepValues: b6SweepRealBits,
-			build: func(sweep float64) (func(a, b uint64) bool, uint64, error) {
+			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := surf.New(keys, surf.SuffixReal, 0, int(sweep))
-				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
+				return f.QueryBatch, f.SizeInBits(), nil
 			},
 			skipDists: map[string]bool{"sosd_wiki": true},
 		},
@@ -617,33 +661,51 @@ func runB6Filter(
 	// remaining unsaturated L values.
 	lSaturated := make(map[uint64]bool)
 
-	// Outer loop: sweep value. We build the structure once per sweep
-	// value and reuse it across all L. L is a query parameter only —
-	// no filter has L-dependent structure.
+	// Outer loop: sweep value. For non-lDependent filters we build the
+	// structure once per sweep value and reuse it across all L; for
+	// lDependent filters (Rosetta) we rebuild per (sweep, L) since the
+	// build closure consumes an L-specific query sample.
 	for _, sweep := range fd.sweepValues {
 		var (
-			builtIsEmpty  func(a, b uint64) bool
-			builtSizeBits uint64
-			builtBuildDur time.Duration
-			builtBuildErr error
-			built         bool
+			builtIsEmpty    func(a, b uint64) bool
+			builtQueryBatch func([][2]uint64) []bool
+			builtSizeBits   uint64
+			builtBuildDur   time.Duration
+			builtBuildErr   error
+			built           bool
 		)
-		buildOnce := func() {
+		// invokeBuild calls fd.build / fd.buildBatch and returns the
+		// resulting query closures alongside size and duration. Exactly
+		// one of (isEmpty, queryBatch) is non-nil on success.
+		invokeBuild := func(sample [][2]uint64) (
+			func(a, b uint64) bool, func([][2]uint64) []bool, uint64, time.Duration, error,
+		) {
+			startBuild := time.Now()
+			if fd.buildBatch != nil {
+				qb, sz, err := fd.buildBatch(sweep, sample)
+				return nil, qb, sz, time.Since(startBuild), err
+			}
+			ie, sz, err := fd.build(sweep, sample)
+			return ie, nil, sz, time.Since(startBuild), err
+		}
+		buildOnce := func(sample [][2]uint64) {
 			if built {
 				return
 			}
 			built = true
 			if !warmedUp {
 				warmKeys := keys[:1<<10]
-				if warmIsEmpty, _, werr := fd.build(sweep); werr == nil {
-					_ = warmIsEmpty(warmKeys[0], warmKeys[len(warmKeys)-1])
+				if wIE, wQB, _, _, werr := invokeBuild(sample); werr == nil {
+					if wIE != nil {
+						_ = wIE(warmKeys[0], warmKeys[len(warmKeys)-1])
+					} else if wQB != nil {
+						_ = wQB([][2]uint64{{warmKeys[0], warmKeys[len(warmKeys)-1]}})
+					}
 				}
 				runtime.GC()
 				warmedUp = true
 			}
-			startBuild := time.Now()
-			builtIsEmpty, builtSizeBits, builtBuildErr = fd.build(sweep)
-			builtBuildDur = time.Since(startBuild)
+			builtIsEmpty, builtQueryBatch, builtSizeBits, builtBuildDur, builtBuildErr = invokeBuild(sample)
 		}
 
 		// Per-K BPK budget exceeded → break sweep entirely (BPK is L-
@@ -691,11 +753,34 @@ func runB6Filter(
 				}
 			}
 
-			buildOnce()
-			isEmpty := builtIsEmpty
-			sizeBits := builtSizeBits
-			buildErr := builtBuildErr
-			buildDur := builtBuildDur
+			// Per-L Rosetta sample. Seed XOR keeps it independent from
+			// the measurement-query seed so the sample is not the same
+			// set of queries we then evaluate FPR against.
+			var sampleQueries [][2]uint64
+			if fd.lDependent {
+				sampleSeed := params.QuerySeed ^ 0x055e77a
+				sRng := rand.New(rand.NewSource(sampleSeed))
+				sampleQueries = generateSmartQueries(keys, 4096, L, sRng)
+			}
+
+			var (
+				isEmpty    func(a, b uint64) bool
+				queryBatch func([][2]uint64) []bool
+				sizeBits   uint64
+				buildErr   error
+				buildDur   time.Duration
+			)
+			if fd.lDependent {
+				// Rebuild per L with the L-specific sample.
+				isEmpty, queryBatch, sizeBits, buildDur, buildErr = invokeBuild(sampleQueries)
+			} else {
+				buildOnce(nil)
+				isEmpty = builtIsEmpty
+				queryBatch = builtQueryBatch
+				sizeBits = builtSizeBits
+				buildErr = builtBuildErr
+				buildDur = builtBuildDur
+			}
 
 			if buildErr != nil {
 				rows = append(rows, b6Row{
@@ -721,7 +806,15 @@ func runB6Filter(
 					dist, fd.name, L, fd.sweepName, sweep)
 				continue
 			}
-			falsePositives, qDur := runQueriesParallel(batch, isEmpty, parallelism)
+			var (
+				falsePositives int
+				qDur           time.Duration
+			)
+			if queryBatch != nil {
+				falsePositives, qDur = runQueriesBatchParallel(batch, queryBatch, parallelism)
+			} else {
+				falsePositives, qDur = runQueriesParallel(batch, isEmpty, parallelism)
+			}
 			nsPerQuery := float64(qDur.Nanoseconds()) / float64(len(batch))
 			fpr := float64(falsePositives) / float64(len(batch))
 
@@ -757,6 +850,7 @@ func runB6Filter(
 		// builds — otherwise GC may delay reclaim until the function
 		// returns, stacking memory across sweeps.
 		builtIsEmpty = nil
+		builtQueryBatch = nil
 		built = false
 		runtime.GC()
 
@@ -792,7 +886,7 @@ func runB6Filter(
 // IsEmpty calls and not concurrent-safe; we skip them at P>1.
 func isCGoFilter(name string) bool {
 	switch name {
-	case "Grafite", "SNARF", "SuRFNone", "SuRFHash", "SuRFReal":
+	case "Grafite", "SNARF", "SuRFNone", "SuRFHash", "SuRFReal", "Rosetta":
 		return true
 	}
 	return false
@@ -853,6 +947,65 @@ func runQueriesParallel(
 			c := 0
 			for _, q := range qs {
 				if !isEmpty(q[0], q[1]) {
+					c++
+				}
+			}
+			fpCounts[idx] = c
+		}(w, batch[lo:hi])
+	}
+	wg.Wait()
+	dur := time.Since(start)
+	total := 0
+	for _, c := range fpCounts {
+		total += c
+	}
+	return total, dur
+}
+
+// runQueriesBatchParallel is the buildBatch counterpart of runQueriesParallel.
+// It runs `queryBatch` over the full batch (or per sub-batch under P>1) so a
+// CGo filter pays one CGo crossing per chunk instead of per query — the only
+// way to measure CGo per-query latency representatively. Semantics match the
+// per-query path: a `false` result counts as a false positive (the smart-mix
+// generator guarantees every query is empty).
+func runQueriesBatchParallel(
+	batch [][2]uint64,
+	queryBatch func([][2]uint64) []bool,
+	parallelism int,
+) (int, time.Duration) {
+	if parallelism <= 1 {
+		start := time.Now()
+		results := queryBatch(batch)
+		dur := time.Since(start)
+		fp := 0
+		for _, r := range results {
+			if !r {
+				fp++
+			}
+		}
+		return fp, dur
+	}
+
+	chunk := (len(batch) + parallelism - 1) / parallelism
+	fpCounts := make([]int, parallelism)
+	var wg sync.WaitGroup
+	start := time.Now()
+	for w := 0; w < parallelism; w++ {
+		lo := w * chunk
+		if lo >= len(batch) {
+			break
+		}
+		hi := lo + chunk
+		if hi > len(batch) {
+			hi = len(batch)
+		}
+		wg.Add(1)
+		go func(idx int, qs [][2]uint64) {
+			defer wg.Done()
+			res := queryBatch(qs)
+			c := 0
+			for _, r := range res {
+				if !r {
 					c++
 				}
 			}

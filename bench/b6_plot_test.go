@@ -11,11 +11,7 @@ import (
 	"testing"
 )
 
-// b6SeriesStyles extends DefaultSeriesStyles with the one filter that B6
-// shows but the FPR-vs-BPK headline does not (Truncation). The headline
-// scheme reserves "warm + circle" for the this-work line; Truncation is
-// from chapter 4 (intermediate building block) so it gets a fourth warm
-// hue (crimson) keeping the same circle marker for family coherence.
+// b6SeriesStyles extends DefaultSeriesStyles with B6-only filters (Rosetta).
 //
 // Filters not listed here fall through to a default gray rendering.
 var b6SeriesStyles = func() map[string]SeriesStyle {
@@ -23,7 +19,10 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 	for k, v := range DefaultSeriesStyles {
 		m[k] = v
 	}
-	m["Truncation"] = SeriesStyle{Name: "Truncation", Color: "#b91c1c", Marker: "circle"}
+	// Rosetta — cool teal-darker, distinct from Grafite-tuned (#14b8a6) but
+	// in the same cool industry-baseline family. Cross marker to separate
+	// it from SNARF/SuRF/Grafite (all diamonds).
+	m["Rosetta"] = SeriesStyle{Name: "Rosetta", Color: "#0d9488", Marker: "cross"}
 	// SuRF is one family rendered as a marker-only point cloud across all
 	// three structural variants (None / Hash / Real). Inherit the
 	// SuRFReal(8) palette so plots stay consistent with comparison_test.go.
@@ -40,16 +39,14 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 	return m
 }()
 
-// b6 series rendering order — matches the headline plot ordering with
-// Truncation inserted into the "this work" warm cluster, between SODA
-// (the academic predecessor) and Scan-ARE / Greedy+Merge (the headline
-// pair that build on it).
+// b6 series rendering order — industry baselines (cool palette) first, then
+// the academic line (warm palette) ending with Bloom as the slope reference.
 var b6PlotOrder = []string{
 	"Grafite",
 	"SNARF",
 	"SuRF",
+	"Rosetta",
 	"SODA",
-	"Truncation",
 	"Scan-ARE",
 	"Greedy+Merge",
 	"BloomARE",
