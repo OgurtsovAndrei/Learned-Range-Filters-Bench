@@ -139,6 +139,10 @@ type b6Store struct {
 	queryCount    int
 	eps           float64
 	queryStrategy string
+	// mixSuffix is appended to the on-disk path for non-default workload
+	// variants (e.g. "gap_heavy"). Empty for the historical 50/30/20 mix
+	// so its layout — bench_results/data/b6_latency_N{N}/ — is preserved.
+	mixSuffix string
 	// filters is keyed by filter name. A nil entry (key not present) means
 	// the per-filter doc has not been loaded yet; a non-nil entry has been
 	// loaded (possibly empty — file did not exist on disk). This matters
@@ -153,12 +157,16 @@ type b6Store struct {
 	migrated bool
 }
 
-func newB6Store(nKeys, queryCount int, eps float64) *b6Store {
+// newB6Store builds a store keyed at (nKeys, queryStrategy). mixSuffix is
+// appended to the on-disk path for non-default workload variants — empty
+// keeps the historical layout, "gap_heavy" routes to a sibling dir.
+func newB6Store(nKeys, queryCount int, eps float64, queryStrategy, mixSuffix string) *b6Store {
 	return &b6Store{
 		nKeys:         nKeys,
 		queryCount:    queryCount,
 		eps:           eps,
-		queryStrategy: "smart_mix_guaranteed_empty",
+		queryStrategy: queryStrategy,
+		mixSuffix:     mixSuffix,
 		filters:       make(map[string]*b6FilterDoc),
 		dirty:         make(map[string]bool),
 	}
@@ -168,12 +176,20 @@ func newB6Store(nKeys, queryCount int, eps float64) *b6Store {
 // plus _meta.json. It does not guarantee the directory exists; flush()
 // creates it on demand.
 func (s *b6Store) path() string {
-	return fmt.Sprintf("../bench_results/data/b6_latency_N%d", s.nKeys)
+	if s.mixSuffix == "" {
+		return fmt.Sprintf("../bench_results/data/b6_latency_N%d", s.nKeys)
+	}
+	return fmt.Sprintf("../bench_results/data/b6_latency_N%d_%s", s.nKeys, s.mixSuffix)
 }
 
 // legacyPath is the pre-refactor monolithic file location. Used only by
-// the one-shot migration in migrateLegacyLocked.
+// the one-shot migration in migrateLegacyLocked. Non-default workload
+// variants never had a legacy file, so we return an empty path which the
+// migrator treats as a no-op.
 func (s *b6Store) legacyPath() string {
+	if s.mixSuffix != "" {
+		return ""
+	}
 	return fmt.Sprintf("../bench_results/data/b6_latency_N%d.json", s.nKeys)
 }
 

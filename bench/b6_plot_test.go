@@ -116,9 +116,26 @@ func TestB6Plots(t *testing.T) {
 			if len(doc.Rows) == 0 {
 				t.Skipf("no rows in %s", src.label)
 			}
-			renderB6Plots(t, doc)
+			renderB6Plots(t, doc, plotsRootFromSource(src, doc))
 		})
 	}
+}
+
+// plotsRootFromSource derives the per-source plots directory from the
+// cache origin. The dir name `b6_latency_N{N}[_<suffix>]` maps to plot
+// root `bench_results/plots/b6_N{N}[_<suffix>]`. Legacy file sources
+// fall back to the bare `b6_N{N}` form.
+func plotsRootFromSource(src b6PlotSource, doc b6Doc) string {
+	if src.dir != "" {
+		base := filepath.Base(src.dir)
+		// strip the "b6_latency_" prefix; what remains is "N{N}" or
+		// "N{N}_<suffix>" — use it directly as the plot subdir tag.
+		if strings.HasPrefix(base, "b6_latency_") {
+			tag := strings.TrimPrefix(base, "b6_latency_")
+			return fmt.Sprintf("../bench_results/plots/b6_%s", tag)
+		}
+	}
+	return fmt.Sprintf("../bench_results/plots/b6_N%d", doc.NKeys)
 }
 
 // b6PlotSource is one renderable cache origin: either a per-N directory
@@ -262,7 +279,7 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-func renderB6Plots(t *testing.T, doc b6Doc) {
+func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 	// Index rows by (distribution, filter). Per-(metric, dist) plots use
 	// only the headline sweep values (one curve per filter through L);
 	// cache-pressure and per-L trade-off plots use all sweep values.
@@ -345,7 +362,6 @@ func renderB6Plots(t *testing.T, doc b6Doc) {
 		},
 	}
 
-	plotsRoot := fmt.Sprintf("../bench_results/plots/b6_N%d", doc.NKeys)
 	for _, m := range metrics {
 		outDir := filepath.Join(plotsRoot, m.subdir)
 		if err := os.MkdirAll(outDir, 0755); err != nil {

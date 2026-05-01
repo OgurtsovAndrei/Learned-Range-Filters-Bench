@@ -67,7 +67,7 @@ func TestB6CacheMigration(t *testing.T) {
 		t.Fatalf("write legacy: %v", err)
 	}
 
-	store := newB6Store(N, 1<<18, 0.01)
+	store := newB6Store(N, 1<<18, 0.01, "smart_mix_guaranteed_empty", "")
 	// Touching any filter triggers the one-shot migration.
 	if doc := store.cachedRow("uniform", "Grafite", 1, "bpk", 12, "h1"); doc == nil {
 		t.Fatalf("expected migrated Grafite row for uniform/L=1/bpk=12 to be present")
@@ -139,7 +139,7 @@ func TestB6CacheMigration(t *testing.T) {
 
 	// Re-opening the store must read the per-filter files cleanly and
 	// must NOT re-migrate (legacy file is gone).
-	store2 := newB6Store(N, 1<<18, 0.01)
+	store2 := newB6Store(N, 1<<18, 0.01, "smart_mix_guaranteed_empty", "")
 	if cached := store2.cachedRow("uniform", "Grafite", 16, "bpk", 12, "h2"); cached == nil {
 		t.Errorf("re-opened store lost migrated Grafite row for L=16")
 	}
@@ -241,7 +241,7 @@ func TestB6CacheUpdateDedup(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chdir(prevCwd) })
 
-	store := newB6Store(1<<20, 1<<18, 0.01)
+	store := newB6Store(1<<20, 1<<18, 0.01, "smart_mix_guaranteed_empty", "")
 
 	// Initial rows at parallelism=1 and parallelism=4 (different paramsHash).
 	store.update("uniform", "SODA", []b6Row{

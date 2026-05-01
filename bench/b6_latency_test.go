@@ -71,6 +71,11 @@ func TestB6IndustryLatency(t *testing.T) {
 	rangeLens := []uint64{1, 16, 128, 1024, 4096, 16384, 65536}
 
 	nValues := parseB6N()
+	mix := parseB6QueryMix()
+	if mix.name != "" {
+		t.Logf("B6_QUERY_MIX=%s (near=%.2f, gap=%.2f, uniform=%.2f) — cache & plots routed to *_%s",
+			mix.name, mix.weights.nearKey, mix.weights.inGap, mix.weights.uniform, mix.name)
+	}
 
 	type distSpec struct {
 		name string
@@ -127,7 +132,7 @@ func TestB6IndustryLatency(t *testing.T) {
 	for _, n := range nValues {
 		n := n
 		t.Run(fmt.Sprintf("N=2^%d", mathbits.TrailingZeros(uint(n))), func(t *testing.T) {
-			store := newB6Store(n, queryCount, eps)
+			store := newB6Store(n, queryCount, eps, mix.queryStrategy, mix.name)
 			b6Logf("\n=== B6: Build + Query latency + actual BPK + FPR, n=%d, ε=%.3f ===\n",
 				n, eps)
 			b6Logf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s\n",
@@ -179,7 +184,7 @@ func TestB6IndustryLatency(t *testing.T) {
 						}
 						t.Run(fd.name, func(t *testing.T) {
 							rows := runB6Filter(t, store, ds.name, fd,
-								keys, rangeLens, queryCount, effN, eps)
+								keys, rangeLens, queryCount, effN, eps, mix)
 							store.update(ds.name, fd.name, rows)
 							if err := store.flush(); err != nil {
 								t.Errorf("flush %s: %v", store.path(), err)
@@ -208,6 +213,50 @@ func syntheticFile(dist string, n int) string {
 		return fmt.Sprintf("%s_256M_uint64", dist)
 	}
 	return fmt.Sprintf("%s_16M_uint64", dist)
+}
+
+// b6QueryMix names a smart-mix workload variant.
+//
+//   - name: short identifier used as path suffix (cache + plots).
+//     Empty for the default mix so existing layouts are untouched.
+//   - queryStrategy: full label written into b6Params/b6Doc.QueryStrategy
+//     (cache key participates so different mixes never collide).
+//   - weights: passed to generateSmartQueriesWeighted.
+type b6QueryMix struct {
+	name          string
+	queryStrategy string
+	weights       smartMixWeights
+}
+
+// b6QueryMixes is the registry of supported B6_QUERY_MIX values. Add a
+// new entry here to introduce a workload variant; the runner + cache +
+// plotter pick it up automatically via the suffix.
+var b6QueryMixes = map[string]b6QueryMix{
+	"smart_mix": {
+		name:          "", // default keeps bare paths
+		queryStrategy: "smart_mix_guaranteed_empty",
+		weights:       defaultSmartMix,
+	},
+	"gap_heavy": {
+		name:          "gap_heavy",
+		queryStrategy: "smart_mix_gap_heavy_guaranteed_empty",
+		weights:       smartMixWeights{nearKey: 0.0, inGap: 0.7, uniform: 0.3},
+	},
+}
+
+// parseB6QueryMix reads B6_QUERY_MIX env var. Default "smart_mix" matches
+// the historical 50/30/20 weights and writes to the original cache/plot
+// directories.
+func parseB6QueryMix() b6QueryMix {
+	v := strings.TrimSpace(os.Getenv("B6_QUERY_MIX"))
+	if v == "" {
+		v = "smart_mix"
+	}
+	mix, ok := b6QueryMixes[v]
+	if !ok {
+		panic(fmt.Sprintf("B6_QUERY_MIX: unknown mix %q (known: smart_mix, gap_heavy)", v))
+	}
+	return mix
 }
 
 // parseB6N reads the B6_N env var as a comma-separated list of N values.
@@ -500,6 +549,7 @@ func runB6Filter(
 	queryCount int,
 	n int,
 	eps float64,
+	mix b6QueryMix,
 ) []b6Row {
 	force := os.Getenv("FORCE") != ""
 	parallelism := parseB6Parallelism()
@@ -581,7 +631,7 @@ func runB6Filter(
 				Eps:           eps,
 				RangeLen:      L,
 				QueryCount:    queryCount,
-				QueryStrategy: "smart_mix_guaranteed_empty",
+				QueryStrategy: mix.queryStrategy,
 				QuerySeed:     int64(L) + 7777777,
 				Distribution:  dist,
 				Filter:        fd.name,
@@ -613,7 +663,7 @@ func runB6Filter(
 			if fd.lDependent {
 				sampleSeed := params.QuerySeed ^ 0x055e77a
 				sRng := rand.New(rand.NewSource(sampleSeed))
-				sampleQueries = generateSmartQueries(keys, 4096, L, sRng)
+				sampleQueries = generateSmartQueriesWeighted(keys, 4096, L, mix.weights, sRng)
 			}
 
 			var (
@@ -653,7 +703,7 @@ func runB6Filter(
 			actualBPK := float64(sizeBits) / float64(n)
 
 			qrng := rand.New(rand.NewSource(params.QuerySeed))
-			batch := generateSmartQueries(keys, queryCount, L, qrng)
+			batch := generateSmartQueriesWeighted(keys, queryCount, L, mix.weights, qrng)
 			if len(batch) == 0 {
 				t.Logf("%s/%s L=%d %s=%.4g: smart-query generator returned 0 queries; skipping",
 					dist, fd.name, L, fd.sweepName, sweep)

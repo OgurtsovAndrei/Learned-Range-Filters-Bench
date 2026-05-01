@@ -67,18 +67,38 @@ func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.R
 	return queries
 }
 
-// Smart query mix weights (fractions must sum to 1.0).
+// smartMixWeights captures the per-bucket fractions for generateSmartQueriesWeighted.
+// Fields must sum to 1.0.
+type smartMixWeights struct {
+	nearKey float64
+	inGap   float64
+	uniform float64
+}
+
+// Default smart-mix weights. Used by sosd_test.go and as the B6 default.
 const (
 	queryWeightNearKey = 0.50 // query offset from a random key
 	queryWeightInGap   = 0.30 // query placed inside a random gap
 	queryWeightUniform = 0.20 // uniform random across span
 )
 
+var defaultSmartMix = smartMixWeights{
+	nearKey: queryWeightNearKey,
+	inGap:   queryWeightInGap,
+	uniform: queryWeightUniform,
+}
+
 // generateSmartQueries generates a mix of query types that follow the data
 // distribution. Every returned query is guaranteed to be empty (contains no
 // keys from the set). If a candidate query contains a key, it is truncated
 // to [a, firstKey-1]. Invalid queries (zero length) are re-rolled.
 func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
+	return generateSmartQueriesWeighted(keys, count, rangeLen, defaultSmartMix, rng)
+}
+
+// generateSmartQueriesWeighted is the parametrized variant. Pass arbitrary
+// (nearKey, inGap, uniform) weights to model alternative workloads.
+func generateSmartQueriesWeighted(keys []uint64, count int, rangeLen uint64, w smartMixWeights, rng *rand.Rand) [][2]uint64 {
 	n := len(keys)
 	minK, maxK := keys[0], keys[n-1]
 	span := maxK - minK
@@ -86,8 +106,8 @@ func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.R
 		return nil
 	}
 
-	nNear := int(float64(count) * queryWeightNearKey)
-	nGap := int(float64(count) * queryWeightInGap)
+	nNear := int(float64(count) * w.nearKey)
+	nGap := int(float64(count) * w.inGap)
 	nUnif := count - nNear - nGap
 
 	// Pre-compute gaps for gap-sampling.
