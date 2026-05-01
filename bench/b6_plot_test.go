@@ -23,7 +23,7 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 	// Rosetta — cool teal-darker, distinct from Grafite-tuned (#14b8a6) but
 	// in the same cool industry-baseline family. Diamond marker matches
 	// the industry-baseline visual convention (Grafite, SNARF, SuRF*).
-	m["Rosetta"] = SeriesStyle{Name: "Rosetta", Color: "#0d9488", Marker: "diamond"}
+	m["Rosetta"] = SeriesStyle{Name: "Rosetta", Color: "#0fb5a3", Marker: "diamond"}
 	// SuRF is one family rendered as a marker-only point cloud across all
 	// three structural variants (None / Hash / Real). Inherit the
 	// SuRFReal(8) palette so plots stay consistent with comparison_test.go.
