@@ -98,6 +98,8 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					family = "epsilon"
 				case "Grafite", "SNARF", "SuRFReal(8)":
 					family = "bpksweep"
+				case "Grafite-tuned":
+					family = "epsilon_l"
 				}
 				richData[name] = &richSeries{Name: name, FilterFamily: family}
 			}
@@ -136,18 +138,20 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 				paramsKGrid := buildParamsKGrid(kGrid, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
 				paramsEpsilon := buildParamsEpsilon(epsilons, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
 				paramsBPKSweep := buildParamsBPKSweep(bpkSweep, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
+				paramsEpsLSweep := buildParamsEpsLSweep(DefaultGrafiteEpsSweep, rangeLen, len(cfg.keys), cfg.queryCount, seeds, nRuns)
 				paramsTheoretical := buildParamsTheoretical(kGrid, rangeLen)
 
 				// Determine per-series params mapping (used for saving).
 				seriesParams := map[string]json.RawMessage{
-					"Theoretical":  paramsTheoretical,
-					"SODA":         paramsKGrid,
-					"Scan-ARE":     paramsKGrid,
-					"Greedy+Merge": paramsKGrid,
-					"BloomARE":     paramsEpsilon,
-					"Grafite":      paramsBPKSweep,
-					"SNARF":        paramsBPKSweep,
-					"SuRFReal(8)":  paramsBPKSweep,
+					"Theoretical":   paramsTheoretical,
+					"SODA":          paramsKGrid,
+					"Scan-ARE":      paramsKGrid,
+					"Greedy+Merge":  paramsKGrid,
+					"BloomARE":      paramsEpsilon,
+					"Grafite":       paramsBPKSweep,
+					"Grafite-tuned": paramsEpsLSweep,
+					"SNARF":         paramsBPKSweep,
+					"SuRFReal(8)":   paramsBPKSweep,
 				}
 
 				// Store params in richData for v2 cache compatibility.
@@ -504,6 +508,37 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					}
 				}
 
+				// ---- Grafite-tuned (eps, L) — paper-faithful constructor ----
+				// One filter per epsilon, rebuilt for the current L. Reaches BPK
+				// regimes the bpk-only build cannot (since the library caps
+				// bpk-only builds at log2(U/n) + 2 regardless of L).
+				if d := decideSkip("Grafite-tuned", paramsEpsLSweep); !d.skip {
+					allSeries["Grafite-tuned"].Points = nil
+					richData["Grafite-tuned"].Points = nil
+					richData["Grafite-tuned"].SweepValues = DefaultGrafiteEpsSweep
+
+					for _, eps := range DefaultGrafiteEpsSweep {
+						f := tryGrafiteEpsL(cfg.keys, eps, rangeLen)
+						if f == nil {
+							continue
+						}
+						sizeBits := f.SizeInBits()
+						actualBPK := float64(sizeBits) / float64(len(cfg.keys))
+						fpr := avgFPRBatch(cfg.keys, cfg.queryFunc, rangeLen, seeds, f.QueryBatch)
+						allSeries["Grafite-tuned"].Points = append(allSeries["Grafite-tuned"].Points,
+							testutils.Point{X: actualBPK, Y: fpr})
+						richData["Grafite-tuned"].Points = append(richData["Grafite-tuned"].Points,
+							richPoint{SweepParam: eps, BPK: actualBPK, FPR: fpr, FilterSizeBits: sizeBits})
+						fmt.Printf("%-16s | %8.2f | %14.6f\n", fmt.Sprintf("Grafite-tuned(eps=%g)", eps), actualBPK, fpr)
+					}
+					sort.Slice(allSeries["Grafite-tuned"].Points, func(i, j int) bool {
+						return allSeries["Grafite-tuned"].Points[i].X < allSeries["Grafite-tuned"].Points[j].X
+					})
+					sort.Slice(richData["Grafite-tuned"].Points, func(i, j int) bool {
+						return richData["Grafite-tuned"].Points[i].BPK < richData["Grafite-tuned"].Points[j].BPK
+					})
+				}
+
 				// ---- Save v2 benchResult ----
 				v2Result := &benchResult{
 					Version:   2,
@@ -512,7 +547,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 					Queries:   newQueriesMeta(cfg, seeds, nRuns),
 				}
 				for _, name := range []string{
-					"Theoretical", "Grafite", "SNARF", "SuRFReal(8)",
+					"Theoretical", "Grafite", "Grafite-tuned", "SNARF", "SuRFReal(8)",
 					"SODA", "Scan-ARE", "Greedy+Merge",
 					"BloomARE",
 				} {
@@ -574,6 +609,7 @@ func runTradeoffBench(t *testing.T, cfg benchConfig) {
 			orderedSeries := []testutils.SeriesData{
 				*allSeries["Theoretical"],
 				*allSeries["Grafite"],
+				*allSeries["Grafite-tuned"],
 				*allSeries["SNARF"],
 				*allSeries["SuRFReal(8)"],
 				*allSeries["SODA"],
@@ -824,6 +860,35 @@ func TestSanity_Grafite(t *testing.T) {
 	}
 	if f.IsEmpty(999_999_999, 1_000_000_001) {
 		t.Error("false negative: key 1e9 is in range")
+	}
+}
+
+func TestSanity_GrafiteEpsL(t *testing.T) {
+	// Use a 1000-key arithmetic-progression set so the bpk reading is not
+	// dominated by EF's fixed overhead (which inflates per-key size at
+	// tiny n). With n=1000, eps=0.01, L=128: r = n*L/eps = 1.28e7, so
+	// log2(r/n) ≈ 13.6 and bpk ≈ 15-16 (overhead 2 in EF).
+	keys := make([]uint64, 1000)
+	for i := range keys {
+		keys[i] = uint64(i) * 1_000_000
+	}
+	const (
+		eps = 0.01
+		L   = uint64(128)
+	)
+	f := grafite.NewWithEpsL(keys, eps, L)
+	if f.SizeInBits() == 0 {
+		t.Error("expected SizeInBits > 0")
+	}
+	bpk := float64(f.SizeInBits()) / float64(len(keys))
+	if bpk < 10 || bpk > 30 {
+		t.Errorf("unexpected bpk for (eps=%v, L=%d): got %.2f", eps, L, bpk)
+	}
+	if f.IsEmpty(0, 1) {
+		t.Error("false negative: IsEmpty(0,1) must be false — key 0 is in range")
+	}
+	if f.IsEmpty(999_999, 1_000_001) {
+		t.Error("false negative: key 1_000_000 is in range")
 	}
 }
 

@@ -25,6 +25,12 @@ var (
 	// BPK sweep for CGo filters (Grafite/SNARF/SuRFReal).
 	DefaultBPKSweep = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20}
 
+	// Epsilon sweep for the L-aware Grafite-tuned series. One point per eps,
+	// with a fresh filter built per (distribution, L) pair. Allows Grafite to
+	// access BPK regimes the bpk-only build cannot reach (since the library
+	// caps bpk-only builds at log2(U/n) + 2).
+	DefaultGrafiteEpsSweep = []float64{0.5, 0.1, 0.05, 0.01, 0.001, 1e-4, 1e-5}
+
 	// Epsilon points for BloomARE family (canonical 10-point set).
 	DefaultEpsilons = []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001}
 
@@ -53,14 +59,15 @@ type SeriesStyle struct {
 // SODA is the academic predecessor this work builds upon — same shape as
 // Greedy+Merge / Scan-ARE, distinct (warmer) hue.
 var DefaultSeriesStyles = map[string]SeriesStyle{
-	"Theoretical":  {Name: "Theoretical", Color: "#374151", Dashed: true, Marker: "circle"},
-	"Grafite":      {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
-	"SNARF":        {Name: "SNARF", Color: "#1e3a8a", Marker: "diamond"},
-	"SuRFReal(8)":  {Name: "SuRFReal(8)", Color: "#0f172a", Marker: "diamond"},
-	"SODA":         {Name: "SODA", Color: "#ca8a04", Marker: "circle"},
-	"Scan-ARE":     {Name: "Scan-ARE", Color: "#d946ef", Marker: "circle"},
-	"Greedy+Merge": {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
-	"BloomARE":     {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
+	"Theoretical":   {Name: "Theoretical", Color: "#374151", Dashed: true, Marker: "circle"},
+	"Grafite":       {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
+	"Grafite-tuned": {Name: "Grafite-tuned", Color: "#14b8a6", Marker: "square"},
+	"SNARF":         {Name: "SNARF", Color: "#1e3a8a", Marker: "diamond"},
+	"SuRFReal(8)":   {Name: "SuRFReal(8)", Color: "#0f172a", Marker: "diamond"},
+	"SODA":          {Name: "SODA", Color: "#ca8a04", Marker: "circle"},
+	"Scan-ARE":      {Name: "Scan-ARE", Color: "#d946ef", Marker: "circle"},
+	"Greedy+Merge":  {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
+	"BloomARE":      {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
 }
 
 // ---- Helpers ----

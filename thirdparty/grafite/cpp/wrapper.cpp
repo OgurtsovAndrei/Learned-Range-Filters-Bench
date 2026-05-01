@@ -14,6 +14,13 @@ GrafitePtr grafite_new(const uint64_t* keys, size_t n, double bpk) {
     return static_cast<GrafitePtr>(f);
 }
 
+GrafitePtr grafite_new_eps_l(const uint64_t* keys, size_t n, double eps, uint64_t L) {
+    std::vector<uint64_t> vec(keys, keys + n);
+    auto* f = new GrafiteDefaultFilter(vec.begin(), vec.end(), eps,
+            static_cast<typename std::vector<uint64_t>::value_type>(L));
+    return static_cast<GrafitePtr>(f);
+}
+
 int grafite_query(GrafitePtr ptr, uint64_t lo, uint64_t hi) {
     auto* f = static_cast<GrafiteDefaultFilter*>(ptr);
     // query returns true if range MAY be non-empty

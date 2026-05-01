@@ -62,6 +62,35 @@ func tryGrafite(keys []uint64, bpk float64) *grafite.GrafiteFilter {
 	return grafite.New(keys, bpk)
 }
 
+// tryGrafiteEpsL is the (eps, L) counterpart of tryGrafite. It returns nil
+// when the requested (eps, L) pair would imply a bpk above the library's
+// internal cap of log2(universe/n) + 2 — same SIGABRT regime as tryGrafite,
+// just expressed through the paper-faithful (eps, L) parameterisation
+// (bpk = log2(L/eps) + 2).
+//
+// Additionally guarded by a recover() so any unforeseen C++ throw surfaces
+// as a skipped point rather than crashing the whole test binary.
+func tryGrafiteEpsL(keys []uint64, eps float64, L uint64) (f *grafite.GrafiteFilter) {
+	if len(keys) < 2 || eps <= 0 || L == 0 {
+		return nil
+	}
+	universe := keys[len(keys)-1] - keys[0]
+	if universe == 0 {
+		return nil
+	}
+	impliedBPK := math.Log2(float64(L)/eps) + 2
+	maxBPK := math.Log2(float64(universe)/float64(len(keys))) + 2
+	if impliedBPK > maxBPK {
+		return nil
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			f = nil
+		}
+	}()
+	return grafite.NewWithEpsL(keys, eps, L)
+}
+
 func avgFPRParallel(keys []uint64, queryFunc func(uint64, int64) [][2]uint64, rangeLen uint64, seeds []int64, isEmpty func(a, b uint64) bool) float64 {
 	results := make([]float64, len(seeds))
 	var wg sync.WaitGroup
@@ -153,6 +182,18 @@ type seriesParamsEpsilon struct {
 	NRuns      int       `json:"nRuns"`
 }
 
+// seriesParamsEpsLSweep holds hyperparameters for the L-aware Grafite-tuned
+// series: one filter per epsilon, rebuilt for each (distribution, L) row.
+type seriesParamsEpsLSweep struct {
+	Type       string    `json:"type"`
+	EpsSweep   []float64 `json:"epsSweep"`
+	RangeLen   uint64    `json:"rangeLen"`
+	NKeys      int       `json:"nKeys"`
+	QuerySeeds []int64   `json:"querySeeds"`
+	QueryCount int       `json:"queryCount"`
+	NRuns      int       `json:"nRuns"`
+}
+
 // seriesParamsBPKSweep holds hyperparameters for BPK-sweep CGo filters.
 type seriesParamsBPKSweep struct {
 	Type               string    `json:"type"`
@@ -192,6 +233,20 @@ func buildParamsEpsilon(epsilons []float64, rangeLen uint64, nKeys, queryCount i
 	p := seriesParamsEpsilon{
 		Type:       "epsilon",
 		Epsilons:   epsilons,
+		RangeLen:   rangeLen,
+		NKeys:      nKeys,
+		QuerySeeds: seeds,
+		QueryCount: queryCount,
+		NRuns:      nRuns,
+	}
+	b, _ := json.Marshal(p)
+	return b
+}
+
+func buildParamsEpsLSweep(epsSweep []float64, rangeLen uint64, nKeys, queryCount int, seeds []int64, nRuns int) json.RawMessage {
+	p := seriesParamsEpsLSweep{
+		Type:       "epsilon_l",
+		EpsSweep:   epsSweep,
 		RangeLen:   rangeLen,
 		NKeys:      nKeys,
 		QuerySeeds: seeds,
