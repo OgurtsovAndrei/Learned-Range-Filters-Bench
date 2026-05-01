@@ -61,7 +61,7 @@ func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.R
 	span := maxK - minK
 	queries := make([][2]uint64, count)
 	for i := range queries {
-		a := minK + uint64(rng.Int63n(int64(span)))
+		a := minK + randUint64Below(rng, span)
 		queries[i] = [2]uint64{a, a + rangeLen - 1}
 	}
 	return queries
@@ -94,6 +94,20 @@ var defaultSmartMix = smartMixWeights{
 // to [a, firstKey-1]. Invalid queries (zero length) are re-rolled.
 func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
 	return generateSmartQueriesWeighted(keys, count, rangeLen, defaultSmartMix, rng)
+}
+
+// randUint64Below returns a uniformly random uint64 in [0, n). Tolerates
+// n > 2^63 (where int64(n) would be negative and rng.Int63n panics) by
+// falling back to rng.Uint64() % n. Slightly biased near n=2^64 but
+// acceptable for query generation; safe for n <= 2^63.
+func randUint64Below(rng *rand.Rand, n uint64) uint64 {
+	if n == 0 {
+		return 0
+	}
+	if n <= 1<<63 {
+		return uint64(rng.Int63n(int64(n)))
+	}
+	return rng.Uint64() % n
 }
 
 // generateSmartQueriesWeighted is the parametrized variant. Pass arbitrary
@@ -167,7 +181,7 @@ func generateSmartQueriesWeighted(keys []uint64, count int, rangeLen uint64, w s
 			if gapLen == 0 {
 				continue
 			}
-			a := g.lo + uint64(rng.Int63n(int64(gapLen)))
+			a := g.lo + randUint64Below(rng, gapLen)
 			b := a + rangeLen - 1
 			if b > g.hi {
 				b = g.hi
@@ -181,7 +195,7 @@ func generateSmartQueriesWeighted(keys []uint64, count int, rangeLen uint64, w s
 	// Uniform queries: random across span.
 	target = count
 	for i := 0; i < nUnif*2 && len(queries) < target; i++ {
-		a := minK + uint64(rng.Int63n(int64(span)))
+		a := minK + randUint64Below(rng, span)
 		tryAdd(a, a+rangeLen-1)
 	}
 
