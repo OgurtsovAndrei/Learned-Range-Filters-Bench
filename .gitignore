@@ -31,3 +31,6 @@ bench_results_obsolete_pre_1d_opt/
 
 # Claude Code session data
 .claude/
+
+# Worktrees for parallel feature branches
+.worktrees/
