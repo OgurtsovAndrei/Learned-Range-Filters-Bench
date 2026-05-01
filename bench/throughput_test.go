@@ -90,7 +90,13 @@ func TestGenerateSyntheticKeys(t *testing.T) {
 			"clustered_256M_uint64",
 			func() []uint64 {
 				rng := rand.New(rand.NewSource(99))
-				raw, _ := testutils.GenerateClusterDistribution(1<<28, 5, 0.15, rng)
+				// 20 clusters (vs 5 at smaller n) and the generator's new
+				// clusterSize-floored stddev together avoid concentration
+				// pathologies at this scale. With 5 clusters and 256M keys
+				// each cluster would otherwise hold ~50M keys — too dense
+				// to reflect realistic cluster patterns and exposing
+				// rejection-loop edge cases when σ < cluster_size.
+				raw, _ := testutils.GenerateClusterDistribution(1<<28, 20, 0.15, rng)
 				return raw
 			},
 		},
