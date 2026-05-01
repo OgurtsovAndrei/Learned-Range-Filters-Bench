@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -83,9 +84,12 @@ func floatNear(a, b float64) bool {
 	return math.Abs(a-b) <= 1e-9*math.Max(1.0, math.Abs(b))
 }
 
-// TestB6Plots regenerates SVGs from bench_results/data/b6_latency_N*.json.
-// Each JSON file represents one N (key count) and produces a separate
-// plots/b6_N{n}/ directory.
+// TestB6Plots regenerates SVGs from bench_results/data/b6_latency_N*/.
+// Each per-N directory holds one JSON per filter plus a `_meta.json`
+// header; the plotter walks the directory and aggregates rows. Files
+// matching the legacy single-file pattern `b6_latency_N*.json` are
+// also picked up as a back-compat read-only fallback for unmigrated
+// data.
 //
 // Set PLOT_ONLY=1 (or B6_PLOT=1) to avoid running the heavy measurement
 // test. One SVG per (metric, distribution); filters are series within.
@@ -94,25 +98,163 @@ func TestB6Plots(t *testing.T) {
 		t.Skip("set B6_PLOT=1 (or PLOT_ONLY=1) to render b6 plots from existing JSON")
 	}
 
-	jsonPaths, err := filepath.Glob("../bench_results/data/b6_latency_N*.json")
+	sources, err := discoverB6PlotSources("../bench_results/data")
 	if err != nil {
-		t.Fatalf("glob b6_latency_N*.json: %v", err)
+		t.Fatalf("discover b6 plot sources: %v", err)
 	}
-	// Back-compat: also pick up the legacy single-N file if present.
-	if legacy := "../bench_results/data/b6_latency.json"; fileExists(legacy) {
-		jsonPaths = append(jsonPaths, legacy)
+	if len(sources) == 0 {
+		t.Fatalf("no b6 cache found under ../bench_results/data — run TestB6IndustryLatency first")
 	}
-	if len(jsonPaths) == 0 {
-		t.Fatalf("no b6_latency_N*.json found — run TestB6IndustryLatency first")
-	}
-	sort.Strings(jsonPaths)
 
-	for _, jsonPath := range jsonPaths {
-		jsonPath := jsonPath
-		t.Run(filepath.Base(jsonPath), func(t *testing.T) {
-			renderB6Plots(t, jsonPath)
+	for _, src := range sources {
+		src := src
+		t.Run(src.label, func(t *testing.T) {
+			doc, err := loadB6PlotSource(src)
+			if err != nil {
+				t.Fatalf("load %s: %v", src.label, err)
+			}
+			if len(doc.Rows) == 0 {
+				t.Skipf("no rows in %s", src.label)
+			}
+			renderB6Plots(t, doc)
 		})
 	}
+}
+
+// b6PlotSource is one renderable cache origin: either a per-N directory
+// (new format: dir + per-filter JSON files + _meta.json) or a legacy
+// single-N JSON file kept for back-compat reading.
+type b6PlotSource struct {
+	label string // human-readable label used as subtest name
+	dir   string // populated for directory sources; empty for legacy file
+	file  string // populated for legacy single-file sources; empty for dirs
+}
+
+// discoverB6PlotSources finds every b6 cache origin under dataDir. It
+// prefers the new per-filter directory format `b6_latency_N{N}/` and
+// silently skips a legacy `b6_latency_N{N}.json` that has the same N
+// as a discovered directory. Otherwise the legacy file is included as
+// a read-only fallback.
+func discoverB6PlotSources(dataDir string) ([]b6PlotSource, error) {
+	var dirs []string
+	entries, err := os.ReadDir(dataDir)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	dirNs := map[string]bool{}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasPrefix(name, "b6_latency_N") {
+			continue
+		}
+		dirs = append(dirs, filepath.Join(dataDir, name))
+		dirNs[name+".json"] = true
+	}
+
+	jsonPaths, err := filepath.Glob(filepath.Join(dataDir, "b6_latency_N*.json"))
+	if err != nil {
+		return nil, err
+	}
+	var legacyFiles []string
+	for _, p := range jsonPaths {
+		base := filepath.Base(p)
+		if dirNs[base] {
+			continue // shadowed by a directory of the same N
+		}
+		legacyFiles = append(legacyFiles, p)
+	}
+	// Pre-refactor ultra-legacy file (no N suffix). Rare but cheap to support.
+	if legacy := filepath.Join(dataDir, "b6_latency.json"); fileExists(legacy) {
+		legacyFiles = append(legacyFiles, legacy)
+	}
+
+	sort.Strings(dirs)
+	sort.Strings(legacyFiles)
+
+	out := make([]b6PlotSource, 0, len(dirs)+len(legacyFiles))
+	for _, d := range dirs {
+		out = append(out, b6PlotSource{label: filepath.Base(d), dir: d})
+	}
+	for _, f := range legacyFiles {
+		out = append(out, b6PlotSource{label: filepath.Base(f), file: f})
+	}
+	return out, nil
+}
+
+// loadB6PlotSource reads either a per-filter directory or a legacy
+// single-file source and returns a unified b6Doc the renderer can
+// consume. For the directory case, _meta.json drives nKeys/eps/etc;
+// for the legacy case we just unmarshal the doc directly.
+func loadB6PlotSource(src b6PlotSource) (b6Doc, error) {
+	if src.file != "" {
+		buf, err := os.ReadFile(src.file)
+		if err != nil {
+			return b6Doc{}, err
+		}
+		var doc b6Doc
+		if err := json.Unmarshal(buf, &doc); err != nil {
+			return b6Doc{}, err
+		}
+		return doc, nil
+	}
+
+	doc := b6Doc{Type: "b6_latency"}
+	// Read _meta.json if present — drives doc.NKeys / Eps / QueryCount
+	// used by per-N plot titles.
+	if mbuf, err := os.ReadFile(filepath.Join(src.dir, "_meta.json")); err == nil {
+		var meta b6MetaDoc
+		if err := json.Unmarshal(mbuf, &meta); err == nil {
+			doc.NKeys = meta.NKeys
+			doc.QueryCount = meta.QueryCount
+			doc.QueryStrategy = meta.QueryStrategy
+			doc.Eps = meta.Eps
+		}
+	}
+
+	entries, err := os.ReadDir(src.dir)
+	if err != nil {
+		return b6Doc{}, err
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if name == "_meta.json" || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		buf, err := os.ReadFile(filepath.Join(src.dir, name))
+		if err != nil {
+			return b6Doc{}, fmt.Errorf("read %s: %w", name, err)
+		}
+		var f b6FilterDoc
+		if err := json.Unmarshal(buf, &f); err != nil {
+			return b6Doc{}, fmt.Errorf("parse %s: %w", name, err)
+		}
+		// Fall back to per-filter doc fields if _meta.json was missing
+		// (older partial migration / hand-edited cache).
+		if doc.NKeys == 0 {
+			doc.NKeys = f.NKeys
+		}
+		if doc.QueryCount == 0 {
+			doc.QueryCount = f.QueryCount
+		}
+		if doc.QueryStrategy == "" {
+			doc.QueryStrategy = f.QueryStrategy
+		}
+		if doc.Eps == 0 {
+			doc.Eps = f.Eps
+		}
+		if doc.Timestamp == "" || f.Timestamp > doc.Timestamp {
+			doc.Timestamp = f.Timestamp
+			doc.GitCommit = f.GitCommit
+		}
+		doc.Rows = append(doc.Rows, f.Rows...)
+	}
+	return doc, nil
 }
 
 func fileExists(path string) bool {
@@ -120,19 +262,7 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-func renderB6Plots(t *testing.T, jsonPath string) {
-	buf, err := os.ReadFile(jsonPath)
-	if err != nil {
-		t.Fatalf("read %s: %v", jsonPath, err)
-	}
-	var doc b6Doc
-	if err := json.Unmarshal(buf, &doc); err != nil {
-		t.Fatalf("parse %s: %v", jsonPath, err)
-	}
-	if len(doc.Rows) == 0 {
-		t.Skipf("no rows in %s", jsonPath)
-	}
-
+func renderB6Plots(t *testing.T, doc b6Doc) {
 	// Index rows by (distribution, filter). Per-(metric, dist) plots use
 	// only the headline sweep values (one curve per filter through L);
 	// cache-pressure and per-L trade-off plots use all sweep values.

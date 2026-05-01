@@ -8,9 +8,6 @@ import (
 	"Thesis/emptiness/approx/are_greedy_scan"
 	"Thesis/emptiness/approx/are_hybrid_scan"
 	"Thesis/emptiness/approx/are_soda_hash"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math"
 	mathbits "math/bits"
@@ -452,67 +449,6 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 	}
 }
 
-type b6Row struct {
-	Distribution  string  `json:"distribution"`
-	Filter        string  `json:"filter"`
-	RangeLen      uint64  `json:"rangeLen"`
-	BuildNs       int64   `json:"buildNs"`
-	BuildMKeysSec float64 `json:"buildMKeysSec"`
-	QueryNsPerOp  float64 `json:"queryNsPerOp"` // wall-clock ns / total queries (with parallelism)
-	BPKUsed       float64 `json:"bpkUsed"`
-	SizeBits      uint64  `json:"sizeBits"`
-	FPR           float64 `json:"fpr"`
-	QueriesEmpty  int     `json:"queriesEmpty"`
-	SweepName     string  `json:"sweepName"`
-	SweepParam    float64 `json:"sweepParam"`
-	Parallelism   int     `json:"parallelism"`
-	ParamsHash    string  `json:"paramsHash"`
-	Note          string  `json:"note,omitempty"`
-}
-
-// b6Params captures the hyperparameters that, if changed, invalidate a
-// cached row. Stored hashed into b6Row.ParamsHash; the runner computes the
-// hash for the current run and skips rows whose stored hash matches.
-type b6Params struct {
-	NKeys         int     `json:"nKeys"`
-	Eps           float64 `json:"eps"`
-	RangeLen      uint64  `json:"rangeLen"`
-	QueryCount    int     `json:"queryCount"`
-	QueryStrategy string  `json:"queryStrategy"`
-	QuerySeed     int64   `json:"querySeed"`
-	Distribution  string  `json:"distribution"`
-	Filter        string  `json:"filter"`
-	SweepName     string  `json:"sweepName"`
-	SweepParam    float64 `json:"sweepParam"`
-	Parallelism   int     `json:"parallelism"`
-}
-
-func (p b6Params) hash() string {
-	buf, _ := json.Marshal(p)
-	sum := sha256.Sum256(buf)
-	return hex.EncodeToString(sum[:8]) // 16 hex chars is plenty for collisions
-}
-
-type b6Doc struct {
-	Type          string  `json:"type"`
-	NKeys         int     `json:"nKeys"`
-	QueryCount    int     `json:"queryCount"`
-	QueryStrategy string  `json:"queryStrategy"`
-	Eps           float64 `json:"eps"`
-	Timestamp     string  `json:"timestamp"`
-	GitCommit     string  `json:"gitCommit"`
-	Rows          []b6Row `json:"rows"`
-}
-
-// b6Store is the per-(distribution,filter) incremental writer. On first use
-// it loads any prior b6_latency.json so re-running a single subtest merges
-// into the prior run's output. Legacy rows lacking SweepName are dropped on
-// load — they predate the K-sweep schema and would clutter plots.
-type b6Store struct {
-	mu  sync.Mutex
-	doc b6Doc
-}
-
 // b6ProgressLog is the package-level append-only progress logger. Lines
 // are written immediately (OS write buffer flushes via newline) so a
 // concurrent `tail -f bench_results/b6_progress.log` shows real-time
@@ -552,89 +488,6 @@ func closeB6ProgressLog() {
 	_ = b6ProgressLog.Sync()
 	_ = b6ProgressLog.Close()
 	b6ProgressLog = nil
-}
-
-func newB6Store(nKeys, queryCount int, eps float64) *b6Store {
-	s := &b6Store{
-		doc: b6Doc{
-			Type:          "b6_latency",
-			NKeys:         nKeys,
-			QueryCount:    queryCount,
-			QueryStrategy: "smart_mix_guaranteed_empty",
-			Eps:           eps,
-		},
-	}
-	if buf, err := os.ReadFile(s.path()); err == nil {
-		var prior b6Doc
-		if err := json.Unmarshal(buf, &prior); err == nil {
-			for _, r := range prior.Rows {
-				if r.SweepName == "" {
-					continue
-				}
-				s.doc.Rows = append(s.doc.Rows, r)
-			}
-		}
-	}
-	return s
-}
-
-func (s *b6Store) path() string {
-	return fmt.Sprintf("../bench_results/data/b6_latency_N%d.json", s.doc.NKeys)
-}
-
-func (s *b6Store) update(dist, filter string, rows []b6Row) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	// Only remove old rows whose paramsHash matches one of the incoming
-	// rows. Rows for the same (dist, filter) but a different parameter
-	// space (different parallelism, different sweep grid, etc.) are
-	// preserved so a run at B6_PARALLEL=4 does not clobber the P=1 data.
-	incoming := make(map[string]struct{}, len(rows))
-	for _, r := range rows {
-		incoming[r.ParamsHash] = struct{}{}
-	}
-	kept := s.doc.Rows[:0]
-	for _, r := range s.doc.Rows {
-		if r.Distribution == dist && r.Filter == filter {
-			if _, replaced := incoming[r.ParamsHash]; replaced {
-				continue
-			}
-		}
-		kept = append(kept, r)
-	}
-	s.doc.Rows = append(kept, rows...)
-}
-
-// cachedRow returns a prior row for (dist, filter, L, sweepName, sweepParam)
-// whose paramsHash matches the requested one, or nil. Use to short-circuit
-// measurement when FORCE is unset.
-func (s *b6Store) cachedRow(dist, filter string, L uint64, sweepName string, sweepParam float64, paramsHash string) *b6Row {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for i := range s.doc.Rows {
-		r := &s.doc.Rows[i]
-		if r.Distribution == dist && r.Filter == filter &&
-			r.RangeLen == L && r.SweepName == sweepName &&
-			r.SweepParam == sweepParam && r.ParamsHash == paramsHash {
-			return r
-		}
-	}
-	return nil
-}
-
-func (s *b6Store) flush() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.doc.Timestamp = time.Now().UTC().Format(time.RFC3339)
-	s.doc.GitCommit = gitCommitShort()
-	if err := os.MkdirAll("../bench_results/data", 0755); err != nil {
-		return err
-	}
-	buf, err := json.MarshalIndent(s.doc, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(s.path(), buf, 0644)
 }
 
 func runB6Filter(
