@@ -443,6 +443,11 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			// sample. Other filters reuse one build across all L values.
 			name: "Rosetta", sweepName: "bpk", sweepValues: b6SweepBPK,
 			lDependent: true,
+			// Rosetta query latency degrades sharply at L >= 4096 (Bloom-style
+			// probe count grows with log L; query cost dominated by ~10
+			// concurrent BF lookups per call). At L=4096+ ns/op exceeds 90 µs,
+			// well outside the competitive band — skip them in latency plots.
+			skipLs: map[uint64]bool{4096: true, 65536: true},
 			buildBatch: func(sweep float64, sampleQueries [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				sampleN := len(sampleQueries)
 				var sampleLeft, sampleRight []uint64
