@@ -12,12 +12,13 @@ Requires `curl` and `zstd`. On macOS: `brew install zstd`.
 
 ## Datasets
 
-| File                      | Size   | Keys        | Description               |
-|---------------------------|--------|-------------|---------------------------|
-| `fb_200M_uint64`          | 1.5 GB | 200M uint64 | Facebook user IDs         |
-| `wiki_ts_200M_uint64`     | 1.5 GB | 200M uint64 | Wikipedia edit timestamps |
-| `osm_cellids_800M_uint64` | 6.0 GB | 800M uint64 | OpenStreetMap S2 CellIDs  |
-| `books_200M_uint32`       | 0.8 GB | 200M uint32 | Amazon book popularity    |
+| File                      | Size   | Keys        | Description                          |
+|---------------------------|--------|-------------|--------------------------------------|
+| `fb_200M_uint64`          | 1.5 GB | 200M uint64 | Facebook user IDs                    |
+| `wiki_ts_200M_uint64`     | 1.5 GB | 200M uint64 | Wikipedia edit timestamps            |
+| `osm_cellids_800M_uint64` | 6.0 GB | 800M uint64 | OpenStreetMap S2 CellIDs             |
+| `books_200M_uint32`       | 0.8 GB | 200M uint32 | Amazon book popularity (32-bit)      |
+| `books_800M_uint64`       | 6.0 GB | 800M uint64 | Amazon book popularity (64-bit, 4×n) |
 
 ## Format
 

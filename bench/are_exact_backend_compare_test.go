@@ -16,7 +16,7 @@ import (
 
 const (
 	areCompareN          = 1 << 20
-	areCompareRangeLen   = uint64(4096)
+	areCompareRangeLen   = uint64(128)
 	areCompareEpsilon    = 0.01
 	areCompareQueryCount = 1 << 15
 	areQueryRounds       = 3

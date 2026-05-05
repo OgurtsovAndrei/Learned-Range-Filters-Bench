@@ -35,4 +35,7 @@ download "osm_cellids_800M_uint64" \
 download "books_200M_uint32" \
     "https://dataverse.harvard.edu/api/access/datafile/:persistentId?persistentId=doi:10.7910/DVN/JGVF9A/5YTV8K"
 
+download "books_800M_uint64" \
+    "https://www.dropbox.com/s/y2u3nbanbnbmg7n/books_800M_uint64.zst?dl=1"
+
 echo "All datasets downloaded."
