@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,52 +34,32 @@ type benchConfig struct {
 	queryStrategyParams map[string]interface{} // e.g. smart_mix weights
 }
 
-// tryGrafite returns nil when the requested bpk exceeds what the Grafite
-// C++ library can physically accommodate. The library encodes the filter
-// using Elias-Fano on an array of size ~ bpk*n bits over a universe of
-// ~ log2(universe/n) bits per element; once bpk grows past
-// log2(universe/n) + ~2, the internal sizing asserts and the process is
-// SIGABRT'd from inside the C++ library (verified empirically on
-// SOSD-FB @ n=2^20 at bpk=12 with universe/n=357). The guard is therefore
-// not an aesthetic skip — it prevents a hard library crash.
+// tryGrafite builds a Grafite filter at the requested bpk. The CGo wrapper
+// (thirdparty/grafite/cpp/wrapper.cpp) catches the upstream
+// std::runtime_error thrown when bpk exceeds log2(universe/n) + 2 and falls
+// back to a lossless Elias-Fano on raw keys — so values above that
+// threshold no longer crash and now report FPR=0 deterministically.
 //
-// Visually the consequence is that Grafite curves on the FPR-vs-BPK plot
-// terminate around bpk = log2(universe/n) + 2, which is also the regime
-// where the filter's marginal FPR gain has flattened to ~0 anyway.
+// We still return nil for trivially-empty inputs so the caller can skip
+// degenerate cells without inspecting the filter.
 func tryGrafite(keys []uint64, bpk float64) *grafite.GrafiteFilter {
 	if len(keys) < 2 {
 		return nil
 	}
-	universe := keys[len(keys)-1] - keys[0]
-	if universe == 0 {
-		return nil
-	}
-	maxBPK := math.Log2(float64(universe)/float64(len(keys))) + 2
-	if bpk > maxBPK {
+	if keys[len(keys)-1] == keys[0] {
 		return nil
 	}
 	return grafite.New(keys, bpk)
 }
 
-// tryGrafiteEpsL is the (eps, L) counterpart of tryGrafite. It returns nil
-// when the requested (eps, L) pair would imply a bpk above the library's
-// internal cap of log2(universe/n) + 2 — same SIGABRT regime as tryGrafite,
-// just expressed through the paper-faithful (eps, L) parameterisation
-// (bpk = log2(L/eps) + 2).
-//
-// Additionally guarded by a recover() so any unforeseen C++ throw surfaces
-// as a skipped point rather than crashing the whole test binary.
+// tryGrafiteEpsL is the (eps, L) counterpart of tryGrafite. The same wrapper
+// fallback applies, so high-bpk (eps, L) pairs no longer trigger a SIGABRT
+// — they degrade to lossless EF instead.
 func tryGrafiteEpsL(keys []uint64, eps float64, L uint64) (f *grafite.GrafiteFilter) {
 	if len(keys) < 2 || eps <= 0 || L == 0 {
 		return nil
 	}
-	universe := keys[len(keys)-1] - keys[0]
-	if universe == 0 {
-		return nil
-	}
-	impliedBPK := math.Log2(float64(L)/eps) + 2
-	maxBPK := math.Log2(float64(universe)/float64(len(keys))) + 2
-	if impliedBPK > maxBPK {
+	if keys[len(keys)-1] == keys[0] {
 		return nil
 	}
 	defer func() {
