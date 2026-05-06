@@ -66,8 +66,13 @@ var DefaultSeriesStyles = map[string]SeriesStyle{
 	"SuRFReal(8)":   {Name: "SuRFReal(8)", Color: "#0f172a", Marker: "diamond"},
 	"SODA":          {Name: "SODA", Color: "#ca8a04", Marker: "circle"},
 	"Scan-ARE":      {Name: "Scan-ARE", Color: "#d946ef", Marker: "circle"},
-	"Greedy+Merge":  {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
-	"BloomARE":      {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
+	// Scan-ARE variants: same fuchsia base, different markers.
+	"Scan-ARE-Trunc":     {Name: "Scan-ARE-Trunc", Color: "#d946ef", Marker: "circle"},
+	"Scan-ARE-SODA":      {Name: "Scan-ARE-SODA", Color: "#a21caf", Marker: "triangle"},
+	"Greedy+Merge":       {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
+	"Greedy+Merge-Trunc": {Name: "Greedy+Merge-Trunc", Color: "#ea580c", Marker: "circle"},
+	"Greedy+Merge-SODA":  {Name: "Greedy+Merge-SODA", Color: "#9a3412", Marker: "triangle"},
+	"BloomARE":           {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
 }
 
 // ---- Helpers ----

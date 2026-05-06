@@ -361,10 +361,10 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
-			name: "Scan-ARE", sweepName: "K", sweepValues: b6SweepK,
+			name: "Scan-ARE-Trunc", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_hybrid_scan.NewHybridScanARE(keys, keyBits,
-					are_hybrid_scan.Config{K: uint32(sweep)})
+				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysTrunc{}})
 				if err != nil {
 					return nil, 0, err
 				}
@@ -372,10 +372,32 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
-			name: "Greedy+Merge", sweepName: "K", sweepValues: b6SweepK,
+			name: "Scan-ARE-SODA", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_greedy_scan.NewGreedyScanARE(keys, keyBits,
-					are_greedy_scan.Config{K: uint32(sweep)})
+				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}})
+				if err != nil {
+					return nil, 0, err
+				}
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
+			name: "Greedy+Merge-Trunc", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
+					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_greedy_scan.FallbackAlwaysTrunc{}})
+				if err != nil {
+					return nil, 0, err
+				}
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
+			name: "Greedy+Merge-SODA", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
+					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_greedy_scan.FallbackAlwaysSODA{}})
 				if err != nil {
 					return nil, 0, err
 				}
@@ -415,12 +437,16 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
-			// Grafite saturates at L>=128 — its FPR floor is set by the
-			// internal log2(L/eps) sizing and at the larger L values it
-			// reports FPR ~ 1.0 across the entire bpk grid. Skip those L
-			// values so the sweep finishes quickly.
+			// Grafite is L-aware via its bpk parameterisation: r = n*2^(bpk-2)
+			// implicitly fixes ε_l = l / 2^(bpk-2) for a query of length l.
+			// At small bpk + large L, the implied ε saturates at ~1 and FPR
+			// hits the ceiling, but the cells are still informative for the
+			// FPR-vs-BPK trajectory plots. The previous skipLs guard was a
+			// defence against the upstream `runtime_error` thrown when r
+			// exceeds the lossless envelope — now handled in
+			// thirdparty/grafite/cpp/wrapper.cpp via the lossless EF
+			// fallback, so all (bpk, L) cells are measurable.
 			name: "Grafite", sweepName: "bpk", sweepValues: b6SweepBPK,
-			skipLs: map[uint64]bool{128: true, 1024: true, 4096: true, 16384: true, 65536: true},
 			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := tryGrafite(keys, sweep)
 				if f == nil {
@@ -627,7 +653,13 @@ func runB6Filter(
 			}
 			// Skip L values that already reached FPR=0 at a smaller
 			// K — measuring them at higher K would just duplicate.
-			if lSaturated[L] {
+			// Only applies to K-sweep filters: their FPR is monotone in K
+			// and a larger K just produces a strictly larger filter. For
+			// bpk-sweep filters (Grafite/SNARF/Rosetta) we still want a
+			// row at every bpk target — Grafite's lossless fallback in
+			// particular produces the same EF regardless of the requested
+			// bpk, but headline plots need a row at sweep=10 to render.
+			if fd.sweepName == "K" && lSaturated[L] {
 				continue
 			}
 
