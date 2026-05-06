@@ -48,8 +48,10 @@ var b6PlotOrder = []string{
 	"SuRF",
 	"Rosetta",
 	"SODA",
-	"Scan-ARE",
-	"Greedy+Merge",
+	"Scan-ARE-Trunc",
+	"Scan-ARE-SODA",
+	"Greedy+Merge-Trunc",
+	"Greedy+Merge-SODA",
 	"BloomARE",
 }
 
@@ -290,6 +292,20 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 		if r.Note != "" {
 			continue // skip envelope-rejected / errored cells
 		}
+		// Skip legacy rows from the eps-based sweep that predate the K-sweep
+		// switch for SODA/Scan-ARE/Greedy+Merge/BloomARE. These rows still
+		// live in the cache but should not appear on plots — they would
+		// duplicate every (L) point at the headline value because
+		// matchesHeadlineSweep accepts both "eps" and "K".
+		if r.SweepName == "eps" {
+			continue
+		}
+		// Skip rows recorded under non-default parallelism — those belong
+		// to cache-contention studies (B6_PARALLEL=N) and would otherwise
+		// stack as duplicate points at every L.
+		if r.Parallelism > 1 {
+			continue
+		}
 		k := struct{ dist, filter string }{r.Distribution, r.Filter}
 		byCell[k] = append(byCell[k], r)
 		dists[r.Distribution] = struct{}{}
@@ -389,6 +405,32 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 				continue
 			}
 			fmt.Printf("wrote %s\n", svgPath)
+		}
+
+		// Cross-distribution mean — one curve per filter, Y averaged at
+		// each L over all distributions where the filter has a row at
+		// headline sweep. Useful for build_throughput and query_latency
+		// where the per-dist plots are noisy and the user wants a single
+		// summary line per filter.
+		if m.subdir == "build_throughput" || m.subdir == "query_latency" {
+			ordered := buildB6MeanSeries(byCell, finalDists, m.extract)
+			if anyHasPoints(ordered) {
+				svgPath := filepath.Join(outDir, "_mean.svg")
+				err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
+					Title: fmt.Sprintf("%s — mean across %d distributions (n=2^%d, ε=%.3f)",
+						prettyMetric(m.subdir), len(finalDists), log2int64(int64(doc.NKeys)), doc.Eps),
+					XLabel: "Range Length (L)",
+					YLabel: m.ylabel,
+					XScale: testutils.Log10,
+					YScale: m.yScale,
+					YFloor: m.yFloor,
+				}, ordered, svgPath)
+				if err != nil {
+					t.Errorf("svg %s: %v", svgPath, err)
+				} else {
+					fmt.Printf("wrote %s\n", svgPath)
+				}
+			}
 		}
 	}
 
@@ -514,6 +556,9 @@ func buildB6TradeoffSeries(
 // collectHeadlineRows returns rows for (dist, fname) whose sweep matches the
 // headline value. For the special "SuRF" key the headline picks the
 // (SuRFReal, real_bits=8) representative since SuRF has no single tunable.
+//
+// byCell is already filtered for legacy/parallelism noise at index time —
+// see renderB6Plots — so callers only need to apply the headline match.
 func collectHeadlineRows(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dist, fname string,
@@ -602,6 +647,9 @@ func buildB6CachePressureSeries(
 // collectAtL gathers rows at the given L for fname (or the full SuRF
 // family when fname == "SuRF"). When requireQueryNs is true, rows must
 // also have a positive QueryNsPerOp and BPKUsed (cache-pressure filter).
+//
+// byCell is already filtered for legacy/parallelism noise at index time
+// (see renderB6Plots).
 func collectAtL(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dist, fname string,
@@ -651,6 +699,54 @@ func buildB6PlotSeries(
 				continue
 			}
 			s.Points = append(s.Points, testutils.Point{X: float64(r.RangeLen), Y: y})
+		}
+		if len(s.Points) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// buildB6MeanSeries builds, per filter, a curve where Y at each L is the
+// arithmetic mean of `extract(r)` across all distributions in `dists` that
+// have a headline-sweep row at L. Filters with no points across any
+// distribution are dropped.
+func buildB6MeanSeries(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dists []string,
+	extract func(r b6Row) (float64, bool),
+) []testutils.SeriesData {
+	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
+	for _, fname := range b6PlotOrder {
+		// Aggregate by L across all dists.
+		sumByL := map[uint64]float64{}
+		cntByL := map[uint64]int{}
+		for _, dist := range dists {
+			rows := collectHeadlineRows(byCell, dist, fname)
+			for _, r := range rows {
+				y, ok := extract(r)
+				if !ok {
+					continue
+				}
+				sumByL[r.RangeLen] += y
+				cntByL[r.RangeLen]++
+			}
+		}
+		if len(sumByL) == 0 {
+			continue
+		}
+		Ls := make([]uint64, 0, len(sumByL))
+		for L := range sumByL {
+			Ls = append(Ls, L)
+		}
+		sort.Slice(Ls, func(i, j int) bool { return Ls[i] < Ls[j] })
+
+		s := newB6Series(fname)
+		for _, L := range Ls {
+			s.Points = append(s.Points, testutils.Point{
+				X: float64(L),
+				Y: sumByL[L] / float64(cntByL[L]),
+			})
 		}
 		if len(s.Points) > 0 {
 			out = append(out, s)
