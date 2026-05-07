@@ -114,11 +114,8 @@ func timeAREQueriesU64(queries [][2]uint64, rounds int, fn func(a, b uint64) boo
 func measureSODA(tb testing.TB, ds areLoadedDataset, variant exactbackend.Variant) areVariantMetrics {
 	tb.Helper()
 
-	if err := exactbackend.SetVariant(variant); err != nil {
-		tb.Fatalf("set variant: %v", err)
-	}
 	start := time.Now()
-	filter, err := are_soda_hash.NewSodaAREFromK(ds.keysU64, sodaK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon), int64(areCompareRangeLen))
+	filter, err := are_soda_hash.NewSodaAREFromKWithBackend(ds.keysU64, sodaK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon), int64(areCompareRangeLen), variant)
 	if err != nil {
 		tb.Fatalf("build soda/%s/%s: %v", variant.String(), ds.name, err)
 	}
@@ -135,13 +132,10 @@ func measureSODA(tb testing.TB, ds areLoadedDataset, variant exactbackend.Varian
 func measureGreedyMerge(tb testing.TB, ds areLoadedDataset, variant exactbackend.Variant) areVariantMetrics {
 	tb.Helper()
 
-	if err := exactbackend.SetVariant(variant); err != nil {
-		tb.Fatalf("set variant: %v", err)
-	}
 	K := greedyK(len(ds.keysU64), areCompareRangeLen, areCompareEpsilon)
 	keyBits := uint32(max(1, mathbits.Len64(ds.keysU64[len(ds.keysU64)-1])))
 	start := time.Now()
-	filter, err := are_greedy_scan.NewGreedyScanARE(ds.keysU64, keyBits, are_greedy_scan.Config{K: K})
+	filter, err := are_greedy_scan.NewGreedyScanARE(ds.keysU64, keyBits, are_greedy_scan.Config{K: K}.WithEREBackend(variant))
 	if err != nil {
 		tb.Fatalf("build greedy/%s/%s: %v", variant.String(), ds.name, err)
 	}
@@ -157,10 +151,6 @@ func measureGreedyMerge(tb testing.TB, ds areLoadedDataset, variant exactbackend
 }
 
 func TestAREExactBackendReport(t *testing.T) {
-	defer func() {
-		_ = exactbackend.SetVariant(exactbackend.VariantClassic)
-	}()
-
 	datasets := loadAREDatasets(t)
 	rows := make([]areCompareRow, 0, len(datasets)*2)
 
