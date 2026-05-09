@@ -649,15 +649,31 @@ func runB6Filter(
 		invokeBuild := func(sample [][2]uint64) (
 			func(a, b uint64) bool, func([][2]uint64) []bool, uint64, time.Duration, uint64, error,
 		) {
-			utils.ForceGC()
-			monitor := utils.StartMemoryMonitor(time.Millisecond)
-			startBuild := time.Now()
-			if fd.buildBatch != nil {
-				qb, sz, err := fd.buildBatch(sweep, sample)
-				return nil, qb, sz, time.Since(startBuild), monitor.Stop(), err
+			trackMem := os.Getenv("B6_MEM") != ""
+			var monitor *utils.MemoryMonitor
+			if trackMem {
+				utils.ForceGC()
+				monitor = utils.StartMemoryMonitor(time.Millisecond)
 			}
-			ie, sz, err := fd.build(sweep, sample)
-			return ie, nil, sz, time.Since(startBuild), monitor.Stop(), err
+
+			startBuild := time.Now()
+			var ie func(a, b uint64) bool
+			var qb func([][2]uint64) []bool
+			var sz uint64
+			var err error
+
+			if fd.buildBatch != nil {
+				qb, sz, err = fd.buildBatch(sweep, sample)
+			} else {
+				ie, sz, err = fd.build(sweep, sample)
+			}
+			dur := time.Since(startBuild)
+
+			peak := uint64(0)
+			if trackMem {
+				peak = monitor.Stop()
+			}
+			return ie, qb, sz, dur, peak, err
 		}
 		buildOnce := func(sample [][2]uint64) {
 			if built {
