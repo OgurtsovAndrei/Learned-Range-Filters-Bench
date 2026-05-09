@@ -404,8 +404,6 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 				// Use FPR-gated selector for both throughput and latency.
 				// This ensures we measure performance in the "working regime" (FPR <= eps).
 				ordered = buildB6MinFPRMeanSeries(byCell, []string{dist}, doc.Eps, m.extract)
-			} else if m.subdir == "build_throughput_legacy" {
-				ordered = buildB6BuildThroughputSeries(byCell, dist, doc.Eps)
 			} else {
 				ordered = buildB6PlotSeries(byCell, dist, m.extract)
 			}
@@ -828,38 +826,8 @@ func collectMinFPRRows(
 	return result
 }
 
-// buildB6BuildThroughputSeries builds a per-dist build-throughput curve
-// where each (filter, L) point is taken at the minimum sweep parameter
-// that achieves FPR ≤ targetFPR. Filters that never reach the target at
-// any sweep value are omitted.
-func buildB6BuildThroughputSeries(
-	byCell map[struct{ dist, filter string }][]b6Row,
-	dist string,
-	targetFPR float64,
-) []testutils.SeriesData {
-	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
-	for _, fname := range b6PlotOrder {
-		rows := collectMinFPRRows(byCell, dist, fname, targetFPR)
-		if len(rows) == 0 {
-			continue
-		}
-		sort.Slice(rows, func(i, j int) bool { return rows[i].RangeLen < rows[j].RangeLen })
-		s := newB6Series(fname)
-		for _, r := range rows {
-			if r.BuildMKeysSec <= 0 {
-				continue
-			}
-			s.Points = append(s.Points, testutils.Point{X: float64(r.RangeLen), Y: r.BuildMKeysSec})
-		}
-		if len(s.Points) > 0 {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
-// buildB6MinFPRMeanSeries is the cross-distribution mean variant of
-// buildB6BuildThroughputSeries, generalised to any metric via an extractor.
+// buildB6MinFPRMeanSeries is the cross-distribution mean (and per-dist) variant
+// of the FPR-gated series builder, generalised to any metric via an extractor.
 // For each (filter, L) it averages extract(r) over all dists that have at
 // least one row passing collectMinFPRRows at targetFPR. Distributions where
 // the filter never reaches targetFPR are silently omitted from the average.
