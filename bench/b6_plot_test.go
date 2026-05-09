@@ -426,31 +426,32 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 
 		// Cross-distribution mean — one curve per filter, Y averaged at
 		// each L over all distributions where the filter has a data point.
-		// build_throughput uses the FPR-gated selector (min-K achieving ε);
-		// query_latency uses the standard headline sweep.
+		// Both build_throughput and query_latency use the FPR-gated
+		// selector (min-K achieving ε) and exclude the "spread" outlier.
 		if m.subdir == "build_throughput" || m.subdir == "query_latency" {
-			var ordered []testutils.SeriesData
-			if m.subdir == "build_throughput" {
-				// "spread" is a degenerate case for SODA: all keys hash to
-				// one point, so FPR hits ≤ ε at tiny K (domain saturated
-				// in one bucket) → build_throughput reflects hashing speed
-				// only, not filter construction. Exclude from the mean to
-				// avoid skewing the cross-distribution average.
-				throughputDists := make([]string, 0, len(finalDists))
-				for _, d := range finalDists {
-					if d != "spread" {
-						throughputDists = append(throughputDists, d)
-					}
+			// Both build_throughput and query_latency means use the FPR-gated
+			// selector: each (filter, dist, L) point is taken at the minimum
+			// sweep parameter that achieves FPR ≤ ε, not at the fixed headline
+			// K=14 which is outside the working regime for many filters (e.g.
+			// SODA at K=14 has FPR≈1 on most distributions → trivial 10–13 ns
+			// queries that are not representative of real usage).
+			//
+			// "spread" is also excluded from both means: it is a degenerate
+			// case for SODA-family filters (evenly-spaced keys land in trivially
+			// few hash buckets, reaching FPR ≤ ε at tiny K with near-zero cost
+			// that does not reflect realistic filter construction or query work).
+			meanDists := make([]string, 0, len(finalDists))
+			for _, d := range finalDists {
+				if d != "spread" {
+					meanDists = append(meanDists, d)
 				}
-				ordered = buildB6BuildThroughputMeanSeries(byCell, throughputDists, doc.Eps)
-			} else {
-				ordered = buildB6MeanSeries(byCell, finalDists, m.extract)
 			}
+			ordered := buildB6MinFPRMeanSeries(byCell, meanDists, doc.Eps, m.extract)
 			if anyHasPoints(ordered) {
 				svgPath := filepath.Join(outDir, "_mean.svg")
 				err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 					Title: fmt.Sprintf("%s — mean across %d distributions (n=2^%d, ε=%.3f)",
-						prettyMetric(m.subdir), len(finalDists), log2int64(int64(doc.NKeys)), doc.Eps),
+						prettyMetric(m.subdir), len(meanDists), log2int64(int64(doc.NKeys)), doc.Eps),
 					XLabel: "Range Length (L)",
 					YLabel: m.ylabel,
 					XScale: testutils.Log10,
@@ -849,12 +850,16 @@ func buildB6BuildThroughputSeries(
 	return out
 }
 
-// buildB6BuildThroughputMeanSeries is the cross-distribution mean variant
-// of buildB6BuildThroughputSeries.
-func buildB6BuildThroughputMeanSeries(
+// buildB6MinFPRMeanSeries is the cross-distribution mean variant of
+// buildB6BuildThroughputSeries, generalised to any metric via an extractor.
+// For each (filter, L) it averages extract(r) over all dists that have at
+// least one row passing collectMinFPRRows at targetFPR. Distributions where
+// the filter never reaches targetFPR are silently omitted from the average.
+func buildB6MinFPRMeanSeries(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dists []string,
 	targetFPR float64,
+	extract func(r b6Row) (float64, bool),
 ) []testutils.SeriesData {
 	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
 	for _, fname := range b6PlotOrder {
@@ -862,10 +867,11 @@ func buildB6BuildThroughputMeanSeries(
 		cntByL := map[uint64]int{}
 		for _, dist := range dists {
 			for _, r := range collectMinFPRRows(byCell, dist, fname, targetFPR) {
-				if r.BuildMKeysSec <= 0 {
+				y, ok := extract(r)
+				if !ok {
 					continue
 				}
-				sumByL[r.RangeLen] += r.BuildMKeysSec
+				sumByL[r.RangeLen] += y
 				cntByL[r.RangeLen]++
 			}
 		}
