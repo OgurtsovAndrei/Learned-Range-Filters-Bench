@@ -30,7 +30,7 @@ import (
 
 // b6SchemaVersion is the per-filter doc schema version. Bump when row
 // shape changes incompatibly so older caches are dropped or migrated.
-const b6SchemaVersion = 2
+const b6SchemaVersion = 3
 
 // ----------------------------------------------------------------------------
 // Row + parameter hashing
@@ -40,9 +40,10 @@ type b6Row struct {
 	Distribution  string  `json:"distribution"`
 	Filter        string  `json:"filter"`
 	RangeLen      uint64  `json:"rangeLen"`
-	BuildNs       int64   `json:"buildNs"`
-	BuildMKeysSec float64 `json:"buildMKeysSec"`
-	QueryNsPerOp  float64 `json:"queryNsPerOp"` // wall-clock ns / total queries (with parallelism)
+	BuildNs        int64   `json:"buildNs"`
+	BuildMKeysSec  float64 `json:"buildMKeysSec"`
+	BuildPeakRSSMB float64 `json:"build_peak_rss_mb"`
+	QueryNsPerOp   float64 `json:"queryNsPerOp"` // wall-clock ns / total queries (with parallelism)
 	BPKUsed       float64 `json:"bpkUsed"`
 	SizeBits      uint64  `json:"sizeBits"`
 	FPR           float64 `json:"fpr"`

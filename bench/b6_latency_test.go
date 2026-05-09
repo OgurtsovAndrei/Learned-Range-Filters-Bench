@@ -9,6 +9,7 @@ import (
 	"Thesis/emptiness/approx/are_hybrid_scan"
 	"Thesis/emptiness/approx/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
+	"Thesis/utils"
 	"fmt"
 	"math"
 	mathbits "math/bits"
@@ -111,11 +112,6 @@ func TestB6IndustryLatency(t *testing.T) {
 				return loadSOSDUint64(syntheticDataPath(syntheticFile("uniform", n)), 0)
 			}
 		}},
-		{"spread", func(n int) func() ([]uint64, error) {
-			return func() ([]uint64, error) {
-				return loadSOSDUint64(syntheticDataPath(syntheticFile("spread", n)), 0)
-			}
-		}},
 		{"clustered", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
 				return loadSOSDUint64(syntheticDataPath(syntheticFile("clustered", n)), 0)
@@ -136,8 +132,8 @@ func TestB6IndustryLatency(t *testing.T) {
 			store := newB6Store(n, queryCount, eps, mix.queryStrategy, mix.name)
 			b6Logf("\n=== B6: Build + Query latency + actual BPK + FPR, n=%d, ε=%.3f ===\n",
 				n, eps)
-			b6Logf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s\n",
-				"Distribution", "Filter", "L", "sweep", "build_ms", "build_Mkeys/s", "query_ns/op", "bpk", "fpr")
+			b6Logf("%-11s | %-14s | %-7s | %-13s | %-9s | %-13s | %-13s | %-7s | %-9s | %-10s\n",
+				"Distribution", "Filter", "L", "sweep", "build_ms", "build_Mkeys/s", "query_ns/op", "bpk", "fpr", "peak_rss")
 
 			for _, ds := range distributions {
 				ds := ds
@@ -643,6 +639,7 @@ func runB6Filter(
 			builtQueryBatch func([][2]uint64) []bool
 			builtSizeBits   uint64
 			builtBuildDur   time.Duration
+			builtPeakRSS    uint64
 			builtBuildErr   error
 			built           bool
 		)
@@ -650,15 +647,17 @@ func runB6Filter(
 		// resulting query closures alongside size and duration. Exactly
 		// one of (isEmpty, queryBatch) is non-nil on success.
 		invokeBuild := func(sample [][2]uint64) (
-			func(a, b uint64) bool, func([][2]uint64) []bool, uint64, time.Duration, error,
+			func(a, b uint64) bool, func([][2]uint64) []bool, uint64, time.Duration, uint64, error,
 		) {
+			utils.ForceGC()
+			monitor := utils.StartMemoryMonitor(time.Millisecond)
 			startBuild := time.Now()
 			if fd.buildBatch != nil {
 				qb, sz, err := fd.buildBatch(sweep, sample)
-				return nil, qb, sz, time.Since(startBuild), err
+				return nil, qb, sz, time.Since(startBuild), monitor.Stop(), err
 			}
 			ie, sz, err := fd.build(sweep, sample)
-			return ie, nil, sz, time.Since(startBuild), err
+			return ie, nil, sz, time.Since(startBuild), monitor.Stop(), err
 		}
 		buildOnce := func(sample [][2]uint64) {
 			if built {
@@ -667,7 +666,7 @@ func runB6Filter(
 			built = true
 			if !warmedUp {
 				warmKeys := keys[:1<<10]
-				if wIE, wQB, _, _, werr := invokeBuild(sample); werr == nil {
+				if wIE, wQB, _, _, _, werr := invokeBuild(sample); werr == nil {
 					if wIE != nil {
 						_ = wIE(warmKeys[0], warmKeys[len(warmKeys)-1])
 					} else if wQB != nil {
@@ -677,7 +676,7 @@ func runB6Filter(
 				runtime.GC()
 				warmedUp = true
 			}
-			builtIsEmpty, builtQueryBatch, builtSizeBits, builtBuildDur, builtBuildErr = invokeBuild(sample)
+			builtIsEmpty, builtQueryBatch, builtSizeBits, builtBuildDur, builtPeakRSS, builtBuildErr = invokeBuild(sample)
 		}
 
 		// Per-K BPK budget exceeded → break sweep entirely (BPK is L-
@@ -719,8 +718,9 @@ func runB6Filter(
 			if !force {
 				if cached := store.cachedRow(dist, fd.name, L, fd.sweepName, sweep, paramsHash); cached != nil {
 					rows = append(rows, *cached)
-					b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9s | %-13s | %-13s | %-7s | %-9s  (cached)\n",
-						dist, fd.name, L, fd.sweepName, sweep, "—", "—", "—", "—", "—")
+					b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4g | %-7.1f MB (cached)\n",
+						dist, fd.name, L, fd.sweepName, sweep,
+						float64(cached.BuildNs)/1e6, cached.BuildMKeysSec, cached.QueryNsPerOp, cached.BPKUsed, cached.FPR, cached.BuildPeakRSSMB)
 					if cached.FPR == 0 {
 						lSaturated[L] = true
 					}
@@ -747,10 +747,11 @@ func runB6Filter(
 				sizeBits   uint64
 				buildErr   error
 				buildDur   time.Duration
+				peakRSS    uint64
 			)
 			if fd.lDependent {
 				// Rebuild per L with the L-specific sample.
-				isEmpty, queryBatch, sizeBits, buildDur, buildErr = invokeBuild(sampleQueries)
+				isEmpty, queryBatch, sizeBits, buildDur, peakRSS, buildErr = invokeBuild(sampleQueries)
 			} else {
 				buildOnce(nil)
 				isEmpty = builtIsEmpty
@@ -758,6 +759,7 @@ func runB6Filter(
 				sizeBits = builtSizeBits
 				buildErr = builtBuildErr
 				buildDur = builtBuildDur
+				peakRSS = builtPeakRSS
 			}
 
 			if buildErr != nil {
@@ -797,24 +799,25 @@ func runB6Filter(
 			fpr := float64(falsePositives) / float64(len(batch))
 
 			rows = append(rows, b6Row{
-				Distribution:  dist,
-				Filter:        fd.name,
-				RangeLen:      L,
-				BuildNs:       buildDur.Nanoseconds(),
-				BuildMKeysSec: buildMKeys,
-				QueryNsPerOp:  nsPerQuery,
-				BPKUsed:       actualBPK,
-				SizeBits:      sizeBits,
-				FPR:           fpr,
-				QueriesEmpty:  len(batch),
-				SweepName:     fd.sweepName,
-				SweepParam:    sweep,
-				Parallelism:   parallelism,
-				ParamsHash:    paramsHash,
+				Distribution:   dist,
+				Filter:         fd.name,
+				RangeLen:       L,
+				BuildNs:        buildDur.Nanoseconds(),
+				BuildMKeysSec:  buildMKeys,
+				BuildPeakRSSMB: float64(peakRSS) / (1024 * 1024),
+				QueryNsPerOp:   nsPerQuery,
+				BPKUsed:        actualBPK,
+				SizeBits:       sizeBits,
+				FPR:            fpr,
+				QueriesEmpty:   len(batch),
+				SweepName:      fd.sweepName,
+				SweepParam:     sweep,
+				Parallelism:    parallelism,
+				ParamsHash:     paramsHash,
 			})
-			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | P=%-2d | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4f\n",
-				dist, fd.name, L, fd.sweepName, sweep, parallelism,
-				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr)
+			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4g | %-7.1f MB\n",
+				dist, fd.name, L, fd.sweepName, sweep,
+				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr, float64(peakRSS)/(1024*1024))
 
 			if fpr == 0 {
 				lSaturated[L] = true

@@ -326,7 +326,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 
 	// Stable distribution order — synthetic first, then SOSD.
 	distOrder := []string{
-		"clustered", "uniform", "spread",
+		"clustered", "uniform",
 		"sosd_books", "sosd_fb", "sosd_wiki", "sosd_osm",
 	}
 	finalDists := []string{}
@@ -400,7 +400,11 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 
 		for _, dist := range finalDists {
 			var ordered []testutils.SeriesData
-			if m.subdir == "build_throughput" {
+			if m.subdir == "build_throughput" || m.subdir == "query_latency" {
+				// Use FPR-gated selector for both throughput and latency.
+				// This ensures we measure performance in the "working regime" (FPR <= eps).
+				ordered = buildB6MinFPRMeanSeries(byCell, []string{dist}, doc.Eps, m.extract)
+			} else if m.subdir == "build_throughput_legacy" {
 				ordered = buildB6BuildThroughputSeries(byCell, dist, doc.Eps)
 			} else {
 				ordered = buildB6PlotSeries(byCell, dist, m.extract)
