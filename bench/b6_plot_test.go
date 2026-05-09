@@ -859,6 +859,15 @@ func buildB6BuildThroughputSeries(
 // For each (filter, L) it averages extract(r) over all dists that have at
 // least one row passing collectMinFPRRows at targetFPR. Distributions where
 // the filter never reaches targetFPR are silently omitted from the average.
+//
+// Coverage guard: a point at L is only emitted when the number of
+// contributing distributions is strictly greater than half the filter's
+// maximum coverage across all L values. This prevents artificial "improvement"
+// artefacts when difficult distributions gradually drop out of the average
+// (e.g. Grafite on clustered data failing at large L, causing the mean to
+// plunge from 4 K ns to 85 ns once that distribution disappears).
+// The threshold is per-filter so filters with inherently limited distribution
+// support (e.g. SNARF, SuRF) are not penalised.
 func buildB6MinFPRMeanSeries(
 	byCell map[struct{ dist, filter string }][]b6Row,
 	dists []string,
@@ -882,6 +891,13 @@ func buildB6MinFPRMeanSeries(
 		if len(sumByL) == 0 {
 			continue
 		}
+		// Determine this filter's maximum distribution coverage across all L.
+		maxCnt := 0
+		for _, c := range cntByL {
+			if c > maxCnt {
+				maxCnt = c
+			}
+		}
 		Ls := make([]uint64, 0, len(sumByL))
 		for L := range sumByL {
 			Ls = append(Ls, L)
@@ -889,6 +905,12 @@ func buildB6MinFPRMeanSeries(
 		sort.Slice(Ls, func(i, j int) bool { return Ls[i] < Ls[j] })
 		s := newB6Series(fname)
 		for _, L := range Ls {
+			// Skip L where coverage has dropped to ≤ half of this filter's
+			// maximum — the average would be over a qualitatively different
+			// (easier) subset and no longer comparable across L values.
+			if cntByL[L]*2 <= maxCnt {
+				continue
+			}
 			s.Points = append(s.Points, testutils.Point{
 				X: float64(L),
 				Y: sumByL[L] / float64(cntByL[L]),
