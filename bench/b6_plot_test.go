@@ -397,7 +397,12 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 		}
 
 		for _, dist := range finalDists {
-			ordered := buildB6PlotSeries(byCell, dist, m.extract)
+			var ordered []testutils.SeriesData
+			if m.subdir == "build_throughput" {
+				ordered = buildB6BuildThroughputSeries(byCell, dist, doc.Eps)
+			} else {
+				ordered = buildB6PlotSeries(byCell, dist, m.extract)
+			}
 			if !anyHasPoints(ordered) {
 				continue
 			}
@@ -420,12 +425,16 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 		}
 
 		// Cross-distribution mean — one curve per filter, Y averaged at
-		// each L over all distributions where the filter has a row at
-		// headline sweep. Useful for build_throughput and query_latency
-		// where the per-dist plots are noisy and the user wants a single
-		// summary line per filter.
+		// each L over all distributions where the filter has a data point.
+		// build_throughput uses the FPR-gated selector (min-K achieving ε);
+		// query_latency uses the standard headline sweep.
 		if m.subdir == "build_throughput" || m.subdir == "query_latency" {
-			ordered := buildB6MeanSeries(byCell, finalDists, m.extract)
+			var ordered []testutils.SeriesData
+			if m.subdir == "build_throughput" {
+				ordered = buildB6BuildThroughputMeanSeries(byCell, finalDists, doc.Eps)
+			} else {
+				ordered = buildB6MeanSeries(byCell, finalDists, m.extract)
+			}
 			if anyHasPoints(ordered) {
 				svgPath := filepath.Join(outDir, "_mean.svg")
 				err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
@@ -753,6 +762,110 @@ func buildB6MeanSeries(
 		}
 		sort.Slice(Ls, func(i, j int) bool { return Ls[i] < Ls[j] })
 
+		s := newB6Series(fname)
+		for _, L := range Ls {
+			s.Points = append(s.Points, testutils.Point{
+				X: float64(L),
+				Y: sumByL[L] / float64(cntByL[L]),
+			})
+		}
+		if len(s.Points) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// collectMinFPRRows returns, for each range length L, the single row with
+// the minimum sweep parameter (K / bpk / real_bits) at which the filter
+// achieves FPR ≤ targetFPR. Used for build_throughput plots so throughput
+// is reported at the cheapest configuration that satisfies the quality bar,
+// not at a fixed sweep value that may be completely outside the working regime.
+func collectMinFPRRows(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist, fname string,
+	targetFPR float64,
+) []b6Row {
+	srcNames := []string{fname}
+	if fname == "SuRF" {
+		srcNames = []string{"SuRFReal"}
+	}
+	byL := map[uint64][]b6Row{}
+	for _, src := range srcNames {
+		for _, r := range byCell[struct{ dist, filter string }{dist, src}] {
+			if r.FPR <= targetFPR {
+				byL[r.RangeLen] = append(byL[r.RangeLen], r)
+			}
+		}
+	}
+	result := make([]b6Row, 0, len(byL))
+	for _, rows := range byL {
+		sort.Slice(rows, func(i, j int) bool {
+			return rows[i].SweepParam < rows[j].SweepParam
+		})
+		result = append(result, rows[0])
+	}
+	return result
+}
+
+// buildB6BuildThroughputSeries builds a per-dist build-throughput curve
+// where each (filter, L) point is taken at the minimum sweep parameter
+// that achieves FPR ≤ targetFPR. Filters that never reach the target at
+// any sweep value are omitted.
+func buildB6BuildThroughputSeries(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dist string,
+	targetFPR float64,
+) []testutils.SeriesData {
+	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
+	for _, fname := range b6PlotOrder {
+		rows := collectMinFPRRows(byCell, dist, fname, targetFPR)
+		if len(rows) == 0 {
+			continue
+		}
+		sort.Slice(rows, func(i, j int) bool { return rows[i].RangeLen < rows[j].RangeLen })
+		s := newB6Series(fname)
+		for _, r := range rows {
+			if r.BuildMKeysSec <= 0 {
+				continue
+			}
+			s.Points = append(s.Points, testutils.Point{X: float64(r.RangeLen), Y: r.BuildMKeysSec})
+		}
+		if len(s.Points) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// buildB6BuildThroughputMeanSeries is the cross-distribution mean variant
+// of buildB6BuildThroughputSeries.
+func buildB6BuildThroughputMeanSeries(
+	byCell map[struct{ dist, filter string }][]b6Row,
+	dists []string,
+	targetFPR float64,
+) []testutils.SeriesData {
+	out := make([]testutils.SeriesData, 0, len(b6PlotOrder))
+	for _, fname := range b6PlotOrder {
+		sumByL := map[uint64]float64{}
+		cntByL := map[uint64]int{}
+		for _, dist := range dists {
+			for _, r := range collectMinFPRRows(byCell, dist, fname, targetFPR) {
+				if r.BuildMKeysSec <= 0 {
+					continue
+				}
+				sumByL[r.RangeLen] += r.BuildMKeysSec
+				cntByL[r.RangeLen]++
+			}
+		}
+		if len(sumByL) == 0 {
+			continue
+		}
+		Ls := make([]uint64, 0, len(sumByL))
+		for L := range sumByL {
+			Ls = append(Ls, L)
+		}
+		sort.Slice(Ls, func(i, j int) bool { return Ls[i] < Ls[j] })
 		s := newB6Series(fname)
 		for _, L := range Ls {
 			s.Points = append(s.Points, testutils.Point{
