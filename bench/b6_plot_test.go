@@ -361,12 +361,14 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 		ylabel  string
 		yScale  testutils.AxisScale
 		yFloor  float64
+		yCeil   float64
 		extract func(r b6Row) (float64, bool)
 	}{
 		{
 			subdir:  "query_latency",
 			ylabel:  "Query Time (ns/op)",
 			yScale:  testutils.Log10,
+			yCeil:   1000, // BloomARE grows O(L) and goes off-chart; cap at 1 µs
 			extract: func(r b6Row) (float64, bool) { return r.QueryNsPerOp, r.QueryNsPerOp > 0 },
 		},
 		{
@@ -416,6 +418,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 				XScale: testutils.Log10,
 				YScale: m.yScale,
 				YFloor: m.yFloor,
+				YCeil:  m.yCeil,
 			}, ordered, svgPath)
 			if err != nil {
 				t.Errorf("svg %s: %v", svgPath, err)
@@ -457,6 +460,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 					XScale: testutils.Log10,
 					YScale: m.yScale,
 					YFloor: m.yFloor,
+					YCeil:  m.yCeil,
 				}, ordered, svgPath)
 				if err != nil {
 					t.Errorf("svg %s: %v", svgPath, err)
