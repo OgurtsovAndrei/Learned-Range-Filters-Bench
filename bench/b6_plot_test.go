@@ -431,7 +431,18 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 		if m.subdir == "build_throughput" || m.subdir == "query_latency" {
 			var ordered []testutils.SeriesData
 			if m.subdir == "build_throughput" {
-				ordered = buildB6BuildThroughputMeanSeries(byCell, finalDists, doc.Eps)
+				// "spread" is a degenerate case for SODA: all keys hash to
+				// one point, so FPR hits ≤ ε at tiny K (domain saturated
+				// in one bucket) → build_throughput reflects hashing speed
+				// only, not filter construction. Exclude from the mean to
+				// avoid skewing the cross-distribution average.
+				throughputDists := make([]string, 0, len(finalDists))
+				for _, d := range finalDists {
+					if d != "spread" {
+						throughputDists = append(throughputDists, d)
+					}
+				}
+				ordered = buildB6BuildThroughputMeanSeries(byCell, throughputDists, doc.Eps)
 			} else {
 				ordered = buildB6MeanSeries(byCell, finalDists, m.extract)
 			}
