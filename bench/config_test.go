@@ -63,7 +63,7 @@ var DefaultSeriesStyles = map[string]SeriesStyle{
 	"Grafite":       {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
 	"Grafite-tuned": {Name: "Grafite-tuned", Color: "#14b8a6", Marker: "square"},
 	"SNARF":         {Name: "SNARF", Color: "#1e3a8a", Marker: "diamond"},
-	"SuRFReal(8)":   {Name: "SuRFReal(8)", Color: "#0f172a", Marker: "diamond"},
+	"SuRFReal(8)":   {Name: "SuRFReal(8)", Color: "#dc2626", Marker: "diamond"},
 	"SODA":          {Name: "SODA", Color: "#ca8a04", Marker: "circle"},
 	"Scan-ARE":      {Name: "Scan-ARE", Color: "#d946ef", Marker: "circle"},
 	// Scan-ARE variants: same fuchsia base, different markers.

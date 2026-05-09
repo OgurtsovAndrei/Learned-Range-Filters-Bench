@@ -20,20 +20,29 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 	for k, v := range DefaultSeriesStyles {
 		m[k] = v
 	}
-	// Rosetta — cool teal-darker, distinct from Grafite-tuned (#14b8a6) but
-	// in the same cool industry-baseline family. Diamond marker matches
-	// the industry-baseline visual convention (Grafite, SNARF, SuRF*).
-	m["Rosetta"] = SeriesStyle{Name: "Rosetta", Color: "#12fc21", Marker: "diamond"}
+	// Rosetta — dark green (Tailwind green-700), readable on white projector,
+	// distinct from teal Grafite family. Diamond marker matches the industry-
+	// baseline visual convention (Grafite, SNARF, SuRF*).
+	m["Rosetta"] = SeriesStyle{Name: "Rosetta", Color: "#15803d", Marker: "diamond"}
 	// SuRF is one family rendered as a marker-only point cloud across all
 	// three structural variants (None / Hash / Real). Inherit the
 	// SuRFReal(8) palette so plots stay consistent with comparison_test.go.
-	surfColor := "#0f172a"
+	surfColor := "#dc2626"
 	surfMarker := "diamond"
 	if s, ok := DefaultSeriesStyles["SuRFReal(8)"]; ok {
 		surfColor = s.Color
 		surfMarker = s.Marker
 	}
 	m["SuRF"] = SeriesStyle{Name: "SuRF", Color: surfColor, Marker: surfMarker}
+	// SODA-PEF — same filter as SODA but with the PEF (Partitioned Elias-Fano)
+	// backend. Amber square to sit visually next to SODA (yellow circle).
+	m["SODA-PEF"] = SeriesStyle{Name: "SODA-PEF", Color: "#f59e0b", Marker: "square"}
+	// Scan-ARE-SODA-PEF — Scan-ARE with SODA fallback and PEF backend.
+	// Deep purple square, sibling to Scan-ARE-SODA (purple triangle).
+	m["Scan-ARE-SODA-PEF"] = SeriesStyle{Name: "Scan-ARE-SODA-PEF", Color: "#7c3aed", Marker: "square"}
+	// Scan-ARE-SODA-FbPEF — PEF only in fallback, clusters use OneD.
+	// Lighter purple to sit between Scan-ARE-SODA and Scan-ARE-SODA-PEF.
+	m["Scan-ARE-SODA-FbPEF"] = SeriesStyle{Name: "Scan-ARE-SODA-FbPEF", Color: "#a78bfa", Marker: "triangle"}
 	// Keep SuRFReal entry as a fallback used only by the per-(metric, dist)
 	// plots that pick a single representative cell; same palette as SuRF.
 	m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: surfColor, Marker: surfMarker}
@@ -48,8 +57,11 @@ var b6PlotOrder = []string{
 	"SuRF",
 	"Rosetta",
 	"SODA",
+	"SODA-PEF",
 	"Scan-ARE-Trunc",
 	"Scan-ARE-SODA",
+	"Scan-ARE-SODA-PEF",
+	"Scan-ARE-SODA-FbPEF",
 	"Greedy+Merge-Trunc",
 	"Greedy+Merge-SODA",
 	"BloomARE",

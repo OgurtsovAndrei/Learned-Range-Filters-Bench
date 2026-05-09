@@ -8,6 +8,7 @@ import (
 	"Thesis/emptiness/approx/are_greedy_scan"
 	"Thesis/emptiness/approx/are_hybrid_scan"
 	"Thesis/emptiness/approx/are_soda_hash"
+	exactbackend "Thesis/emptiness/exact"
 	"fmt"
 	"math"
 	mathbits "math/bits"
@@ -361,6 +362,17 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
+			name: "SODA-PEF", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_soda_hash.NewSodaAREFromKWithBackend(keys, uint32(sweep),
+					int64(sweep)*1000003+int64(len(keys)), exactbackend.VariantPEF)
+				if err != nil {
+					return nil, 0, err
+				}
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
 			name: "Scan-ARE-Trunc", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
@@ -376,6 +388,32 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
 					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}})
+				if err != nil {
+					return nil, 0, err
+				}
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
+			// PEF everywhere: cluster sub-filters + SODA fallback.
+			name: "Scan-ARE-SODA-PEF", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}}.
+						WithEREBackend(exactbackend.VariantPEF))
+				if err != nil {
+					return nil, 0, err
+				}
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
+			// PEF only in the SODA fallback; cluster sub-filters keep OneD (VariantAuto).
+			name: "Scan-ARE-SODA-FbPEF", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}}.
+						WithFallbackEREBackend(exactbackend.VariantPEF))
 				if err != nil {
 					return nil, 0, err
 				}
