@@ -34,31 +34,12 @@ type benchConfig struct {
 	queryStrategyParams map[string]interface{} // e.g. smart_mix weights
 }
 
-// tryGrafite builds a Grafite filter at the requested bpk. The CGo wrapper
-// (thirdparty/grafite/cpp/wrapper.cpp) catches the upstream
-// std::runtime_error thrown when bpk exceeds log2(universe/n) + 2 and falls
-// back to a lossless Elias-Fano on raw keys — so values above that
-// threshold no longer crash and now report FPR=0 deterministically.
-//
-// We still return nil for trivially-empty inputs so the caller can skip
-// degenerate cells without inspecting the filter.
-func tryGrafite(keys []uint64, bpk float64) *grafite.GrafiteFilter {
-	if len(keys) < 2 {
-		return nil
-	}
-	if keys[len(keys)-1] == keys[0] {
-		return nil
-	}
-	return grafite.New(keys, bpk)
-}
-
-// tryGrafiteEpsL is the (eps, L) counterpart of tryGrafite. The same wrapper
-// fallback applies, so high-bpk (eps, L) pairs no longer trigger a SIGABRT
-// — they degrade to lossless EF instead.
+// tryGrafiteEpsL is the (eps, L) counterpart of tryGrafite.
 func tryGrafiteEpsL(keys []uint64, eps float64, L uint64) (f *grafite.GrafiteFilter) {
 	if len(keys) < 2 || eps <= 0 || L == 0 {
 		return nil
 	}
+
 	if keys[len(keys)-1] == keys[0] {
 		return nil
 	}

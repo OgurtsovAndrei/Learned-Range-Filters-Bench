@@ -1,17 +1,8 @@
 package bench_test
 
 import (
-	"Thesis-bench-industry/thirdparty/rosetta"
-	"Thesis-bench-industry/thirdparty/snarf"
-	"Thesis-bench-industry/thirdparty/surf"
-	"Thesis/emptiness/approx/are_bloom"
-	"Thesis/emptiness/approx/are_greedy_scan"
-	"Thesis/emptiness/approx/are_hybrid_scan"
-	"Thesis/emptiness/approx/are_soda_hash"
-	exactbackend "Thesis/emptiness/exact"
 	"Thesis/utils"
 	"fmt"
-	"math"
 	mathbits "math/bits"
 	"math/rand"
 	"os"
@@ -23,6 +14,7 @@ import (
 	"testing"
 	"time"
 )
+
 
 // TestB6IndustryLatency measures four things per (distribution, filter, L,
 // sweepValue):
@@ -79,7 +71,6 @@ func TestB6IndustryLatency(t *testing.T) {
 			mix.name, mix.weights.NearKey, mix.weights.InGap, mix.weights.Uniform, mix.name)
 	}
 
-
 	type distSpec struct {
 		name string
 		// load returns at least n unique uint64 keys (sorted). The closure
@@ -130,6 +121,7 @@ func TestB6IndustryLatency(t *testing.T) {
 	for _, n := range nValues {
 		n := n
 		t.Run(fmt.Sprintf("N=2^%d", mathbits.TrailingZeros(uint(n))), func(t *testing.T) {
+
 			store := newB6Store(n, queryCount, eps, mix.queryStrategy, mix.name)
 			b6Logf("\n=== B6: Build + Query latency + actual BPK + FPR, n=%d, ε=%.3f ===\n",
 				n, eps)
@@ -157,6 +149,7 @@ func TestB6IndustryLatency(t *testing.T) {
 					}
 					keys := allKeys[:effN]
 					keyBits := uint32(max(1, mathbits.Len64(keys[len(keys)-1])))
+
 					t.Logf("%s: %d keys, range [%d, %d], keyBits=%d",
 						ds.name, len(keys), keys[0], keys[len(keys)-1], keyBits)
 
@@ -242,7 +235,6 @@ var b6QueryMixes = map[string]b6QueryMix{
 	},
 }
 
-
 // parseB6QueryMix reads B6_QUERY_MIX env var. Default "smart_mix" matches
 // the historical 50/30/20 weights and writes to the original cache/plot
 // directories.
@@ -286,283 +278,6 @@ func parseB6N() []int {
 		out = append(out, n)
 	}
 	return out
-}
-
-// Per-filter sweep grids. Top-level vars so they are easy to tune for
-// individual reruns without touching the filter table.
-var (
-	// SODA and BloomARE keep their eps-based public APIs; Truncation/Scan-ARE/
-	// Greedy+Merge are now K-driven (see TruncARE/HybridScanARE/GreedyScanARE
-	// Config). The K grid spans approximately the same BPK range the eps grid
-	// covered (BPK ≈ K under exact-mode regimes).
-	b6SweepEps      = []float64{0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005}
-	b6SweepK        = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 44, 48, 52, 56, 60, 64}
-	b6SweepBPK      = []float64{4, 6, 8, 10, 12, 14, 16, 18}
-	// BloomARE filter size m = n*L/eps. With the full eps grid at
-	// L=65536 / n=2^20 we already need 16 GB at eps=0.0005. We trim the
-	// smallest eps values for Bloom so peak memory stays manageable
-	// (~1.6 GB worst case at n=2^20). For n=2^24 / n=2^28 the runner
-	// will clip further if needed; this minimal grid is the safe floor.
-	b6SweepBloomEps = []float64{0.1, 0.05, 0.02, 0.01, 0.005}
-	b6SweepRealBits = []float64{0, 2, 4, 8, 12, 16}
-	b6SweepHashBits = []float64{2, 4, 8, 12, 16}
-	b6SweepNoneBits = []float64{0}
-)
-
-type b6FilterDef struct {
-	name string
-	// sweepName describes the parameter being swept ("eps", "bpk", "real_bits").
-	sweepName string
-	// sweepValues is the grid of values for the swept parameter.
-	sweepValues []float64
-	// build returns an isEmpty closure plus the actual filter footprint
-	// (bits). Used for pure-Go filters and Bloom (no CGo crossings).
-	// Exactly one of build / buildBatch must be set per filter.
-	//
-	// sampleQueries is the per-L representative query sample used by
-	// L-dependent CGo filters (Rosetta) for build-time level shaping.
-	// Pure-Go filters ignore it.
-	build func(sweep float64, sampleQueries [][2]uint64) (isEmpty func(a, b uint64) bool, sizeBits uint64, err error)
-	// buildBatch is set ONLY for CGo filters. When non-nil, the runner uses
-	// it instead of looping per-query through `isEmpty`. This avoids
-	// ~50–200 ns of CGo crossing overhead per query and is the only way to
-	// measure CGo filter latency representatively.
-	buildBatch func(sweep float64, sampleQueries [][2]uint64) (queryBatch func([][2]uint64) []bool, sizeBits uint64, err error)
-	// lDependent: when true, the runner rebuilds the filter per (sweep, L)
-	// rather than once per sweep. Used by Rosetta whose build accepts the
-	// L-specific query sample for `calc_dst` level shaping.
-	lDependent bool
-	// skipDists is the set of distribution names for which this filter is
-	// known to be unsafe (e.g. SuRF SIGSEGVs on sosd_wiki due to upstream
-	// efficient/SuRF#8). The runner skips these cells without attempting
-	// the build, preserving the rest of the sweep.
-	skipDists map[string]bool
-	// skipLs is the set of range lengths for which this filter is too
-	// expensive to measure productively (e.g. BloomARE's IsEmpty scans L
-	// hash probes per query, so L≥4096 becomes minutes/cell with no
-	// useful FPR signal anyway).
-	skipLs map[uint64]bool
-}
-
-func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
-	return []b6FilterDef{
-		{
-			name: "SODA", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				// Hash seed: derive from K so different K values still
-				// get different hash A/B (otherwise sweep cells would
-				// share hash → not independent samples).
-				f, err := are_soda_hash.NewSodaAREFromK(keys, uint32(sweep), int64(sweep)*1000003+int64(len(keys)))
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "SODA-PEF", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_soda_hash.NewSodaAREFromKWithBackend(keys, uint32(sweep),
-					int64(sweep)*1000003+int64(len(keys)), exactbackend.VariantPEF)
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "Scan-ARE-Trunc", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysTrunc{}})
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "Scan-ARE-SODA", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}})
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			// PEF everywhere: cluster sub-filters + SODA fallback.
-			name: "Scan-ARE-SODA-PEF", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}}.
-						WithEREBackend(exactbackend.VariantPEF))
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			// PEF only in the SODA fallback; cluster sub-filters keep OneD (VariantAuto).
-			name: "Scan-ARE-SODA-FbPEF", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}}.
-						WithFallbackEREBackend(exactbackend.VariantPEF))
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "Greedy+Merge-Trunc", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_greedy_scan.FallbackAlwaysTrunc{}})
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "Greedy+Merge-SODA", sweepName: "K", sweepValues: b6SweepK,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_greedy_scan.FallbackAlwaysSODA{}})
-				if err != nil {
-					return nil, 0, err
-				}
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			// BloomARE is BPK-driven and L-independent: filter size is
-			// fixed by target bits-per-key, queries at any L just probe
-			// the same filter L times. Range FPR = 1 - (1-pointFPR)^L
-			// is implicit per-query.
-			//
-			// IsEmpty scans every uint64 in [a, b] against the bloom
-			// filter — query time grows linearly with L. At L >= 4096
-			// each cell costs minutes with no additional information,
-			// so we skip those L values and rely on the smaller-L
-			// trajectory plus the analytical formula
-			// FPR(L) = 1 - (1-pointFPR)^L for the rest.
-			name:        "BloomARE",
-			sweepName:   "K",
-			sweepValues: b6SweepK,
-			skipLs:      map[uint64]bool{4096: true, 16384: true, 65536: true},
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				bpk := sweep
-				estBits := float64(len(keys)) * bpk
-				if estBits > 1.6e10 {
-					return nil, 0, fmt.Errorf("bloom: estimated %.2g bits exceeds 2 GB envelope at BPK=%.1f", estBits, bpk)
-				}
-				// pointFPR from target BPK at Bloom optimum:
-				// pointFPR ≈ exp(-BPK * ln(2)^2).
-				pointFPR := math.Exp(-bpk * 0.4804530139182014)
-				f, err := are_bloom.NewBloomAREFromPointFPR(keys, pointFPR)
-				if err != nil {
-					return nil, 0, err
-				}
-				return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.SizeInBits(), nil
-			},
-		},
-		{
-			// Grafite is L-aware via its bpk parameterisation: r = n*2^(bpk-2)
-			// implicitly fixes ε_l = l / 2^(bpk-2) for a query of length l.
-			// At small bpk + large L, the implied ε saturates at ~1 and FPR
-			// hits the ceiling, but the cells are still informative for the
-			// FPR-vs-BPK trajectory plots. The previous skipLs guard was a
-			// defence against the upstream `runtime_error` thrown when r
-			// exceeds the lossless envelope — now handled in
-			// thirdparty/grafite/cpp/wrapper.cpp via the lossless EF
-			// fallback, so all (bpk, L) cells are measurable.
-			name: "Grafite", sweepName: "bpk", sweepValues: b6SweepBPK,
-			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
-				f := tryGrafite(keys, sweep)
-				if f == nil {
-					return nil, 0, fmt.Errorf("grafite: target bpk=%.2f exceeds envelope", sweep)
-				}
-				return f.QueryBatch, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "SNARF", sweepName: "bpk", sweepValues: b6SweepBPK,
-			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
-				f := snarf.New(keys, sweep)
-				return f.QueryBatch, f.SizeInBits(), nil
-			},
-		},
-		{
-			// Rosetta is BPK-driven and uses the per-L sample query batch
-			// for `calc_dst` level shaping at build time. lDependent makes
-			// the runner rebuild it per (sweep, L) with the L-specific
-			// sample. Other filters reuse one build across all L values.
-			name: "Rosetta", sweepName: "bpk", sweepValues: b6SweepBPK,
-			lDependent: true,
-			// Rosetta query latency degrades sharply at L >= 4096 (Bloom-style
-			// probe count grows with log L; query cost dominated by ~10
-			// concurrent BF lookups per call). At L=4096+ ns/op exceeds 90 µs,
-			// well outside the competitive band — skip them in latency plots.
-			skipLs: map[uint64]bool{4096: true, 65536: true},
-			buildBatch: func(sweep float64, sampleQueries [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
-				sampleN := len(sampleQueries)
-				var sampleLeft, sampleRight []uint64
-				if sampleN > 0 {
-					sampleLeft = make([]uint64, sampleN)
-					sampleRight = make([]uint64, sampleN)
-					for i, q := range sampleQueries {
-						sampleLeft[i] = q[0]
-						sampleRight[i] = q[1]
-					}
-				}
-				f := rosetta.New(keys, sweep, sampleLeft, sampleRight)
-				if f == nil {
-					return nil, 0, fmt.Errorf("rosetta: New returned nil for bpk=%.2f", sweep)
-				}
-				return f.QueryBatch, f.SizeInBits(), nil
-			},
-		},
-		// SuRF is one filter family with three structural variants. We sweep
-		// each variant's bit budget so the FPR-vs-BPK plots get a SuRF point
-		// cloud across (suffixType, bitCount); the plotter folds all three
-		// names into a single marker-only "SuRF" series.
-		{
-			name:        "SuRFNone",
-			sweepName:   "real_bits",
-			sweepValues: b6SweepNoneBits,
-			buildBatch: func(_ float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
-				f := surf.New(keys, surf.SuffixNone, 0, 0)
-				return f.QueryBatch, f.SizeInBits(), nil
-			},
-			skipDists: map[string]bool{"sosd_wiki": true},
-		},
-		{
-			name:        "SuRFHash",
-			sweepName:   "hash_bits",
-			sweepValues: b6SweepHashBits,
-			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
-				f := surf.New(keys, surf.SuffixHash, int(sweep), 0)
-				return f.QueryBatch, f.SizeInBits(), nil
-			},
-			skipDists: map[string]bool{"sosd_wiki": true},
-		},
-		{
-			name:        "SuRFReal",
-			sweepName:   "real_bits",
-			sweepValues: b6SweepRealBits,
-			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
-				f := surf.New(keys, surf.SuffixReal, 0, int(sweep))
-				return f.QueryBatch, f.SizeInBits(), nil
-			},
-			skipDists: map[string]bool{"sosd_wiki": true},
-		},
-	}
 }
 
 // b6ProgressLog is the package-level append-only progress logger. Lines
@@ -708,12 +423,6 @@ func runB6Filter(
 			}
 			// Skip L values that already reached FPR=0 at a smaller
 			// K — measuring them at higher K would just duplicate.
-			// Only applies to K-sweep filters: their FPR is monotone in K
-			// and a larger K just produces a strictly larger filter. For
-			// bpk-sweep filters (Grafite/SNARF/Rosetta) we still want a
-			// row at every bpk target — Grafite's lossless fallback in
-			// particular produces the same EF regardless of the requested
-			// bpk, but headline plots need a row at sweep=10 to render.
 			if fd.sweepName == "K" && lSaturated[L] {
 				continue
 			}
