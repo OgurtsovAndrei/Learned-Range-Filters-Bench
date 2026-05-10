@@ -2,7 +2,7 @@ package sosd_test
 
 import (
 	"Thesis-bench-industry/bench/internal/keygen"
-	"Thesis-bench-industry/bench/internal/utils"
+	"Thesis-bench-industry/bench/internal/benchutil"
 	"Thesis/testutils"
 	"fmt"
 	"os"
@@ -22,11 +22,11 @@ func loadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
 }
 
 func histogram(keys []uint64, nBins int) []testutils.Point {
-	return utils.Histogram(keys, nBins)
+	return benchutil.Histogram(keys, nBins)
 }
 
 func normalizedCDF(keys []uint64, sampleEvery int) []testutils.Point {
-	return utils.NormalizedCDF(keys, sampleEvery)
+	return benchutil.NormalizedCDF(keys, sampleEvery)
 }
 
 

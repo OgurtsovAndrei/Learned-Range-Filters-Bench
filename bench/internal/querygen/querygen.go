@@ -98,6 +98,35 @@ func GenerateTemporalQueries(count int, keys []uint64, rangeLen uint64, rng *ran
 	return queries
 }
 
+// QueryAudit represents a single range query.
+type QueryAudit struct{ Lo, Hi uint64 }
+
+// GenerateSmartQueriesAudit reuses the same "smart-mix empty" recipe the
+// B6 bench uses: 80% near-key + 20% uniform, all guaranteed-empty.
+func GenerateSmartQueriesAudit(rng *rand.Rand, keys []uint64, L uint64, count int) []QueryAudit {
+	out := make([]QueryAudit, count)
+	for i := range out {
+		var lo uint64
+		if rng.Intn(5) > 0 {
+			k := keys[rng.Intn(len(keys))]
+			off := uint64(rng.Intn(int(L*4))) + L
+			if rng.Intn(2) == 0 {
+				lo = k + off
+			} else {
+				if k > L+off {
+					lo = k - off - L
+				} else {
+					lo = k + off
+				}
+			}
+		} else {
+			lo = rng.Uint64()
+		}
+		out[i] = QueryAudit{Lo: lo, Hi: lo + L - 1}
+	}
+	return out
+}
+
 // randUint64Below returns a uniformly random uint64 in [0, n).
 func randUint64Below(rng *rand.Rand, n uint64) uint64 {
 	if n == 0 {

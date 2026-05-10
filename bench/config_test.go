@@ -3,9 +3,11 @@ package bench_test
 import (
 	"Thesis-bench-industry/bench/internal/keygen"
 	"Thesis-bench-industry/bench/internal/querygen"
+	"Thesis-bench-industry/bench/internal/benchutil"
 	"fmt"
 	"math/rand"
 )
+
 
 
 // ---- Global parameters (single source of truth across all bench tests) ----
@@ -84,41 +86,12 @@ var (
 )
 
 // SeriesStyle describes plot appearance for a single series.
-type SeriesStyle struct {
-	Name   string
-	Color  string
-	Marker string
-	Dashed bool
-}
+type SeriesStyle = benchutil.SeriesStyle
 
 // DefaultSeriesStyles is the unified 8-series set used on FPR-vs-BPK plots.
-// Two-axis visual contrast separates the academic line (this work + its
-// baseline) from the industry alternative:
-//
-//	                          Colour                              Marker
-//	This work + Goswami SODA  WARM (mustard, orange, fuchsia)     circle
-//	Industry baselines        COOL DARK (teal, navy, near-black)  diamond
-//	References                MUTED DASHED (slate, gray)          circle
-//
-// Scan-ARE is the headline so it gets the brightest accent (fuchsia).
-// SODA is the academic predecessor this work builds upon — same shape as
-// Greedy+Merge / Scan-ARE, distinct (warmer) hue.
-var DefaultSeriesStyles = map[string]SeriesStyle{
-	"Theoretical":   {Name: "Theoretical", Color: "#374151", Dashed: true, Marker: "circle"},
-	"Grafite":       {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
-	"Grafite-tuned": {Name: "Grafite-tuned", Color: "#14b8a6", Marker: "square"},
-	"SNARF":         {Name: "SNARF", Color: "#1e3a8a", Marker: "diamond"},
-	"SuRFReal(8)":   {Name: "SuRFReal(8)", Color: "#dc2626", Marker: "diamond"},
-	"SODA":          {Name: "SODA", Color: "#ca8a04", Marker: "circle"},
-	"Scan-ARE":      {Name: "Scan-ARE", Color: "#d946ef", Marker: "circle"},
-	// Scan-ARE variants: same fuchsia base, different markers.
-	"Scan-ARE-Trunc":     {Name: "Scan-ARE-Trunc", Color: "#d946ef", Marker: "circle"},
-	"Scan-ARE-SODA":      {Name: "Scan-ARE-SODA", Color: "#a21caf", Marker: "triangle"},
-	"Greedy+Merge":       {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
-	"Greedy+Merge-Trunc": {Name: "Greedy+Merge-Trunc", Color: "#ea580c", Marker: "circle"},
-	"Greedy+Merge-SODA":  {Name: "Greedy+Merge-SODA", Color: "#9a3412", Marker: "triangle"},
-	"BloomARE":           {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
-}
+var DefaultSeriesStyles = benchutil.DefaultSeriesStyles
+
+
 
 // ---- Helpers ----
 

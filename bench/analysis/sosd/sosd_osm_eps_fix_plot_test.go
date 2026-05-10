@@ -1,7 +1,7 @@
 package sosd_test
 
 import (
-	"Thesis-bench-industry/bench/internal/utils"
+	"Thesis-bench-industry/bench/internal/benchutil"
 	"path/filepath"
 	"testing"
 
@@ -32,8 +32,8 @@ func TestEpsFix_OSM_FullPlot(t *testing.T) {
 		return testutils.Point{X: p.bpk, Y: y}
 	}
 
-	style := func(name string) utils.SeriesStyle {
-		return utils.DefaultSeriesStyles[name]
+	style := func(name string) benchutil.SeriesStyle {
+		return benchutil.DefaultSeriesStyles[name]
 	}
 
 	mkSeries := func(name string, pts []pt) testutils.SeriesData {

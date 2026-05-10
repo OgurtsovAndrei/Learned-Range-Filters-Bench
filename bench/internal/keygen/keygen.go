@@ -18,6 +18,12 @@ const (
 	syntheticDataDir = "synthetic_data"
 )
 
+// ClusterMeta is the JSON-serialisable form of cluster info.
+type ClusterMeta struct {
+	Center uint64  `json:"center"`
+	Stddev float64 `json:"stddev"`
+}
+
 func SOSDPath(name string) string {
 	_, thisFile, _, _ := runtime.Caller(0)
 	return filepath.Join(filepath.Dir(thisFile), "..", "..", sosdDataDir, name)
@@ -70,6 +76,9 @@ func LoadSOSDUint64(path string, maxKeys int) ([]uint64, error) {
 	}
 
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	if len(keys) == 0 {
+		return keys, nil
+	}
 	j := 0
 	for i := 1; i < len(keys); i++ {
 		if keys[i] != keys[j] {
@@ -109,6 +118,9 @@ func LoadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
 	}
 
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	if len(keys) == 0 {
+		return keys, nil
+	}
 	j := 0
 	for i := 1; i < len(keys); i++ {
 		if keys[i] != keys[j] {
