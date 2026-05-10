@@ -1,6 +1,12 @@
 package bench_test
 
-import "fmt"
+import (
+	"Thesis-bench-industry/bench/internal/keygen"
+	"Thesis-bench-industry/bench/internal/querygen"
+	"fmt"
+	"math/rand"
+)
+
 
 // ---- Global parameters (single source of truth across all bench tests) ----
 
@@ -8,8 +14,47 @@ const (
 	DefaultNRuns      = 3
 	DefaultQueryCount = 1 << 18 // 262144
 	DefaultXMax       = 25.0    // hard cap on FPR-vs-BPK plot X-axis
-	Mask60            = (uint64(1) << 60) - 1
+	Mask60            = keygen.Mask60
 )
+
+// ---- Helpers for bench_test package ----
+
+func sosdPath(name string) string {
+	return keygen.SOSDPath(name)
+}
+
+func loadSOSDUint64(path string, maxKeys int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(path, maxKeys)
+}
+
+func loadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
+	return keygen.LoadSOSDUint32(path, maxKeys)
+}
+
+func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
+	return querygen.GenerateSmartQueries(keys, count, rangeLen, rng)
+}
+
+func generateSmartQueriesWeighted(keys []uint64, count int, rangeLen uint64, w querygen.SmartMixWeights, rng *rand.Rand) [][2]uint64 {
+	return querygen.GenerateSmartQueriesWeighted(keys, count, rangeLen, w, rng)
+}
+
+func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
+	return querygen.GenerateRangeQueries(keys, count, rangeLen, rng)
+}
+
+type smartMixWeights = querygen.SmartMixWeights
+
+var defaultSmartMix = querygen.DefaultSmartMix
+
+const (
+	queryWeightNearKey = querygen.QueryWeightNearKey
+	queryWeightInGap   = querygen.QueryWeightInGap
+	queryWeightUniform = querygen.QueryWeightUniform
+)
+
+
+
 
 var (
 	DefaultSeeds = []int64{12345, 54321, 99999}

@@ -2,55 +2,13 @@ package bench_test
 
 import (
 	"Thesis/testutils"
-	"encoding/binary"
 	"fmt"
 	"os"
-	"sort"
 	"testing"
 )
 
-// loadSOSDUint32 reads a SOSD binary file with uint32 keys:
-// [uint64 count][count × uint32 keys], returning them as []uint64.
-// If maxKeys <= 0, all keys are returned.
-func loadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var count uint64
-	if err := binary.Read(f, binary.LittleEndian, &count); err != nil {
-		return nil, fmt.Errorf("read count: %w", err)
-	}
-
-	readN := int(count)
-	if maxKeys > 0 && maxKeys < readN {
-		readN = maxKeys
-	}
-
-	raw := make([]uint32, readN)
-	if err := binary.Read(f, binary.LittleEndian, raw); err != nil {
-		return nil, fmt.Errorf("read keys: %w", err)
-	}
-
-	keys := make([]uint64, readN)
-	for i, v := range raw {
-		keys[i] = uint64(v)
-	}
-
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-	j := 0
-	for i := 1; i < len(keys); i++ {
-		if keys[i] != keys[j] {
-			j++
-			keys[j] = keys[i]
-		}
-	}
-	return keys[:j+1], nil
-}
-
 func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
+
 	path := sosdPath("fb_200M_uint64")
 	keys, err := loadSOSDUint64(path, 0)
 	if err != nil {

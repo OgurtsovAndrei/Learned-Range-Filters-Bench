@@ -76,8 +76,9 @@ func TestB6IndustryLatency(t *testing.T) {
 	mix := parseB6QueryMix()
 	if mix.name != "" {
 		t.Logf("B6_QUERY_MIX=%s (near=%.2f, gap=%.2f, uniform=%.2f) — cache & plots routed to *_%s",
-			mix.name, mix.weights.nearKey, mix.weights.inGap, mix.weights.uniform, mix.name)
+			mix.name, mix.weights.NearKey, mix.weights.InGap, mix.weights.Uniform, mix.name)
 	}
+
 
 	type distSpec struct {
 		name string
@@ -237,9 +238,10 @@ var b6QueryMixes = map[string]b6QueryMix{
 	"gap_heavy": {
 		name:          "gap_heavy",
 		queryStrategy: "smart_mix_gap_heavy_guaranteed_empty",
-		weights:       smartMixWeights{nearKey: 0.0, inGap: 0.7, uniform: 0.3},
+		weights:       smartMixWeights{NearKey: 0.0, InGap: 0.7, Uniform: 0.3},
 	},
 }
+
 
 // parseB6QueryMix reads B6_QUERY_MIX env var. Default "smart_mix" matches
 // the historical 50/30/20 weights and writes to the original cache/plot
