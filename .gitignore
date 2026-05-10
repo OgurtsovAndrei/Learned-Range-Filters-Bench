@@ -8,6 +8,10 @@
 # Go
 go.sum
 
+# Compiled test binaries (go test -c, go build)
+*.test
+*_test
+
 # CGo build artifacts
 thirdparty/grafite/build/
 thirdparty/surf/build/
