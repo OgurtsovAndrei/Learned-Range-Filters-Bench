@@ -1,6 +1,7 @@
 package bench_test
 
 import (
+	"Thesis-bench-industry/bench/internal/benchutil"
 	"Thesis-bench-industry/thirdparty/snarf"
 	"Thesis-bench-industry/thirdparty/surf"
 	"Thesis/bits"
@@ -64,80 +65,80 @@ func TestBuildTimePerKey(t *testing.T) {
 	bpk := math.Log2(float64(rangeLen) / eps)
 
 	type filterDef struct {
-		name   string
-		color  string
-		marker string
-		dashed bool
-		build  func(bs []bits.BitString, u64 []uint64, masked []uint64) error
+		name  string
+		style benchutil.SeriesStyle
+		build func(bs []bits.BitString, u64 []uint64, masked []uint64) error
 	}
 
 	filters := []filterDef{
-		{"Adaptive(t=0)", "#2a7fff", "square", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"Adaptive(t=0)", benchutil.DefaultSeriesStyles["Adaptive(t=0)"], func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
 			_, err := are_adaptive.NewAdaptiveARE(u64, keyBits, are_adaptive.Config{K: kFromEps(len(u64), rangeLen, eps), Threshold: 0})
 			return err
 		}},
-		{"SODA", "#22a06b", "diamond", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"SODA", benchutil.DefaultSeriesStyles["SODA"], func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
 			_, err := are_soda_hash.NewSodaARE(u64, rangeLen, eps)
 			return err
 		}},
-		{"Truncation", "#e6a800", "triangle", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"Truncation", benchutil.DefaultSeriesStyles["Truncation"], func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
 			_, err := are_trunc.NewTruncARE(u64, keyBits, are_trunc.Config{K: kFromEpsTrunc(len(u64), eps)})
 			return err
 		}},
-		{"Hybrid", "#9b59b6", "star", false, func(bs []bits.BitString, _ []uint64, _ []uint64) error {
+		{"Hybrid", benchutil.DefaultSeriesStyles["Hybrid"], func(bs []bits.BitString, _ []uint64, _ []uint64) error {
 			_, err := are_hybrid.NewHybridARE(bs, rangeLen, eps)
 			return err
 		}},
-		{"Scan-ARE", "#06b6d4", "star", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"Scan-ARE", benchutil.DefaultSeriesStyles["Scan-ARE"], func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
 			_, err := are_hybrid_scan.NewHybridScanARE(u64, keyBits, are_hybrid_scan.Config{K: kFromEps(len(u64), rangeLen, eps)})
 			return err
 		}},
-		{"Greedy+Merge", "#22c55e", "diamond", false, func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"Greedy+Merge", benchutil.DefaultSeriesStyles["Greedy+Merge"], func(bs []bits.BitString, u64 []uint64, _ []uint64) error {
 			keyBits := uint32(max(1, mathbits.Len64(u64[len(u64)-1])))
 			_, err := are_greedy_scan.NewGreedyScanARE(u64, keyBits, are_greedy_scan.Config{K: kFromEps(len(u64), rangeLen, eps)})
 			return err
 		}},
-		{"CDF-ARE", "#e05d10", "circle", false, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"CDF-ARE", benchutil.DefaultSeriesStyles["CDF-ARE"], func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
 			_, err := are_pgm.NewPGMApproximateRangeEmptiness(u64, rangeLen, eps, 64)
 			return err
 		}},
-		{"Bloom V3", "#888888", "circle", true, func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
+		{"Bloom V3", benchutil.DefaultSeriesStyles["BloomARE"], func(_ []bits.BitString, u64 []uint64, _ []uint64) error {
 			_, err := are_bloom.NewBloomARE(u64, rangeLen, eps)
 			return err
 		}},
-		{"Grafite", "#1a6b3c", "diamond", false, func(_ []bits.BitString, _ []uint64, masked []uint64) error {
+		{"Grafite", benchutil.DefaultSeriesStyles["Grafite"], func(_ []bits.BitString, _ []uint64, masked []uint64) error {
 			if tryGrafite(masked, bpk) == nil {
 				return fmt.Errorf("grafite: unsupported bpk=%.2f for this key set", bpk)
 			}
 			return nil
 		}},
-		{"SNARF", "#1a3a6b", "star", false, func(_ []bits.BitString, _ []uint64, masked []uint64) error {
+		{"SNARF", benchutil.DefaultSeriesStyles["SNARF"], func(_ []bits.BitString, _ []uint64, masked []uint64) error {
 			snarf.New(masked, bpk)
 			return nil
 		}},
-		{"SuRF", "#111111", "square", false, func(_ []bits.BitString, _ []uint64, masked []uint64) error {
+		{"SuRF", benchutil.DefaultSeriesStyles["SuRFNone"], func(_ []bits.BitString, _ []uint64, masked []uint64) error {
 			surf.New(masked, surf.SuffixNone, 0, 0)
 			return nil
 		}},
-		{"SuRFHash(8)", "#111111", "triangle", false, func(_ []bits.BitString, _ []uint64, masked []uint64) error {
+		{"SuRFHash(8)", benchutil.DefaultSeriesStyles["SuRFHash"], func(_ []bits.BitString, _ []uint64, masked []uint64) error {
 			surf.New(masked, surf.SuffixHash, 8, 0)
 			return nil
 		}},
-		{"SuRFReal(8)", "#111111", "diamond", false, func(_ []bits.BitString, _ []uint64, masked []uint64) error {
+		{"SuRFReal(8)", benchutil.DefaultSeriesStyles["SuRFReal"], func(_ []bits.BitString, _ []uint64, masked []uint64) error {
 			surf.New(masked, surf.SuffixReal, 0, 8)
 			return nil
 		}},
 	}
 
+
 	var allSeries []testutils.SeriesData
 	for _, f := range filters {
 		allSeries = append(allSeries, testutils.SeriesData{
-			Name: f.name, Color: f.color, Marker: f.marker, Dashed: f.dashed,
+			Name: f.name, Color: f.style.Color, Marker: f.style.Marker, Dashed: f.style.Dashed,
 		})
 	}
+
 
 	fmt.Printf("\n=== Build Time per Key (ε=%.3f, L=%d) ===\n", eps, rangeLen)
 	fmt.Printf("%-16s", "Filter")
@@ -242,101 +243,101 @@ func TestQueryTimeVsRangeLen(t *testing.T) {
 	maskedKeys := keysU64
 
 	type filterDef struct {
-		name   string
-		color  string
-		marker string
-		dashed bool
-		build  func(L uint64) (check func(a, b uint64) bool, batchQuery func([][2]uint64) []bool, err error)
+		name  string
+		style benchutil.SeriesStyle
+		build func(L uint64) (check func(a, b uint64) bool, batchQuery func([][2]uint64) []bool, err error)
 	}
 
 	filters := []filterDef{
-		{"Adaptive(t=0)", "#2a7fff", "square", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Adaptive(t=0)", benchutil.DefaultSeriesStyles["Adaptive(t=0)"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_adaptive.NewAdaptiveARE(keysU64, keyBits, are_adaptive.Config{K: kFromEps(len(keysU64), L, eps), Threshold: 0})
 			if err != nil {
 				return nil, nil, err
 			}
 			return f.IsEmpty, nil, nil
 		}},
-		{"SODA", "#22a06b", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"SODA", benchutil.DefaultSeriesStyles["SODA"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_soda_hash.NewSodaARE(keysU64, L, eps)
 			if err != nil {
 				return nil, nil, err
 			}
 			return f.IsEmpty, nil, nil
 		}},
-		{"Truncation", "#e6a800", "triangle", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Truncation", benchutil.DefaultSeriesStyles["Truncation"], func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_trunc.NewTruncARE(keysU64, keyBits, are_trunc.Config{K: kFromEpsTrunc(len(keysU64), eps)})
 			if err != nil {
 				return nil, nil, err
 			}
 			return f.IsEmpty, nil, nil
 		}},
-		{"Hybrid", "#9b59b6", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Hybrid", benchutil.DefaultSeriesStyles["Hybrid"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_hybrid.NewHybridARE(keysBS, L, eps)
 			if err != nil {
 				return nil, nil, err
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(testutils.TrieBS(a), testutils.TrieBS(b)) }, nil, nil
 		}},
-		{"Scan-ARE", "#06b6d4", "star", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Scan-ARE", benchutil.DefaultSeriesStyles["Scan-ARE"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_hybrid_scan.NewHybridScanARE(keysU64, keyBits, are_hybrid_scan.Config{K: kFromEps(len(keysU64), L, eps)})
 			if err != nil {
 				return nil, nil, err
 			}
 			return f.IsEmpty, nil, nil
 		}},
-		{"Greedy+Merge", "#22c55e", "diamond", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Greedy+Merge", benchutil.DefaultSeriesStyles["Greedy+Merge"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_greedy_scan.NewGreedyScanARE(keysU64, keyBits, are_greedy_scan.Config{K: kFromEps(len(keysU64), L, eps)})
 			if err != nil {
 				return nil, nil, err
 			}
 			return f.IsEmpty, nil, nil
 		}},
-		{"CDF-ARE", "#e05d10", "circle", false, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"CDF-ARE", benchutil.DefaultSeriesStyles["CDF-ARE"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_pgm.NewPGMApproximateRangeEmptiness(keysU64, L, eps, 64)
 			if err != nil {
 				return nil, nil, err
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, nil
 		}},
-		{"Bloom V3", "#888888", "circle", true, func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Bloom V3", benchutil.DefaultSeriesStyles["BloomARE"], func(L uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f, err := are_bloom.NewBloomARE(keysU64, L, eps)
 			if err != nil {
 				return nil, nil, err
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, nil, nil
 		}},
-		{"Grafite", "#1a6b3c", "diamond", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"Grafite", benchutil.DefaultSeriesStyles["Grafite"], func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := tryGrafite(maskedKeys, bpk)
 			if f == nil {
 				return nil, nil, fmt.Errorf("grafite: unsupported bpk=%.2f for this key set", bpk)
 			}
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SNARF", "#1a3a6b", "star", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"SNARF", benchutil.DefaultSeriesStyles["SNARF"], func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := snarf.New(maskedKeys, bpk)
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SuRF", "#111111", "square", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"SuRF", benchutil.DefaultSeriesStyles["SuRFNone"], func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := surf.New(maskedKeys, surf.SuffixNone, 0, 0)
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SuRFHash(8)", "#111111", "triangle", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"SuRFHash(8)", benchutil.DefaultSeriesStyles["SuRFHash"], func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := surf.New(maskedKeys, surf.SuffixHash, 8, 0)
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
-		{"SuRFReal(8)", "#111111", "diamond", false, func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
+		{"SuRFReal(8)", benchutil.DefaultSeriesStyles["SuRFReal"], func(_ uint64) (func(a, b uint64) bool, func([][2]uint64) []bool, error) {
 			f := surf.New(maskedKeys, surf.SuffixReal, 0, 8)
 			return func(a, b uint64) bool { return f.IsEmpty(a, b) }, f.QueryBatch, nil
 		}},
 	}
 
+
 	var allSeries []testutils.SeriesData
 	for _, f := range filters {
 		allSeries = append(allSeries, testutils.SeriesData{
-			Name: f.name, Color: f.color, Marker: f.marker, Dashed: f.dashed,
+			Name: f.name, Color: f.style.Color, Marker: f.style.Marker, Dashed: f.style.Dashed,
 		})
 	}
+
 
 	fmt.Printf("\n=== Query Time vs Range Length (n=%d, ε=%.3f) ===\n", n, eps)
 	fmt.Printf("%-16s", "Filter")

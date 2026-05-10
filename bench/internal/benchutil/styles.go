@@ -8,7 +8,7 @@ type SeriesStyle struct {
 	Dashed bool
 }
 
-// DefaultSeriesStyles is the unified 8-series set used on FPR-vs-BPK plots.
+// DefaultSeriesStyles is the unified style set used across all plots.
 var DefaultSeriesStyles = map[string]SeriesStyle{
 	"Theoretical":   {Name: "Theoretical", Color: "#374151", Dashed: true, Marker: "circle"},
 	"Grafite":       {Name: "Grafite", Color: "#0f766e", Marker: "diamond"},
@@ -23,4 +23,14 @@ var DefaultSeriesStyles = map[string]SeriesStyle{
 	"Greedy+Merge-Trunc": {Name: "Greedy+Merge-Trunc", Color: "#ea580c", Marker: "circle"},
 	"Greedy+Merge-SODA":  {Name: "Greedy+Merge-SODA", Color: "#9a3412", Marker: "triangle"},
 	"BloomARE":           {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
+	
+	// Legacy / internal filters.
+	"Adaptive(t=0)": {Name: "Adaptive(t=0)", Color: "#2a7fff", Marker: "square"},
+	"Hybrid":        {Name: "Hybrid", Color: "#9b59b6", Marker: "star"},
+	"Truncation":    {Name: "Truncation", Color: "#e6a800", Marker: "triangle"},
+	"CDF-ARE":       {Name: "CDF-ARE", Color: "#6366f1", Marker: "circle"},
+	"SuRFNone":      {Name: "SuRFNone", Color: "#fca5a5", Marker: "diamond"},
+	"SuRFHash":      {Name: "SuRFHash", Color: "#f87171", Marker: "diamond"},
+	"SuRFReal":      {Name: "SuRFReal", Color: "#dc2626", Marker: "diamond"},
+	"Rosetta":       {Name: "Rosetta", Color: "#15803d", Marker: "diamond"},
 }
