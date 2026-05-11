@@ -294,16 +294,16 @@ func TestBuildThroughput(t *testing.T) {
 			return loadSOSDUint64(syntheticDataPath("spread_16M_uint64"), 0)
 		}},
 		{"sosd_books", func() ([]uint64, error) {
-			return loadSOSDUint32(sosdPath("books_200M_uint32"), loadOvershoot)
+			return loadBooksKeys( loadOvershoot)
 		}},
 		{"sosd_fb", func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("fb_200M_uint64"), loadOvershoot)
+			return loadFacebookKeys( loadOvershoot)
 		}},
 		{"sosd_wiki", func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), loadOvershoot)
+			return loadWikiKeys( loadOvershoot)
 		}},
 		{"sosd_osm", func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), loadOvershoot)
+			return loadOSMKeys( loadOvershoot)
 		}},
 	}
 

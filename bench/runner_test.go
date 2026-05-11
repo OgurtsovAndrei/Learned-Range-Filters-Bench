@@ -81,22 +81,22 @@ func TestB6IndustryLatency(t *testing.T) {
 	distributions := []distSpec{
 		{"sosd_fb", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint64(sosdPath("fb_200M_uint64"), 2*n)
+				return loadFacebookKeys( 2*n)
 			}
 		}},
 		{"sosd_wiki", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), 2*n)
+				return loadWikiKeys( 2*n)
 			}
 		}},
 		{"sosd_osm", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 2*n)
+				return loadOSMKeys( 2*n)
 			}
 		}},
 		{"sosd_books", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadSOSDUint32(sosdPath("books_200M_uint32"), 2*n)
+				return loadBooksKeys( 2*n)
 			}
 		}},
 		{"uniform", func(n int) func() ([]uint64, error) {

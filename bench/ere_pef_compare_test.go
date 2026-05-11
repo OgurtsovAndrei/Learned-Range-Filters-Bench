@@ -111,25 +111,25 @@ var pefDatasetLoaders = []ereDatasetLoader{
 	{
 		name: "sosd_fb",
 		load: loadAndMask60(func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("fb_200M_uint64"), pefCompareN)
+			return loadFacebookKeys( pefCompareN)
 		}),
 	},
 	{
 		name: "sosd_wiki",
 		load: loadAndMask60(func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), pefCompareN)
+			return loadWikiKeys( pefCompareN)
 		}),
 	},
 	{
 		name: "sosd_osm",
 		load: loadAndMask60(func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), pefCompareN)
+			return loadOSMKeys( pefCompareN)
 		}),
 	},
 	{
 		name: "sosd_books",
 		load: loadAndMask60(func() ([]uint64, error) {
-			return loadSOSDUint32(sosdPath("books_200M_uint32"), pefCompareN)
+			return loadBooksKeys( pefCompareN)
 		}),
 	},
 }

@@ -21,6 +21,22 @@ func loadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
 	return keygen.LoadSOSDUint32(path, maxKeys)
 }
 
+func loadFacebookKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("fb_200M_uint64"), n)
+}
+
+func loadWikiKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("wiki_ts_200M_uint64"), n)
+}
+
+func loadOSMKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("osm_cellids_800M_uint64"), n)
+}
+
+func loadBooksKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint32(keygen.SOSDPath("books_200M_uint32"), n)
+}
+
 func histogram(keys []uint64, nBins int) []testutils.Point {
 	return benchutil.Histogram(keys, nBins)
 }
@@ -33,13 +49,12 @@ func normalizedCDF(keys []uint64, sampleEvery int) []testutils.Point {
 
 func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 
-	path := sosdPath("fb_200M_uint64")
-	keys, err := loadSOSDUint64(path, 0)
+	keys, err := loadFacebookKeys(0)
 	if err != nil {
 		t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 	}
 
-	os.MkdirAll("../bench_results/plots/distributions", 0755)
+	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	// Histogram
 	histSeries := []testutils.SeriesData{{
@@ -48,12 +63,14 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
-	histPath := "../bench_results/plots/distributions/hist_sosd_fb.svg"
+	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_fb.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  "Key Density — sosd_fb (n=200M, 1000 bins)",
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		KeepAllPoints: true,
+		YCeil:  1.0,
 		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
@@ -69,7 +86,7 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
-	cdfPath := "../bench_results/plots/distributions/cdf_sosd_fb.svg"
+	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_fb.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("CDF — sosd_fb (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
@@ -84,13 +101,12 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 }
 
 func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
-	path := sosdPath("wiki_ts_200M_uint64")
-	keys, err := loadSOSDUint64(path, 0)
+	keys, err := loadWikiKeys(0)
 	if err != nil {
 		t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 	}
 
-	os.MkdirAll("../bench_results/plots/distributions", 0755)
+	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	histSeries := []testutils.SeriesData{{
 		Name:   "sosd_wiki",
@@ -98,12 +114,13 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
-	histPath := "../bench_results/plots/distributions/hist_sosd_wiki.svg"
+	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_wiki.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("Key Density — sosd_wiki (n=%d, 1000 bins)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		KeepAllPoints: true,
 		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
@@ -118,7 +135,7 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
-	cdfPath := "../bench_results/plots/distributions/cdf_sosd_wiki.svg"
+	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_wiki.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("CDF — sosd_wiki (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
@@ -133,13 +150,12 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 }
 
 func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
-	path := sosdPath("osm_cellids_800M_uint64")
-	keys, err := loadSOSDUint64(path, 0)
+	keys, err := loadOSMKeys(0)
 	if err != nil {
 		t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 	}
 
-	os.MkdirAll("../bench_results/plots/distributions", 0755)
+	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	histSeries := []testutils.SeriesData{{
 		Name:   "sosd_osm",
@@ -147,12 +163,13 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
-	histPath := "../bench_results/plots/distributions/hist_sosd_osm.svg"
+	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_osm.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("Key Density — sosd_osm (n=%d, 1000 bins)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		KeepAllPoints: true,
 		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
@@ -167,7 +184,7 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
-	cdfPath := "../bench_results/plots/distributions/cdf_sosd_osm.svg"
+	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_osm.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("CDF — sosd_osm (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
@@ -182,13 +199,12 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 }
 
 func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
-	path := sosdPath("books_200M_uint32")
-	keys, err := loadSOSDUint32(path, 0)
+	keys, err := loadBooksKeys(0)
 	if err != nil {
 		t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 	}
 
-	os.MkdirAll("../bench_results/plots/distributions", 0755)
+	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	histSeries := []testutils.SeriesData{{
 		Name:   "sosd_books",
@@ -196,12 +212,13 @@ func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
-	histPath := "../bench_results/plots/distributions/hist_sosd_books.svg"
+	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_books.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("Key Density — sosd_books (n=%d, 1000 bins)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Relative Density",
 		YScale: testutils.Log10,
+		KeepAllPoints: true,
 		XMax:   25,
 	}, histSeries, histPath)
 	if err != nil {
@@ -216,7 +233,7 @@ func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
-	cdfPath := "../bench_results/plots/distributions/cdf_sosd_books.svg"
+	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_books.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 		Title:  fmt.Sprintf("CDF — sosd_books (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 )
 
 const (
@@ -22,6 +23,22 @@ const (
 type ClusterMeta struct {
 	Center uint64  `json:"center"`
 	Stddev float64 `json:"stddev"`
+}
+
+// datasetSentinelTrim returns the number of tail sentinel keys to drop after
+// sort+dedup for datasets known to contain synthetic boundary values at the end
+// of the key space (e.g. evenly-spaced uint64-max sentinels in fb_200M, or
+// uint32-boundary sentinels in books_200M). These sentinels stretch the key
+// range to [0, 2^64) and make density histograms unreadable.
+func datasetSentinelTrim(path string) int {
+	switch {
+	case strings.Contains(path, "fb_200M_uint64"):
+		return 21 // 9 evenly-spaced uint64-boundary sentinels + 12 sparse outliers; dense cluster ends at 77308821508
+	case strings.Contains(path, "books_200M_uint32"):
+		return 9 // 9 evenly-spaced uint32-boundary sentinels; dense cluster ends at 2^30 = 1073741824
+	default:
+		return 0
+	}
 }
 
 func SOSDPath(name string) string {
@@ -87,6 +104,9 @@ func LoadSOSDUint64(path string, maxKeys int) ([]uint64, error) {
 		}
 	}
 	keys = keys[:j+1]
+	if trim := datasetSentinelTrim(path); trim > 0 && len(keys) > trim {
+		keys = keys[:len(keys)-trim]
+	}
 	return keys, nil
 }
 
@@ -129,6 +149,9 @@ func LoadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
 		}
 	}
 	keys = keys[:j+1]
+	if trim := datasetSentinelTrim(path); trim > 0 && len(keys) > trim {
+		keys = keys[:len(keys)-trim]
+	}
 	return keys, nil
 }
 

@@ -538,8 +538,7 @@ func TestHybridCompare_FPR_SOSD_Facebook(t *testing.T) {
 		n          = 1 << 18
 		queryCount = 1 << 18
 	)
-	path := sosdPath("fb_200M_uint64")
-	keys, err := loadSOSDUint64(path, n)
+	keys, err := loadFacebookKeys(n)
 	if err != nil {
 		t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 	}
@@ -554,8 +553,7 @@ func TestHybridCompare_FPR_SOSD_Wiki(t *testing.T) {
 		n          = 1 << 18
 		queryCount = 1 << 18
 	)
-	path := sosdPath("wiki_ts_200M_uint64")
-	keys, err := loadSOSDUint64(path, n)
+	keys, err := loadWikiKeys(n)
 	if err != nil {
 		t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 	}
@@ -570,8 +568,7 @@ func TestHybridCompare_FPR_SOSD_OSM(t *testing.T) {
 		n          = 1 << 18
 		queryCount = 1 << 18
 	)
-	path := sosdPath("osm_cellids_800M_uint64")
-	keys, err := loadSOSDUint64(path, n)
+	keys, err := loadOSMKeys(n)
 	if err != nil {
 		t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 	}
@@ -586,8 +583,7 @@ func TestHybridCompare_FPR_SOSD_Books(t *testing.T) {
 		n          = 1 << 18
 		queryCount = 1 << 18
 	)
-	path := sosdPath("books_200M_uint32")
-	keys, err := loadSOSDUint32(path, n)
+	keys, err := loadBooksKeys(n)
 	if err != nil {
 		t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 	}
@@ -701,8 +697,7 @@ func TestHybridCompare_FPR_1M_SOSD_Facebook(t *testing.T) {
 		n          = 1 << 20
 		queryCount = 1 << 18
 	)
-	path := sosdPath("fb_200M_uint64")
-	keys, err := loadSOSDUint64(path, n)
+	keys, err := loadFacebookKeys(n)
 	if err != nil {
 		t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 	}
@@ -717,8 +712,7 @@ func TestHybridCompare_FPR_1M_SOSD_Wiki(t *testing.T) {
 		n          = 1 << 20
 		queryCount = 1 << 18
 	)
-	path := sosdPath("wiki_ts_200M_uint64")
-	keys, err := loadSOSDUint64(path, n)
+	keys, err := loadWikiKeys(n)
 	if err != nil {
 		t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 	}
@@ -733,8 +727,7 @@ func TestHybridCompare_FPR_1M_SOSD_OSM(t *testing.T) {
 		n          = 1 << 20
 		queryCount = 1 << 18
 	)
-	path := sosdPath("osm_cellids_800M_uint64")
-	keys, err := loadSOSDUint64(path, n)
+	keys, err := loadOSMKeys(n)
 	if err != nil {
 		t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 	}
@@ -749,8 +742,7 @@ func TestHybridCompare_FPR_1M_SOSD_Books(t *testing.T) {
 		n          = 1 << 20
 		queryCount = 1 << 18
 	)
-	path := sosdPath("books_200M_uint32")
-	keys, err := loadSOSDUint32(path, n)
+	keys, err := loadBooksKeys(n)
 	if err != nil {
 		t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 	}
@@ -811,9 +803,8 @@ func sosdBuildKeys(path string, n int, uint32Keys bool) ([]uint64, error) {
 }
 
 func TestHybridCompare_BuildTime_SOSD_Facebook(t *testing.T) {
-	path := sosdPath("fb_200M_uint64")
 	runHybridCompareBuildTime(t, "sosd_fb", hybridBuildNValues, func(n int) []uint64 {
-		keys, err := loadSOSDUint64(path, n)
+		keys, err := loadFacebookKeys(n)
 		if err != nil {
 			t.Skipf("SOSD fb_200M_uint64 not available: %v", err)
 			return nil
@@ -823,9 +814,8 @@ func TestHybridCompare_BuildTime_SOSD_Facebook(t *testing.T) {
 }
 
 func TestHybridCompare_BuildTime_SOSD_Wiki(t *testing.T) {
-	path := sosdPath("wiki_ts_200M_uint64")
 	runHybridCompareBuildTime(t, "sosd_wiki", hybridBuildNValues, func(n int) []uint64 {
-		keys, err := loadSOSDUint64(path, n)
+		keys, err := loadWikiKeys(n)
 		if err != nil {
 			t.Skipf("SOSD wiki_ts_200M_uint64 not available: %v", err)
 			return nil
@@ -835,9 +825,8 @@ func TestHybridCompare_BuildTime_SOSD_Wiki(t *testing.T) {
 }
 
 func TestHybridCompare_BuildTime_SOSD_OSM(t *testing.T) {
-	path := sosdPath("osm_cellids_800M_uint64")
 	runHybridCompareBuildTime(t, "sosd_osm", hybridBuildNValues, func(n int) []uint64 {
-		keys, err := loadSOSDUint64(path, n)
+		keys, err := loadOSMKeys(n)
 		if err != nil {
 			t.Skipf("SOSD osm_cellids_800M_uint64 not available: %v", err)
 			return nil
@@ -847,9 +836,8 @@ func TestHybridCompare_BuildTime_SOSD_OSM(t *testing.T) {
 }
 
 func TestHybridCompare_BuildTime_SOSD_Books(t *testing.T) {
-	path := sosdPath("books_200M_uint32")
 	runHybridCompareBuildTime(t, "sosd_books", hybridBuildNValues, func(n int) []uint64 {
-		keys, err := loadSOSDUint32(path, n)
+		keys, err := loadBooksKeys(n)
 		if err != nil {
 			t.Skipf("SOSD books_200M_uint32 not available: %v", err)
 			return nil

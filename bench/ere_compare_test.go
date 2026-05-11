@@ -99,25 +99,25 @@ var ereDatasetLoaders = []ereDatasetLoader{
 	{
 		name: "sosd_fb",
 		load: func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("fb_200M_uint64"), ereCompareN)
+			return loadFacebookKeys(ereCompareN)
 		},
 	},
 	{
 		name: "sosd_wiki",
 		load: func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), ereCompareN)
+			return loadWikiKeys(ereCompareN)
 		},
 	},
 	{
 		name: "sosd_osm",
 		load: func() ([]uint64, error) {
-			return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), ereCompareN)
+			return loadOSMKeys(ereCompareN)
 		},
 	},
 	{
 		name: "sosd_books",
 		load: func() ([]uint64, error) {
-			return loadSOSDUint32(sosdPath("books_200M_uint32"), ereCompareN)
+			return loadBooksKeys(ereCompareN)
 		},
 	},
 }

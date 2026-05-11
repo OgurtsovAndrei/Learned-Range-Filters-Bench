@@ -409,7 +409,7 @@ func TestFallbackPolicy_Zipfian(t *testing.T) {
 
 func TestFallbackPolicy_SOSD_Facebook(t *testing.T) {
 	const queryCount = 1 << 18
-	keys, err := loadSOSDUint64(sosdPath("fb_200M_uint64"), 1<<18)
+	keys, err := loadFacebookKeys( 1<<18)
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
@@ -420,7 +420,7 @@ func TestFallbackPolicy_SOSD_Facebook(t *testing.T) {
 
 func TestFallbackPolicy_SOSD_Wiki(t *testing.T) {
 	const queryCount = 1 << 18
-	keys, err := loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), 1<<18)
+	keys, err := loadWikiKeys( 1<<18)
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
@@ -431,7 +431,7 @@ func TestFallbackPolicy_SOSD_Wiki(t *testing.T) {
 
 func TestFallbackPolicy_SOSD_OSM(t *testing.T) {
 	const queryCount = 1 << 18
-	keys, err := loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 1<<18)
+	keys, err := loadOSMKeys( 1<<18)
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
@@ -442,7 +442,7 @@ func TestFallbackPolicy_SOSD_OSM(t *testing.T) {
 
 func TestFallbackPolicy_SOSD_OSM_UnifQueries(t *testing.T) {
 	const queryCount = 1 << 18
-	keys, err := loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), 1<<18)
+	keys, err := loadOSMKeys( 1<<18)
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}
@@ -453,7 +453,7 @@ func TestFallbackPolicy_SOSD_OSM_UnifQueries(t *testing.T) {
 
 func TestFallbackPolicy_SOSD_Books(t *testing.T) {
 	const queryCount = 1 << 18
-	keys, err := loadSOSDUint32(sosdPath("books_200M_uint32"), 1<<18)
+	keys, err := loadBooksKeys( 1<<18)
 	if err != nil {
 		t.Skipf("SOSD data not available: %v (run bench/sosd_data/download.sh)", err)
 	}

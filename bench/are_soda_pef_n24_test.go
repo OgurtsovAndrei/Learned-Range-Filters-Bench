@@ -91,25 +91,25 @@ func loadSodaPEFDatasets(t *testing.T) []sodaPEFDataset {
 		{
 			name: "sosd_fb",
 			load: func() ([]uint64, error) {
-				return loadSOSDUint64(sosdPath("fb_200M_uint64"), sodaPEFN)
+				return loadFacebookKeys( sodaPEFN)
 			},
 		},
 		{
 			name: "sosd_wiki",
 			load: func() ([]uint64, error) {
-				return loadSOSDUint64(sosdPath("wiki_ts_200M_uint64"), sodaPEFN)
+				return loadWikiKeys( sodaPEFN)
 			},
 		},
 		{
 			name: "sosd_osm",
 			load: func() ([]uint64, error) {
-				return loadSOSDUint64(sosdPath("osm_cellids_800M_uint64"), sodaPEFN)
+				return loadOSMKeys( sodaPEFN)
 			},
 		},
 		{
 			name: "sosd_books",
 			load: func() ([]uint64, error) {
-				return loadSOSDUint32(sosdPath("books_200M_uint32"), sodaPEFN)
+				return loadBooksKeys( sodaPEFN)
 			},
 		},
 	}

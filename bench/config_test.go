@@ -33,6 +33,22 @@ func loadSOSDUint32(path string, maxKeys int) ([]uint64, error) {
 	return keygen.LoadSOSDUint32(path, maxKeys)
 }
 
+func loadFacebookKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("fb_200M_uint64"), n)
+}
+
+func loadWikiKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("wiki_ts_200M_uint64"), n)
+}
+
+func loadOSMKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("osm_cellids_800M_uint64"), n)
+}
+
+func loadBooksKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint32(keygen.SOSDPath("books_200M_uint32"), n)
+}
+
 func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
 	return querygen.GenerateSmartQueries(keys, count, rangeLen, rng)
 }
