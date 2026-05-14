@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"Thesis/emptiness/approx/are_bloom"
-	"Thesis/emptiness/approx/are_greedy_scan"
-	"Thesis/emptiness/approx/are_hybrid_scan"
+	"Thesis/emptiness/approx/hybrid/are_greedy"
+	"Thesis/emptiness/approx/hybrid/are_dbscan"
 	"Thesis/emptiness/approx/are_soda_hash"
 	"Thesis/emptiness/approx/are_trunc"
 )

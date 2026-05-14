@@ -1,7 +1,7 @@
 package bench_test
 
 import (
-	"Thesis/emptiness/approx/are_hybrid_scan"
+	"Thesis/emptiness/approx/hybrid/are_dbscan"
 	"Thesis/testutils"
 	"encoding/json"
 	"fmt"

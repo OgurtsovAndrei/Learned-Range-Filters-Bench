@@ -58,20 +58,20 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 
 	// Histogram
 	histSeries := []testutils.SeriesData{{
-		Name:   "sosd_fb",
+		Name:   "Facebook",
 		Color:  "#e74c3c",
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
 	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_fb.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  "Key Density — sosd_fb (n=200M, 1000 bins)",
-		XLabel: "Normalized Key Position",
-		YLabel: "Relative Density",
-		YScale: testutils.Log10,
+		Title:         "Facebook",
+		XLabel:        "Normalized Key Position",
+		YLabel:        "Relative Density",
+		YScale:        testutils.Log10,
 		KeepAllPoints: true,
-		YCeil:  1.0,
-		XMax:   25,
+		YCeil:         1.0,
+		XMax:          25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -81,14 +81,14 @@ func TestDistribution_SOSD_FB_Histogram(t *testing.T) {
 
 	// CDF
 	cdfSeries := []testutils.SeriesData{{
-		Name:   "sosd_fb",
+		Name:   "Facebook",
 		Color:  "#e74c3c",
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
 	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_fb.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("CDF — sosd_fb (n=%d, normalized)", len(keys)),
+		Title:  fmt.Sprintf("Facebook CDF (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
 		XMax:   25,
@@ -109,19 +109,19 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	histSeries := []testutils.SeriesData{{
-		Name:   "sosd_wiki",
+		Name:   "Wiki",
 		Color:  "#3498db",
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
 	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_wiki.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("Key Density — sosd_wiki (n=%d, 1000 bins)", len(keys)),
-		XLabel: "Normalized Key Position",
-		YLabel: "Relative Density",
-		YScale: testutils.Log10,
+		Title:         "Wiki",
+		XLabel:        "Normalized Key Position",
+		YLabel:        "Relative Density",
+		YScale:        testutils.Log10,
 		KeepAllPoints: true,
-		XMax:   25,
+		XMax:          25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -130,14 +130,14 @@ func TestDistribution_SOSD_Wiki_Histogram(t *testing.T) {
 	}
 
 	cdfSeries := []testutils.SeriesData{{
-		Name:   "sosd_wiki",
+		Name:   "Wiki",
 		Color:  "#3498db",
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
 	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_wiki.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("CDF — sosd_wiki (n=%d, normalized)", len(keys)),
+		Title:  fmt.Sprintf("Wiki CDF (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
 		XMax:   25,
@@ -158,19 +158,19 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	histSeries := []testutils.SeriesData{{
-		Name:   "sosd_osm",
+		Name:   "OSM",
 		Color:  "#27ae60",
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
 	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_osm.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("Key Density — sosd_osm (n=%d, 1000 bins)", len(keys)),
-		XLabel: "Normalized Key Position",
-		YLabel: "Relative Density",
-		YScale: testutils.Log10,
+		Title:         "OSM",
+		XLabel:        "Normalized Key Position",
+		YLabel:        "Relative Density",
+		YScale:        testutils.Log10,
 		KeepAllPoints: true,
-		XMax:   25,
+		XMax:          25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -179,14 +179,14 @@ func TestDistribution_SOSD_OSM_Histogram(t *testing.T) {
 	}
 
 	cdfSeries := []testutils.SeriesData{{
-		Name:   "sosd_osm",
+		Name:   "OSM",
 		Color:  "#27ae60",
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
 	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_osm.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("CDF — sosd_osm (n=%d, normalized)", len(keys)),
+		Title:  fmt.Sprintf("OSM CDF (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
 		XMax:   25,
@@ -207,19 +207,19 @@ func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
 	os.MkdirAll("../../../Thesis/text/plots/distributions", 0755)
 
 	histSeries := []testutils.SeriesData{{
-		Name:   "sosd_books",
+		Name:   "Books",
 		Color:  "#8e44ad",
 		Marker: "none",
 		Points: histogram(keys, 1000),
 	}}
 	histPath := "../../../Thesis/text/plots/distributions/hist_sosd_books.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("Key Density — sosd_books (n=%d, 1000 bins)", len(keys)),
-		XLabel: "Normalized Key Position",
-		YLabel: "Relative Density",
-		YScale: testutils.Log10,
+		Title:         "Books",
+		XLabel:        "Normalized Key Position",
+		YLabel:        "Relative Density",
+		YScale:        testutils.Log10,
 		KeepAllPoints: true,
-		XMax:   25,
+		XMax:          25,
 	}, histSeries, histPath)
 	if err != nil {
 		t.Errorf("histogram SVG failed: %v", err)
@@ -228,14 +228,14 @@ func TestDistribution_SOSD_Books_Histogram(t *testing.T) {
 	}
 
 	cdfSeries := []testutils.SeriesData{{
-		Name:   "sosd_books",
+		Name:   "Books",
 		Color:  "#8e44ad",
 		Marker: "none",
 		Points: normalizedCDF(keys, 256),
 	}}
 	cdfPath := "../../../Thesis/text/plots/distributions/cdf_sosd_books.svg"
 	err = testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-		Title:  fmt.Sprintf("CDF — sosd_books (n=%d, normalized)", len(keys)),
+		Title:  fmt.Sprintf("Books CDF (n=%d, normalized)", len(keys)),
 		XLabel: "Normalized Key Position",
 		YLabel: "Cumulative Fraction",
 		XMax:   25,

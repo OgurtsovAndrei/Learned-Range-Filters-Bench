@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"Thesis-bench-industry/bench/datasets"
-	"Thesis/emptiness/approx/are_greedy_scan"
-	"Thesis/emptiness/approx/are_hybrid_scan"
+	"Thesis/emptiness/approx/hybrid/are_greedy"
+	"Thesis/emptiness/approx/hybrid/are_dbscan"
 	"Thesis/emptiness/approx/are_soda_hash"
 	"Thesis/testutils"
 	"Thesis-bench-industry/thirdparty/grafite"
