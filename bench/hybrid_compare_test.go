@@ -2,10 +2,10 @@ package bench_test
 
 import (
 	"Thesis/bits"
-	"Thesis/emptiness/approx/hybrid/are_dp"
-	"Thesis/emptiness/approx/hybrid/are_greedy"
-	"Thesis/emptiness/approx/hybrid/are_gap"
-	"Thesis/emptiness/approx/hybrid/are_dbscan"
+	are_dp_scan "Thesis/emptiness/approx/hybrid/are_dp"
+	are_greedy_scan "Thesis/emptiness/approx/hybrid/are_greedy"
+	are_hybrid "Thesis/emptiness/approx/hybrid/are_gap"
+	are_hybrid_scan "Thesis/emptiness/approx/hybrid/are_dbscan"
 	"Thesis/testutils"
 	"encoding/json"
 	"fmt"

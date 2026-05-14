@@ -1,7 +1,8 @@
 package bench_test
 
 import (
-	"Thesis/emptiness/approx/hybrid/are_dbscan"
+	are_hybrid_scan "Thesis/emptiness/approx/hybrid/are_dbscan"
+	"Thesis/emptiness/approx/hybrid/hybridutil"
 	"Thesis/testutils"
 	"encoding/json"
 	"fmt"
@@ -20,7 +21,7 @@ type policyEntry struct {
 	name   string
 	color  string
 	marker string
-	policy func(epsilon float64) are_hybrid_scan.FallbackPolicy
+	policy func(epsilon float64) hybridutil.FallbackPolicy
 }
 
 var fallbackPolicies = []policyEntry{
@@ -28,42 +29,42 @@ var fallbackPolicies = []policyEntry{
 		name:   "Auto",
 		color:  "#06b6d4",
 		marker: "circle",
-		policy: func(_ float64) are_hybrid_scan.FallbackPolicy { return are_hybrid_scan.FallbackAuto{} },
+		policy: func(_ float64) hybridutil.FallbackPolicy { return hybridutil.FallbackAuto{} },
 	},
 	{
 		name:   "AlwaysTrunc",
 		color:  "#9b59b6",
 		marker: "triangle",
-		policy: func(_ float64) are_hybrid_scan.FallbackPolicy { return are_hybrid_scan.FallbackAlwaysTrunc{} },
+		policy: func(_ float64) hybridutil.FallbackPolicy { return hybridutil.FallbackAlwaysTrunc{} },
 	},
 	{
 		name:   "AlwaysSODA",
 		color:  "#4dd88a",
 		marker: "diamond",
-		policy: func(_ float64) are_hybrid_scan.FallbackPolicy { return are_hybrid_scan.FallbackAlwaysSODA{} },
+		policy: func(_ float64) hybridutil.FallbackPolicy { return hybridutil.FallbackAlwaysSODA{} },
 	},
 	{
 		name:   "EstFPR",
 		color:  "#ff922b",
 		marker: "star",
-		policy: func(epsilon float64) are_hybrid_scan.FallbackPolicy {
-			return are_hybrid_scan.FallbackEstimateFPR{Epsilon: epsilon}
+		policy: func(epsilon float64) hybridutil.FallbackPolicy {
+			return hybridutil.FallbackEstimateFPR{Epsilon: epsilon}
 		},
 	},
 	{
 		name:   "GapFrac",
 		color:  "#e74c3c",
 		marker: "square",
-		policy: func(epsilon float64) are_hybrid_scan.FallbackPolicy {
-			return are_hybrid_scan.FallbackGapFraction{Epsilon: epsilon}
+		policy: func(epsilon float64) hybridutil.FallbackPolicy {
+			return hybridutil.FallbackGapFraction{Epsilon: epsilon}
 		},
 	},
 	{
 		name:   "Phantom",
 		color:  "#2d3436",
 		marker: "circle",
-		policy: func(_ float64) are_hybrid_scan.FallbackPolicy {
-			return are_hybrid_scan.FallbackPhantom{}
+		policy: func(_ float64) hybridutil.FallbackPolicy {
+			return hybridutil.FallbackPhantom{}
 		},
 	},
 }

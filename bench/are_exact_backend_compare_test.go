@@ -1,7 +1,7 @@
 package bench_test
 
 import (
-	"Thesis/emptiness/approx/hybrid/are_greedy"
+	are_greedy_scan "Thesis/emptiness/approx/hybrid/are_greedy"
 	"Thesis/emptiness/approx/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
 	"bytes"
