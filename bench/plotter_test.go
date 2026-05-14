@@ -64,6 +64,7 @@ var b6PlotOrder = []string{
 	"Scan-ARE-SODA-FbPEF",
 	"Greedy+Merge-Trunc",
 	"Greedy+Merge-SODA",
+	"SegARE",
 	"BloomARE",
 }
 

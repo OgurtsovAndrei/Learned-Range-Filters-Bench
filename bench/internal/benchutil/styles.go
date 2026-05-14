@@ -22,6 +22,7 @@ var DefaultSeriesStyles = map[string]SeriesStyle{
 	"Greedy+Merge":       {Name: "Greedy+Merge", Color: "#ea580c", Marker: "circle"},
 	"Greedy+Merge-Trunc": {Name: "Greedy+Merge-Trunc", Color: "#ea580c", Marker: "circle"},
 	"Greedy+Merge-SODA":  {Name: "Greedy+Merge-SODA", Color: "#9a3412", Marker: "triangle"},
+	"SegARE":             {Name: "SegARE", Color: "#16a34a", Marker: "diamond"},
 	"BloomARE":           {Name: "BloomARE", Color: "#9ca3af", Dashed: true, Marker: "circle"},
 	
 	// Legacy / internal filters.
