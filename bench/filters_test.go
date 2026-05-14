@@ -6,8 +6,9 @@ import (
 	"Thesis-bench-industry/thirdparty/snarf"
 	"Thesis-bench-industry/thirdparty/surf"
 	"Thesis/emptiness/approx/are_bloom"
-	"Thesis/emptiness/approx/hybrid/are_greedy"
 	"Thesis/emptiness/approx/hybrid/are_dbscan"
+	"Thesis/emptiness/approx/hybrid/are_greedy"
+	"Thesis/emptiness/approx/hybrid/hybridutil"
 	"Thesis/emptiness/approx/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
 	"fmt"
@@ -95,7 +96,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name: "Scan-ARE-Trunc", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysTrunc{}})
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}})
 				if err != nil {
 					return nil, 0, err
 				}
@@ -106,7 +107,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name: "Scan-ARE-SODA", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}})
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}})
 				if err != nil {
 					return nil, 0, err
 				}
@@ -118,7 +119,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name: "Scan-ARE-SODA-PEF", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}}.
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
 						WithEREBackend(exactbackend.VariantPEF))
 				if err != nil {
 					return nil, 0, err
@@ -131,7 +132,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name: "Scan-ARE-SODA-FbPEF", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_hybrid_scan.FallbackAlwaysSODA{}}.
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
 						WithFallbackEREBackend(exactbackend.VariantPEF))
 				if err != nil {
 					return nil, 0, err
@@ -143,7 +144,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name: "Greedy+Merge-Trunc", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_greedy_scan.FallbackAlwaysTrunc{}})
+					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}})
 				if err != nil {
 					return nil, 0, err
 				}
@@ -154,7 +155,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			name: "Greedy+Merge-SODA", sweepName: "K", sweepValues: b6SweepK,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: are_greedy_scan.FallbackAlwaysSODA{}})
+					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}})
 				if err != nil {
 					return nil, 0, err
 				}

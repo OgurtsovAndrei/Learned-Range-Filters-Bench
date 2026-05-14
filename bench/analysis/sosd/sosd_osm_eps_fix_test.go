@@ -13,8 +13,9 @@ import (
 	"time"
 
 	"Thesis-bench-industry/bench/datasets"
-	"Thesis/emptiness/approx/hybrid/are_greedy"
 	"Thesis/emptiness/approx/hybrid/are_dbscan"
+	"Thesis/emptiness/approx/hybrid/are_greedy"
+	"Thesis/emptiness/approx/hybrid/hybridutil"
 	"Thesis/emptiness/approx/are_soda_hash"
 	"Thesis/testutils"
 	"Thesis-bench-industry/thirdparty/grafite"
@@ -203,7 +204,7 @@ func TestEpsFix_HybridScan_OSM_Full(t *testing.T) {
 		// Scan-ARE (DBSCAN) — Trunc fallback
 		tB := time.Now()
 		hsT, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-			are_hybrid_scan.ConfigWithPolicy{K: K, RangeLen: rangeLen, Policy: are_hybrid_scan.FallbackAlwaysTrunc{}})
+			are_hybrid_scan.ConfigWithPolicy{K: K, RangeLen: rangeLen, Policy: hybridutil.FallbackAlwaysTrunc{}})
 		if err != nil {
 			t.Errorf("K=%d Scan-ARE-Trunc build: %v", K, err)
 		} else {
@@ -221,7 +222,7 @@ func TestEpsFix_HybridScan_OSM_Full(t *testing.T) {
 		// Scan-ARE (DBSCAN) — SODA fallback
 		tB = time.Now()
 		hsS, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-			are_hybrid_scan.ConfigWithPolicy{K: K, RangeLen: rangeLen, Policy: are_hybrid_scan.FallbackAlwaysSODA{}})
+			are_hybrid_scan.ConfigWithPolicy{K: K, RangeLen: rangeLen, Policy: hybridutil.FallbackAlwaysSODA{}})
 		if err != nil {
 			t.Errorf("K=%d Scan-ARE-SODA build: %v", K, err)
 		} else {
@@ -239,7 +240,7 @@ func TestEpsFix_HybridScan_OSM_Full(t *testing.T) {
 		// Greedy+Merge — Trunc fallback
 		tB = time.Now()
 		gsT, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-			are_greedy_scan.ConfigWithPolicy{K: K, Policy: are_greedy_scan.FallbackAlwaysTrunc{}})
+			are_greedy_scan.ConfigWithPolicy{K: K, Policy: hybridutil.FallbackAlwaysTrunc{}})
 		if err != nil {
 			t.Errorf("K=%d Greedy+Merge-Trunc build: %v", K, err)
 		} else {
@@ -255,7 +256,7 @@ func TestEpsFix_HybridScan_OSM_Full(t *testing.T) {
 		// Greedy+Merge — SODA fallback
 		tB = time.Now()
 		gsS, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-			are_greedy_scan.ConfigWithPolicy{K: K, Policy: are_greedy_scan.FallbackAlwaysSODA{}})
+			are_greedy_scan.ConfigWithPolicy{K: K, Policy: hybridutil.FallbackAlwaysSODA{}})
 		if err != nil {
 			t.Errorf("K=%d Greedy+Merge-SODA build: %v", K, err)
 		} else {
