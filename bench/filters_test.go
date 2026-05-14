@@ -8,6 +8,7 @@ import (
 	"Thesis/emptiness/approx/are_bloom"
 	"Thesis/emptiness/approx/hybrid/are_dbscan"
 	"Thesis/emptiness/approx/hybrid/are_greedy"
+	"Thesis/emptiness/approx/hybrid/are_seg"
 	"Thesis/emptiness/approx/hybrid/hybridutil"
 	"Thesis/emptiness/approx/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
@@ -156,6 +157,16 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
 					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}})
+				if err != nil {
+					return nil, 0, err
+				}
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
+			name: "SegARE", sweepName: "K", sweepValues: b6SweepK,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_seg.NewSegAREFromK(keys, keyBits, uint32(sweep), 1)
 				if err != nil {
 					return nil, 0, err
 				}
