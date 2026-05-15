@@ -53,6 +53,7 @@ type b6Row struct {
 	Parallelism   int     `json:"parallelism"`
 	ParamsHash    string  `json:"paramsHash"`
 	Note          string  `json:"note,omitempty"`
+	NumClusters   int     `json:"numClusters,omitempty"`
 }
 
 // b6Params captures the hyperparameters that, if changed, invalidate a

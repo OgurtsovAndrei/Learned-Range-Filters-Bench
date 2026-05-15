@@ -525,7 +525,7 @@ func runB6Filter(
 			nsPerQuery := float64(qDur.Nanoseconds()) / float64(len(batch))
 			fpr := float64(falsePositives) / float64(len(batch))
 
-			rows = append(rows, b6Row{
+			row := b6Row{
 				Distribution:   dist,
 				Filter:         fd.name,
 				RangeLen:       L,
@@ -541,7 +541,11 @@ func runB6Filter(
 				SweepParam:     sweep,
 				Parallelism:    parallelism,
 				ParamsHash:     paramsHash,
-			})
+			}
+			if fd.numClusters != nil {
+				row.NumClusters = *fd.numClusters
+			}
+			rows = append(rows, row)
 			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4g | %-7.1f MB\n",
 				dist, fd.name, L, fd.sweepName, sweep,
 				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr, float64(peakRSS)/(1024*1024))

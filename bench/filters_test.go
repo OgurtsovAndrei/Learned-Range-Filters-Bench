@@ -65,9 +65,24 @@ type b6FilterDef struct {
 	// hash probes per query, so L≥4096 becomes minutes/cell with no
 	// useful FPR signal anyway).
 	skipLs map[uint64]bool
+	// numClusters is written by the build closure after each build and
+	// reflects how many segments/clusters the last-built instance contains.
+	// Nil for non-segmented filters (SODA, Bloom, Grafite, etc.).
+	numClusters *int
 }
 
 func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
+	// Pre-allocate cluster-count pointers. Each is shared between the
+	// b6FilterDef.numClusters field and the corresponding build closure so
+	// the runner can read the count written during buildOnce.
+	scanAreTruncNC := new(int)
+	scanAreSODANC := new(int)
+	scanAreSODAPEFNC := new(int)
+	scanAreSODAFbPEFNC := new(int)
+	greedyTruncNC := new(int)
+	greedySODANC := new(int)
+	segARENC := new(int)
+
 	return []b6FilterDef{
 		{
 			name: "SODA", sweepName: "K", sweepValues: b6SweepK,
@@ -75,7 +90,8 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				// Hash seed: derive from K so different K values still
 				// get different hash A/B (otherwise sweep cells would
 				// share hash → not independent samples).
-				f, err := are_soda_hash.NewSodaAREFromK(keys, uint32(sweep), int64(sweep)*1000003+int64(len(keys)))
+				f, err := are_soda_hash.NewSodaAREFromKWithBackend(keys, uint32(sweep),
+					int64(sweep)*1000003+int64(len(keys)), exactbackend.VariantOneD)
 				if err != nil {
 					return nil, 0, err
 				}
@@ -95,29 +111,38 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 		},
 		{
 			name: "Scan-ARE-Trunc", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: scanAreTruncNC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}})
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}}.
+						WithEREBackend(exactbackend.VariantOneD))
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*scanAreTruncNC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
 		{
 			name: "Scan-ARE-SODA", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: scanAreSODANC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}})
+					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
+						WithEREBackend(exactbackend.VariantOneD))
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*scanAreSODANC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
 		{
 			// PEF everywhere: cluster sub-filters + SODA fallback.
 			name: "Scan-ARE-SODA-PEF", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: scanAreSODAPEFNC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
 					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
@@ -125,51 +150,68 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*scanAreSODAPEFNC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
 		{
-			// PEF only in the SODA fallback; cluster sub-filters keep OneD (VariantAuto).
+			// PEF in SODA fallback only; cluster sub-filters use OneD.
 			name: "Scan-ARE-SODA-FbPEF", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: scanAreSODAFbPEFNC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
 					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
+						WithEREBackend(exactbackend.VariantOneD).
 						WithFallbackEREBackend(exactbackend.VariantPEF))
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*scanAreSODAFbPEFNC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
 		{
 			name: "Greedy+Merge-Trunc", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: greedyTruncNC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}})
+					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}}.
+						WithEREBackend(exactbackend.VariantOneD))
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*greedyTruncNC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
 		{
 			name: "Greedy+Merge-SODA", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: greedySODANC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
 				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}})
+					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
+						WithEREBackend(exactbackend.VariantOneD))
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*greedySODANC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
 		{
 			name: "SegARE", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: segARENC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_seg.NewSegAREFromK(keys, keyBits, uint32(sweep), 1)
+				f, err := are_seg.NewSegAREFromKWithBackend(keys, keyBits, uint32(sweep), 1, exactbackend.VariantOneD)
 				if err != nil {
 					return nil, 0, err
 				}
+				nc, _, _ := f.Stats()
+				*segARENC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
