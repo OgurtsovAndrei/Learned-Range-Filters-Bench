@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git & Submodule Rules
+
+- **Submodule Updates:** Do NOT automatically bump/update the submodule hash in the root repository (`git add Thesis`) after making changes inside the `Thesis/` directory. The user will handle submodule reference updates manually before pushing.
+- **Commit Style:** Use conventional prefixes: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `bench:`. Scope in parens when helpful, e.g. `feat(bench):`, `fix(are_hybrid):`.
+- **Commit Messages:** Do NOT add `Co-Authored-By` signatures.
+
 ## Repository Structure
 
 This is a **two-module Go workspace** for benchmarking range emptiness filter structures:
@@ -80,9 +86,14 @@ The ARE/ERE filters are built on these lower-level structures:
 - `trie/` — Z-Fast Trie, hollow tries
 - `locators/` — Range locators (MMPH-based, Z-Fast Trie-based)
 
-### CGo Wrappers (thirdparty/{grafite,snarf,surf}/)
+### CGo Wrappers (thirdparty/{grafite,snarf,surf,rosetta}/)
 
-Each wraps a C++ range filter library. Keys must be **masked to 60 bits** via `mask60Keys()` before passing to CGo filters. ~50-200ns overhead per CGo call.
+Each wraps a C++ range filter library. ~50-200ns overhead per CGo call.
+
+**Key Bit-Width Logic:**
+- **Native Data**: SOSD and NYC Taxi datasets are used in their native bit-width (up to 64-bit). No masking is applied by default to avoid artificial collisions and dataset shrinkage.
+- **Synthetic Data**: Generators (`uniform`, `zipfian`, etc.) produce 60-bit keys by default to provide a consistent "universe" for comparison and ensure out-of-the-box compatibility with all filters.
+- **Filter-Specific Limits**: SNARF internally masks to 60 bits as it cannot handle wider keys. Other filters (SODA, Rosetta, Grafite, SuRF) operate on the full bits provided.
 
 ### Shared Utilities (Thesis/testutils/)
 
@@ -90,7 +101,7 @@ Each wraps a C++ range filter library. Keys must be **masked to 60 bits** via `m
 - `plot.go` — SVG chart generation (`GeneratePerformanceSVG`, `GenerateTradeoffSVG`)
 - `keys.go` — Cached benchmark key sets (`GetBenchKeys`)
 - `metrics.go` — FPR/BPK measurement helpers
-- `convert.go` — `TrieBS(uint64)` converts uint64 to 60-bit BitString
+- `convert.go` — `TrieBS(uint64)` converts uint64 to BitString (trie-ready binary representation)
 
 ### Benchmark Tests (bench/)
 
@@ -109,9 +120,3 @@ All plots are **SVG format**. Use log scales for asymptotic analysis (key counts
 - `are_hybrid` cluster detection (`detectClusters`) fails on sequential/evenly-spaced distributions — all gaps equal, elbow detector returns 0 clusters, falls back to plain Truncation ARE.
 - `are_pgm` build is O(n²) due to PGM hull construction. Constructor returns error for N > 2^20.
 - Benchmark outputs (`bench_results/plots/`, `bench_results/data/`) are gitignored — regenerate by running tests.
-
-## Commit Style
-
-Use conventional prefixes: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `bench:`. Scope in parens when helpful, e.g. `feat(bench):`, `fix(are_hybrid):`.
-
-Do NOT add `Co-Authored-By` (or any other similar signs) signatures to commit messages.
