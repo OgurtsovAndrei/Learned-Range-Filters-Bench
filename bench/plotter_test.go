@@ -902,11 +902,25 @@ func newB6Series(fname string) testutils.SeriesData {
 		style = SeriesStyle{Name: fname, Color: "#9ca3af", Marker: "circle"}
 	}
 	return testutils.SeriesData{
-		Name:   style.Name,
+		Name:   legendName(style.Name),
 		Color:  style.Color,
 		Marker: style.Marker,
 		Dashed: style.Dashed,
 	}
+}
+
+// legendName strips the "ARE" substring from filter display names.
+// All filters in this benchmark are range-emptiness filters, so the
+// suffix is redundant in the legend.
+//   "Scan-ARE-SODA" → "Scan-SODA"
+//   "SegARE"        → "Seg"
+//   "BloomARE"      → "Bloom"
+//   "Grafite"       → "Grafite"  (unchanged)
+func legendName(name string) string {
+	s := strings.ReplaceAll(name, "-ARE-", "-")
+	s = strings.TrimSuffix(s, "-ARE")
+	s = strings.TrimSuffix(s, "ARE")
+	return s
 }
 
 // floorFPR pins a 0-FPR observation just below the YFloor so the log10
