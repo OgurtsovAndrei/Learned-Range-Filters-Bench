@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git & Submodule Rules
 
-- **Submodule Updates:** Do NOT automatically bump/update the submodule hash in the root repository (`git add Thesis`) after making changes inside the `Thesis/` directory. The user will handle submodule reference updates manually before pushing.
+- **Submodule Updates:** After committing inside `Thesis/`, check when the root repository last updated the submodule pointer (`git log -1 --format=%ci -- Thesis`). If more than 24 hours have passed since that commit, stage and commit the updated pointer: `git add Thesis && git commit -m "chore: bump Thesis submodule"`. Otherwise leave it — the user will batch-update before pushing.
 - **Commit Style:** Use conventional prefixes: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `bench:`. Scope in parens when helpful, e.g. `feat(bench):`, `fix(are_hybrid):`.
 - **Commit Messages:** Do NOT add `Co-Authored-By` signatures.
 
