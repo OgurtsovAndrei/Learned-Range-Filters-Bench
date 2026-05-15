@@ -89,8 +89,11 @@ func TestSegFallbackPolicy_Smoke_Uniform(t *testing.T) {
 	trunc := runSegOnce(t, keys, queries, L, eps, hybridutil.FallbackAlwaysTrunc{}, "AlwaysTrunc")
 	inGap := runSegOnce(t, keys, queries, L, eps, hybridutil.FallbackInGapFPR{Epsilon: eps}, "InGapFPR")
 
-	t.Logf("uniform ε=%g: SODA=(BPK=%.2f, FPR=%.3e)  Trunc=(BPK=%.2f, FPR=%.3e)  InGapFPR=(BPK=%.2f, FPR=%.3e)",
-		eps, soda.bpk, soda.fpr, trunc.bpk, trunc.fpr, inGap.bpk, inGap.fpr)
+	t.Logf("uniform ε=%g: SODA=(BPK=%.2f, FPR=%.3e, nC=%d, nF=%d)  Trunc=(BPK=%.2f, FPR=%.3e, nC=%d, nF=%d)  InGapFPR=(BPK=%.2f, FPR=%.3e, nC=%d, nF=%d)",
+		eps,
+		soda.bpk, soda.fpr, soda.nClusters, soda.nFallback,
+		trunc.bpk, trunc.fpr, trunc.nClusters, trunc.nFallback,
+		inGap.bpk, inGap.fpr, inGap.nClusters, inGap.nFallback)
 
 	persistRow(t, "uniform", eps, soda, trunc, inGap)
 
@@ -98,15 +101,20 @@ func TestSegFallbackPolicy_Smoke_Uniform(t *testing.T) {
 		t.Logf("empty fallback — policy not exercised, skipping envelope check")
 		return
 	}
-	sodaMatch := withinAbs(inGap.bpk, soda.bpk, 1.0) && withinRel(inGap.fpr, soda.fpr, 5e-4, 0.30)
+	// On uniform data the lower envelope of {SODA, Trunc} is Trunc — the
+	// per-gap formula is comfortably safe at any reasonable ε. InGapFPR must
+	// pick that side. We branch the error message so the failure mode is
+	// readable: matched-SODA-instead vs matched-nothing.
 	truncMatch := withinAbs(inGap.bpk, trunc.bpk, 1.0) && withinRel(inGap.fpr, trunc.fpr, 5e-4, 0.30)
-	if !sodaMatch && !truncMatch {
-		t.Errorf("InGapFPR does not match either reference line (BPK=%.2f FPR=%.3e) vs SODA (%.2f, %.3e) Trunc (%.2f, %.3e)",
-			inGap.bpk, inGap.fpr, soda.bpk, soda.fpr, trunc.bpk, trunc.fpr)
-	}
 	if !truncMatch {
-		t.Errorf("uniform: expected InGapFPR ≈ Trunc envelope (lower BPK), got Trunc=(%.2f,%.3e) vs InGapFPR=(%.2f,%.3e)",
-			trunc.bpk, trunc.fpr, inGap.bpk, inGap.fpr)
+		sodaMatch := withinAbs(inGap.bpk, soda.bpk, 1.0) && withinRel(inGap.fpr, soda.fpr, 5e-4, 0.30)
+		if sodaMatch {
+			t.Errorf("uniform: InGapFPR matched SODA (BPK=%.2f, FPR=%.3e) but should have picked Trunc (BPK=%.2f, FPR=%.3e)",
+				inGap.bpk, inGap.fpr, trunc.bpk, trunc.fpr)
+		} else {
+			t.Errorf("uniform: InGapFPR (BPK=%.2f, FPR=%.3e) matches neither SODA (%.2f, %.3e) nor Trunc (%.2f, %.3e)",
+				inGap.bpk, inGap.fpr, soda.bpk, soda.fpr, trunc.bpk, trunc.fpr)
+		}
 	}
 }
 
