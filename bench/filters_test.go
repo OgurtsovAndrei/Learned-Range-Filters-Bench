@@ -6,11 +6,10 @@ import (
 	"Thesis-bench-industry/thirdparty/snarf"
 	"Thesis-bench-industry/thirdparty/surf"
 	"Thesis/emptiness/approx/are_bloom"
+	"Thesis/emptiness/approx/are_soda_hash"
 	are_hybrid_scan "Thesis/emptiness/approx/hybrid/are_dbscan"
-	are_greedy_scan "Thesis/emptiness/approx/hybrid/are_greedy"
 	"Thesis/emptiness/approx/hybrid/are_seg"
 	"Thesis/emptiness/approx/hybrid/hybridutil"
-	"Thesis/emptiness/approx/are_soda_hash"
 	exactbackend "Thesis/emptiness/exact"
 	"fmt"
 	"math"
@@ -18,8 +17,9 @@ import (
 
 var (
 	// Standard grids.
-	b6SweepK   = []float64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48}
-	b6SweepBPK = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20}
+	b6SweepK           = []float64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 28, 32, 36, 40, 48, 50}
+	b6SweepBPK         = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20}
+	b6SweepBPKExtended = []float64{4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36}
 
 	// BloomARE is BPK-driven but FPR grows exponentially with L. At
 	// L=65536 / n=2^20 we already need 16 GB at eps=0.0005. We trim the
@@ -78,10 +78,8 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 	scanAreTruncNC := new(int)
 	scanAreSODANC := new(int)
 	scanAreSODAPEFNC := new(int)
-	scanAreSODAFbPEFNC := new(int)
-	greedyTruncNC := new(int)
-	greedySODANC := new(int)
 	segARENC := new(int)
+	segAREIGFPRNC := new(int)
 
 	return []b6FilterDef{
 		{
@@ -156,53 +154,6 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
-			// PEF in SODA fallback only; cluster sub-filters use OneD.
-			name: "Scan-ARE-SODA-FbPEF", sweepName: "K", sweepValues: b6SweepK,
-			numClusters: scanAreSODAFbPEFNC,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_hybrid_scan.NewHybridScanAREWithPolicy(keys, keyBits,
-					are_hybrid_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
-						WithEREBackend(exactbackend.VariantOneD).
-						WithFallbackEREBackend(exactbackend.VariantPEF))
-				if err != nil {
-					return nil, 0, err
-				}
-				nc, _, _ := f.Stats()
-				*scanAreSODAFbPEFNC = nc
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "Greedy+Merge-Trunc", sweepName: "K", sweepValues: b6SweepK,
-			numClusters: greedyTruncNC,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysTrunc{}}.
-						WithEREBackend(exactbackend.VariantOneD))
-				if err != nil {
-					return nil, 0, err
-				}
-				nc, _, _ := f.Stats()
-				*greedyTruncNC = nc
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
-			name: "Greedy+Merge-SODA", sweepName: "K", sweepValues: b6SweepK,
-			numClusters: greedySODANC,
-			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
-				f, err := are_greedy_scan.NewGreedyScanAREWithPolicy(keys, keyBits,
-					are_greedy_scan.ConfigWithPolicy{K: uint32(sweep), Policy: hybridutil.FallbackAlwaysSODA{}}.
-						WithEREBackend(exactbackend.VariantOneD))
-				if err != nil {
-					return nil, 0, err
-				}
-				nc, _, _ := f.Stats()
-				*greedySODANC = nc
-				return f.IsEmpty, f.SizeInBits(), nil
-			},
-		},
-		{
 			name: "SegARE", sweepName: "K", sweepValues: b6SweepK,
 			numClusters: segARENC,
 			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
@@ -212,6 +163,24 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				}
 				nc, _, _ := f.Stats()
 				*segARENC = nc
+				return f.IsEmpty, f.SizeInBits(), nil
+			},
+		},
+		{
+			// SegARE with FallbackInGapFPR policy: per-cluster the policy
+			// picks Trunc vs SODA based on expected in-gap FPR rather than
+			// always falling back to SODA. Same K-sweep grid; ε hardwired
+			// to the runner's headline ε=0.01.
+			name: "SegARE-InGapFPR", sweepName: "K", sweepValues: b6SweepK,
+			numClusters: segAREIGFPRNC,
+			build: func(sweep float64, _ [][2]uint64) (func(a, b uint64) bool, uint64, error) {
+				f, err := are_seg.NewSegAREFromKWithPolicy(keys, keyBits, uint32(sweep), 1,
+					hybridutil.FallbackInGapFPR{Epsilon: 0.01}, exactbackend.VariantOneD)
+				if err != nil {
+					return nil, 0, err
+				}
+				nc, _, _ := f.Stats()
+				*segAREIGFPRNC = nc
 				return f.IsEmpty, f.SizeInBits(), nil
 			},
 		},
@@ -235,7 +204,7 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
-			name: "Grafite", sweepName: "bpk", sweepValues: b6SweepBPK,
+			name: "Grafite", sweepName: "bpk", sweepValues: b6SweepBPKExtended,
 			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := tryGrafite(keys, sweep)
 				if f == nil {
@@ -245,16 +214,16 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 			},
 		},
 		{
-			name: "SNARF", sweepName: "bpk", sweepValues: b6SweepBPK,
+			name: "SNARF", sweepName: "bpk", sweepValues: b6SweepBPKExtended,
 			buildBatch: func(sweep float64, _ [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				f := snarf.New(keys, sweep)
 				return f.QueryBatch, f.SizeInBits(), nil
 			},
 		},
 		{
-			name: "Rosetta", sweepName: "bpk", sweepValues: b6SweepBPK,
+			name: "Rosetta", sweepName: "bpk", sweepValues: b6SweepBPKExtended,
 			lDependent: true,
-			skipLs:     map[uint64]bool{4096: true, 65536: true},
+			skipLs:     map[uint64]bool{4096: true, 16384: true, 65536: true},
 			buildBatch: func(sweep float64, sampleQueries [][2]uint64) (func([][2]uint64) []bool, uint64, error) {
 				sampleN := len(sampleQueries)
 				var sampleLeft, sampleRight []uint64
@@ -281,7 +250,6 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				f := surf.New(keys, surf.SuffixNone, 0, 0)
 				return f.QueryBatch, f.SizeInBits(), nil
 			},
-			skipDists: map[string]bool{"sosd_wiki": true},
 		},
 		{
 			name:        "SuRFHash",
@@ -291,7 +259,6 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				f := surf.New(keys, surf.SuffixHash, int(sweep), 0)
 				return f.QueryBatch, f.SizeInBits(), nil
 			},
-			skipDists: map[string]bool{"sosd_wiki": true},
 		},
 		{
 			name:        "SuRFReal",
@@ -301,7 +268,6 @@ func buildB6Filters(keys []uint64, keyBits uint32) []b6FilterDef {
 				f := surf.New(keys, surf.SuffixReal, 0, int(sweep))
 				return f.QueryBatch, f.SizeInBits(), nil
 			},
-			skipDists: map[string]bool{"sosd_wiki": true},
 		},
 	}
 }

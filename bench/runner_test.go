@@ -15,7 +15,6 @@ import (
 	"time"
 )
 
-
 // TestB6IndustryLatency measures four things per (distribution, filter, L,
 // sweepValue):
 //   - build throughput (M keys/sec)
@@ -81,22 +80,27 @@ func TestB6IndustryLatency(t *testing.T) {
 	distributions := []distSpec{
 		{"sosd_fb", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadFacebookKeys( 2*n)
+				return loadFacebookKeys(2 * n)
 			}
 		}},
 		{"sosd_wiki", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadWikiKeys( 2*n)
+				return loadWikiKeys(2 * n)
 			}
 		}},
 		{"sosd_osm", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadOSMKeys( 2*n)
+				return loadOSMKeys(2 * n)
 			}
 		}},
 		{"sosd_books", func(n int) func() ([]uint64, error) {
 			return func() ([]uint64, error) {
-				return loadBooksKeys( 2*n)
+				return loadBooksKeys(2 * n)
+			}
+		}},
+		{"sosd_books_800m", func(n int) func() ([]uint64, error) {
+			return func() ([]uint64, error) {
+				return loadBooks800MKeys(2 * n)
 			}
 		}},
 		{"uniform", func(n int) func() ([]uint64, error) {

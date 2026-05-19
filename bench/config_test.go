@@ -1,14 +1,12 @@
 package bench_test
 
 import (
+	"Thesis-bench-industry/bench/internal/benchutil"
 	"Thesis-bench-industry/bench/internal/keygen"
 	"Thesis-bench-industry/bench/internal/querygen"
-	"Thesis-bench-industry/bench/internal/benchutil"
 	"fmt"
 	"math/rand"
 )
-
-
 
 // ---- Global parameters (single source of truth across all bench tests) ----
 
@@ -49,6 +47,10 @@ func loadBooksKeys(n int) ([]uint64, error) {
 	return keygen.LoadSOSDUint32(keygen.SOSDPath("books_200M_uint32"), n)
 }
 
+func loadBooks800MKeys(n int) ([]uint64, error) {
+	return keygen.LoadSOSDUint64(keygen.SOSDPath("books_800M_uint64"), n)
+}
+
 func generateSmartQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
 	return querygen.GenerateSmartQueries(keys, count, rangeLen, rng)
 }
@@ -70,9 +72,6 @@ const (
 	queryWeightInGap   = querygen.QueryWeightInGap
 	queryWeightUniform = querygen.QueryWeightUniform
 )
-
-
-
 
 var (
 	DefaultSeeds = []int64{12345, 54321, 99999}
@@ -107,8 +106,6 @@ type SeriesStyle = benchutil.SeriesStyle
 // DefaultSeriesStyles is the unified 8-series set used on FPR-vs-BPK plots.
 var DefaultSeriesStyles = benchutil.DefaultSeriesStyles
 
-
-
 // ---- Helpers ----
 
 // BenchResultsDataDir returns the JSON cache path for one (n, distName) cell.
@@ -132,8 +129,9 @@ func DefaultYFloor(queryCount, runs int) float64 {
 //
 // After the initial DefaultBPKSweep is measured for a CGo filter, we add a
 // midpoint between adjacent measurements when:
-//   ΔBPK ≥ AdaptiveBPKGap AND
-//   |Δlog10(FPR)| ≥ AdaptiveLogFPRDrop
+//
+//	ΔBPK ≥ AdaptiveBPKGap AND
+//	|Δlog10(FPR)| ≥ AdaptiveLogFPRDrop
 //
 // We also extend the tail with a single +AdaptiveTailStep BPK probe while the
 // last measured FPR is still above the noise floor and BPK < DefaultXMax.

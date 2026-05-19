@@ -46,8 +46,71 @@ var b6SeriesStyles = func() map[string]SeriesStyle {
 	// Keep SuRFReal entry as a fallback used only by the per-(metric, dist)
 	// plots that pick a single representative cell; same palette as SuRF.
 	m["SuRFReal"] = SeriesStyle{Name: "SuRFReal", Color: surfColor, Marker: surfMarker}
+	// SegARE-InGapFPR — sibling of SegARE (which is amber circle in
+	// DefaultSeriesStyles). Burnt-orange square to read as the same
+	// family with a different fallback policy.
+	m["SegARE-InGapFPR"] = SeriesStyle{Name: "SegARE-InGapFPR", Color: "#ea580c", Marker: "square"}
 	return m
 }()
+
+// b6Titler bundles the title formatters used by the five plot kinds.
+// Default values preserve the historical defence-oriented titles;
+// TestB6PaperPlots overrides them with a cleaner paper variant.
+type b6Titler struct {
+	Metric        func(metric, dist string, log2N int, eps float64) string
+	MetricMean    func(metric string, nDists, log2N int, eps float64) string
+	Tradeoff      func(dist string, log2N int, eps float64) string
+	TradeoffPerL  func(dist string, L uint64, log2N int) string
+	CachePressure func(dist string, L uint64) string
+}
+
+// b6TradeoffMonotone, when true, post-filters tradeoff curves so that
+// FPR is non-increasing as BPK grows. Points where a later (higher-BPK)
+// sample has higher FPR than any earlier sample are dropped — those are
+// parameter-noise artefacts that obscure the Pareto front. Defence/cache
+// plots leave this off; TestB6PaperPlots flips it on.
+//
+// Only the two FPR-vs-BPK plot kinds (Tradeoff, TradeoffPerL) honour it;
+// cache-pressure and per-metric plots use a different metric on Y.
+var b6TradeoffMonotone = false
+
+// applyMonotoneFPR returns pts unchanged when b6TradeoffMonotone is off.
+// Otherwise it walks pts in input order (callers sort by BPK first) and
+// keeps only points whose Y is strictly less than the minimum Y seen so
+// far. The very first point is always kept so the curve has an anchor.
+func applyMonotoneFPR(pts []testutils.Point) []testutils.Point {
+	if !b6TradeoffMonotone || len(pts) <= 1 {
+		return pts
+	}
+	out := pts[:0:0]
+	out = append(out, pts[0])
+	minY := pts[0].Y
+	for _, p := range pts[1:] {
+		if p.Y < minY {
+			out = append(out, p)
+			minY = p.Y
+		}
+	}
+	return out
+}
+
+var b6Titles = b6Titler{
+	Metric: func(metric, dist string, log2N int, eps float64) string {
+		return fmt.Sprintf("%s — %s (n=2^%d, ε=%.3f)", metric, dist, log2N, eps)
+	},
+	MetricMean: func(metric string, nDists, log2N int, eps float64) string {
+		return fmt.Sprintf("%s — mean across %d distributions (n=2^%d, ε=%.3f)", metric, nDists, log2N, eps)
+	},
+	Tradeoff: func(dist string, log2N int, eps float64) string {
+		return fmt.Sprintf("FPR vs BPK trajectory across L — %s (n=2^%d, ε=%.3f)", dist, log2N, eps)
+	},
+	TradeoffPerL: func(dist string, L uint64, log2N int) string {
+		return fmt.Sprintf("FPR vs BPK (K-sweep) — %s, L=%d (n=2^%d)", dist, L, log2N)
+	},
+	CachePressure: func(dist string, L uint64) string {
+		return fmt.Sprintf("Query latency vs filter footprint (cache-pressure) — %s, L=%d", dist, L)
+	},
+}
 
 // b6 series rendering order — industry baselines (cool palette) first, then
 // the academic line (warm palette) ending with Bloom as the slope reference.
@@ -65,6 +128,7 @@ var b6PlotOrder = []string{
 	"Greedy+Merge-Trunc",
 	"Greedy+Merge-SODA",
 	"SegARE",
+	"SegARE-InGapFPR",
 	"BloomARE",
 }
 
@@ -414,8 +478,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 
 			svgPath := filepath.Join(outDir, dist+".svg")
 			err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-				Title: fmt.Sprintf("%s — %s (n=2^%d, ε=%.3f)",
-					prettyMetric(m.subdir), dist, log2int64(int64(doc.NKeys)), doc.Eps),
+				Title:  b6Titles.Metric(prettyMetric(m.subdir), dist, log2int64(int64(doc.NKeys)), doc.Eps),
 				XLabel: "Range Length (L)",
 				YLabel: m.ylabel,
 				XScale: testutils.Log10,
@@ -456,8 +519,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 			if anyHasPoints(ordered) {
 				svgPath := filepath.Join(outDir, "_mean.svg")
 				err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
-					Title: fmt.Sprintf("%s — mean across %d distributions (n=2^%d, ε=%.3f)",
-						prettyMetric(m.subdir), len(meanDists), log2int64(int64(doc.NKeys)), doc.Eps),
+					Title:  b6Titles.MetricMean(prettyMetric(m.subdir), len(meanDists), log2int64(int64(doc.NKeys)), doc.Eps),
 					XLabel: "Range Length (L)",
 					YLabel: m.ylabel,
 					XScale: testutils.Log10,
@@ -490,8 +552,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 			continue
 		}
 		svgPath := filepath.Join(tradeoffDir, dist+".svg")
-		title := fmt.Sprintf("FPR vs BPK trajectory across L — %s (n=2^%d, ε=%.3f)",
-			dist, log2int64(int64(doc.NKeys)), doc.Eps)
+		title := b6Titles.Tradeoff(dist, log2int64(int64(doc.NKeys)), doc.Eps)
 		if err := testutils.GenerateTradeoffSVG(
 			title, "Bits per Key (BPK)", "False Positive Rate (FPR)",
 			ordered, svgPath, yFloor,
@@ -517,8 +578,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 				continue
 			}
 			svgPath := filepath.Join(perLDir, fmt.Sprintf("L%d.svg", L))
-			title := fmt.Sprintf("FPR vs BPK (K-sweep) — %s, L=%d (n=2^%d)",
-				dist, L, log2int64(int64(doc.NKeys)))
+			title := b6Titles.TradeoffPerL(dist, L, log2int64(int64(doc.NKeys)))
 			if err := testutils.GenerateTradeoffSVG(
 				title, "Bits per Key (BPK)", "False Positive Rate (FPR)",
 				ordered, svgPath, yFloor,
@@ -545,7 +605,7 @@ func renderB6Plots(t *testing.T, doc b6Doc, plotsRoot string) {
 				continue
 			}
 			svgPath := filepath.Join(cacheDir, fmt.Sprintf("L%d.svg", L))
-			title := fmt.Sprintf("Query latency vs filter footprint (cache-pressure) — %s, L=%d", dist, L)
+			title := b6Titles.CachePressure(dist, L)
 			err := testutils.GeneratePerformanceSVG(testutils.PlotConfig{
 				Title:  title,
 				XLabel: "Bits per Key (BPK)",
@@ -585,6 +645,10 @@ func buildB6TradeoffSeries(
 				continue
 			}
 			s.Points = append(s.Points, testutils.Point{X: r.BPKUsed, Y: floorFPR(r.FPR)})
+		}
+		if b6TradeoffMonotone {
+			sort.Slice(s.Points, func(i, j int) bool { return s.Points[i].X < s.Points[j].X })
+			s.Points = applyMonotoneFPR(s.Points)
 		}
 		if len(s.Points) > 0 {
 			out = append(out, s)
@@ -645,6 +709,11 @@ func buildB6TradeoffPerLSeries(
 				continue
 			}
 			s.Points = append(s.Points, testutils.Point{X: r.BPKUsed, Y: floorFPR(r.FPR)})
+		}
+		// SuRF is rendered as a marker cloud; monotone-filtering it would
+		// drop legitimate points across structural variants.
+		if fname != "SuRF" {
+			s.Points = applyMonotoneFPR(s.Points)
 		}
 		if len(s.Points) > 0 {
 			out = append(out, s)
@@ -912,10 +981,11 @@ func newB6Series(fname string) testutils.SeriesData {
 // legendName strips the "ARE" substring from filter display names.
 // All filters in this benchmark are range-emptiness filters, so the
 // suffix is redundant in the legend.
-//   "Scan-ARE-SODA" → "Scan-SODA"
-//   "SegARE"        → "Seg"
-//   "BloomARE"      → "Bloom"
-//   "Grafite"       → "Grafite"  (unchanged)
+//
+//	"Scan-ARE-SODA" → "Scan-SODA"
+//	"SegARE"        → "Seg"
+//	"BloomARE"      → "Bloom"
+//	"Grafite"       → "Grafite"  (unchanged)
 func legendName(name string) string {
 	s := strings.ReplaceAll(name, "-ARE-", "-")
 	s = strings.TrimSuffix(s, "-ARE")
