@@ -59,6 +59,10 @@ func generateSmartQueriesWeighted(keys []uint64, count int, rangeLen uint64, w q
 	return querygen.GenerateSmartQueriesWeighted(keys, count, rangeLen, w, rng)
 }
 
+func generateMixedQueriesWeighted(keys []uint64, count int, rangeLen uint64, w querygen.SmartMixWeights, rng *rand.Rand) [][2]uint64 {
+	return querygen.GenerateMixedQueriesWeighted(keys, count, rangeLen, w, rng)
+}
+
 func generateRangeQueries(keys []uint64, count int, rangeLen uint64, rng *rand.Rand) [][2]uint64 {
 	return querygen.GenerateRangeQueries(keys, count, rangeLen, rng)
 }

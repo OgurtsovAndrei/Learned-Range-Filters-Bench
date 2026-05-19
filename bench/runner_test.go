@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -121,6 +122,12 @@ func TestB6IndustryLatency(t *testing.T) {
 			skipSet[strings.TrimSpace(name)] = true
 		}
 	}
+	onlyFilters := parseCsvSet(os.Getenv("B6_FILTERS_ONLY"))
+	onlyDists := parseCsvSet(os.Getenv("B6_DISTS_ONLY"))
+	if rl := parseB6RangeLens(); rl != nil {
+		rangeLens = rl
+		t.Logf("B6_RANGE_LENS override: rangeLens=%v", rangeLens)
+	}
 
 	for _, n := range nValues {
 		n := n
@@ -134,6 +141,9 @@ func TestB6IndustryLatency(t *testing.T) {
 
 			for _, ds := range distributions {
 				ds := ds
+				if onlyDists != nil && !onlyDists[ds.name] {
+					continue
+				}
 				t.Run(ds.name, func(t *testing.T) {
 					allKeys, err := ds.makeLoad(n)()
 					if err != nil {
@@ -162,6 +172,9 @@ func TestB6IndustryLatency(t *testing.T) {
 						fd := fd
 						if skipSet[fd.name] {
 							t.Logf("%s/%s: skipped via SKIP_FILTERS", ds.name, fd.name)
+							continue
+						}
+						if onlyFilters != nil && !onlyFilters[fd.name] {
 							continue
 						}
 						if fd.skipDists[ds.name] {
@@ -217,10 +230,20 @@ func syntheticFile(dist string, n int) string {
 //   - queryStrategy: full label written into b6Params/b6Doc.QueryStrategy
 //     (cache key participates so different mixes never collide).
 //   - weights: passed to generateSmartQueriesWeighted.
+//   - allowNonEmpty: when true, the runner uses generateMixedQueriesWeighted
+//     (no truncation around stored keys) and computes FPR over the empty
+//     ground-truth subset only. Latency is reported across the whole batch
+//     so it reflects realistic LSM read patterns where queries that hit
+//     existing keys are still answered correctly by the filter.
+//   - timeBudget: if non-zero, the query loop cycles through the batch
+//     until elapsed wall-clock ≥ timeBudget (capped at maxQueryRepeats).
+//     Use this for ns/op stability when single-pass time is below ~100ms.
 type b6QueryMix struct {
 	name          string
 	queryStrategy string
 	weights       smartMixWeights
+	allowNonEmpty bool
+	timeBudget    time.Duration
 }
 
 // b6QueryMixes is the registry of supported B6_QUERY_MIX values. Add a
@@ -237,7 +260,26 @@ var b6QueryMixes = map[string]b6QueryMix{
 		queryStrategy: "smart_mix_gap_heavy_guaranteed_empty",
 		weights:       smartMixWeights{NearKey: 0.0, InGap: 0.7, Uniform: 0.3},
 	},
+	// gap_heavy_mixed reuses the gap-heavy weighting but drops query
+	// truncation around stored keys. Use it for query-latency comparisons
+	// that should reflect realistic LSM reads where some queries return
+	// "not empty" because they actually contain keys. Combined with a
+	// non-zero timeBudget the runner repeats the query batch until the
+	// elapsed wall-clock crosses the budget — giving statistically stable
+	// ns/op even for filters with sub-microsecond per-query cost.
+	"gap_heavy_mixed": {
+		name:          "gap_heavy_mixed",
+		queryStrategy: "gap_heavy_mixed_no_truncation",
+		weights:       smartMixWeights{NearKey: 0.0, InGap: 0.7, Uniform: 0.3},
+		allowNonEmpty: true,
+		timeBudget:    2 * time.Second,
+	},
 }
+
+// maxQueryRepeats caps how many times the runner cycles through the
+// query batch under a time budget. Acts as a safety net so a runaway
+// filter cannot block on a single cell indefinitely.
+const maxQueryRepeats = 1024
 
 // parseB6QueryMix reads B6_QUERY_MIX env var. Default "smart_mix" matches
 // the historical 50/30/20 weights and writes to the original cache/plot
@@ -249,7 +291,11 @@ func parseB6QueryMix() b6QueryMix {
 	}
 	mix, ok := b6QueryMixes[v]
 	if !ok {
-		panic(fmt.Sprintf("B6_QUERY_MIX: unknown mix %q (known: smart_mix, gap_heavy)", v))
+		known := make([]string, 0, len(b6QueryMixes))
+		for k := range b6QueryMixes {
+			known = append(known, k)
+		}
+		panic(fmt.Sprintf("B6_QUERY_MIX: unknown mix %q (known: %v)", v, known))
 	}
 	return mix
 }
@@ -511,23 +557,59 @@ func runB6Filter(
 			actualBPK := float64(sizeBits) / float64(n)
 
 			qrng := rand.New(rand.NewSource(params.QuerySeed))
-			batch := generateSmartQueriesWeighted(keys, queryCount, L, mix.weights, qrng)
+			var (
+				batch        [][2]uint64
+				emptyMask    []bool // ground-truth: true means [a,b] is actually empty
+				emptyCount   int
+			)
+			if mix.allowNonEmpty {
+				batch = generateMixedQueriesWeighted(keys, queryCount, L, mix.weights, qrng)
+				emptyMask = make([]bool, len(batch))
+				for i, q := range batch {
+					idx := sort.Search(len(keys), func(k int) bool { return keys[k] >= q[0] })
+					isEmpty := idx >= len(keys) || keys[idx] > q[1]
+					emptyMask[i] = isEmpty
+					if isEmpty {
+						emptyCount++
+					}
+				}
+			} else {
+				batch = generateSmartQueriesWeighted(keys, queryCount, L, mix.weights, qrng)
+				emptyCount = len(batch)
+			}
 			if len(batch) == 0 {
-				t.Logf("%s/%s L=%d %s=%.4g: smart-query generator returned 0 queries; skipping",
+				t.Logf("%s/%s L=%d %s=%.4g: query generator returned 0 queries; skipping",
 					dist, fd.name, L, fd.sweepName, sweep)
 				continue
 			}
 			var (
 				falsePositives int
+				totalQueried   int
 				qDur           time.Duration
 			)
 			if queryBatch != nil {
-				falsePositives, qDur = runQueriesBatchParallel(batch, queryBatch, parallelism)
+				falsePositives, totalQueried, qDur = runQueriesBatchTimed(
+					batch, emptyMask, queryBatch, parallelism, mix.timeBudget)
 			} else {
-				falsePositives, qDur = runQueriesParallel(batch, isEmpty, parallelism)
+				falsePositives, totalQueried, qDur = runQueriesTimed(
+					batch, emptyMask, isEmpty, parallelism, mix.timeBudget)
 			}
-			nsPerQuery := float64(qDur.Nanoseconds()) / float64(len(batch))
-			fpr := float64(falsePositives) / float64(len(batch))
+			nsPerQuery := float64(qDur.Nanoseconds()) / float64(totalQueried)
+			// FPR denominator must be the empty-query count, not the
+			// total batch — non-empty queries cannot produce a false
+			// positive by definition.
+			emptyDenom := emptyCount
+			if mix.timeBudget > 0 && emptyDenom > 0 {
+				repeats := totalQueried / len(batch)
+				if repeats < 1 {
+					repeats = 1
+				}
+				emptyDenom = emptyCount * repeats
+			}
+			var fpr float64
+			if emptyDenom > 0 {
+				fpr = float64(falsePositives) / float64(emptyDenom)
+			}
 
 			row := b6Row{
 				Distribution:   dist,
@@ -540,7 +622,7 @@ func runB6Filter(
 				BPKUsed:        actualBPK,
 				SizeBits:       sizeBits,
 				FPR:            fpr,
-				QueriesEmpty:   len(batch),
+				QueriesEmpty:   emptyCount,
 				SweepName:      fd.sweepName,
 				SweepParam:     sweep,
 				Parallelism:    parallelism,
@@ -550,9 +632,14 @@ func runB6Filter(
 				row.NumClusters = *fd.numClusters
 			}
 			rows = append(rows, row)
-			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4g | %-7.1f MB\n",
+			extraInfo := ""
+			if mix.allowNonEmpty {
+				extraInfo = fmt.Sprintf(" [nonempty=%.1f%%, queries=%d]",
+					100*float64(len(batch)-emptyCount)/float64(len(batch)), totalQueried)
+			}
+			b6Logf("%-11s | %-14s | L=%-5d | %s=%-9.4g | %-9.1f | %-13.2f | %-13.1f | %-7.2f | %-9.4g | %-7.1f MB%s\n",
 				dist, fd.name, L, fd.sweepName, sweep,
-				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr, float64(peakRSS)/(1024*1024))
+				float64(buildDur.Milliseconds()), buildMKeys, nsPerQuery, actualBPK, fpr, float64(peakRSS)/(1024*1024), extraInfo)
 
 			if fpr == 0 {
 				lSaturated[L] = true
@@ -606,6 +693,53 @@ func isCGoFilter(name string) bool {
 		return true
 	}
 	return false
+}
+
+// parseCsvSet returns a set of comma-separated tokens from val, or nil
+// if val is empty. Used by B6_FILTERS_ONLY / B6_DISTS_ONLY to whitelist
+// a subset of the default filter / distribution registries.
+func parseCsvSet(val string) map[string]bool {
+	v := strings.TrimSpace(val)
+	if v == "" {
+		return nil
+	}
+	out := map[string]bool{}
+	for _, tok := range strings.Split(v, ",") {
+		t := strings.TrimSpace(tok)
+		if t != "" {
+			out[t] = true
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// parseB6RangeLens reads B6_RANGE_LENS env var as a comma-separated list
+// of uint64 values. Returns nil if unset, so the caller keeps its default
+// range-length sweep.
+func parseB6RangeLens() []uint64 {
+	v := strings.TrimSpace(os.Getenv("B6_RANGE_LENS"))
+	if v == "" {
+		return nil
+	}
+	out := []uint64{}
+	for _, tok := range strings.Split(v, ",") {
+		t := strings.TrimSpace(tok)
+		if t == "" {
+			continue
+		}
+		n, err := strconv.ParseUint(t, 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("B6_RANGE_LENS: bad token %q: %v", t, err))
+		}
+		out = append(out, n)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // parseB6Parallelism reads B6_PARALLEL env var. Default 1 = serial query
@@ -676,6 +810,191 @@ func runQueriesParallel(
 		total += c
 	}
 	return total, dur
+}
+
+// runQueriesTimed is the time-budget-aware variant of runQueriesParallel.
+//
+//   - emptyMask: per-batch ground truth (true = query is actually empty).
+//     If nil, every query is treated as empty (legacy smart-mix path).
+//     False-positive count is incremented only on positions with
+//     emptyMask[i] == true and filter answer == "not empty".
+//   - budget: if 0 the function does exactly one pass through the batch
+//     (preserving back-compat ns/op). If > 0 the batch is cycled until
+//     elapsed wall-clock ≥ budget or maxQueryRepeats whole passes have
+//     completed, whichever comes first.
+//
+// Returns the false-positive count, the total number of queries dispatched
+// (= len(batch) * completed passes), and the wall-clock duration of the
+// timed region. Parallelism > 1 splits each pass into P contiguous chunks.
+func runQueriesTimed(
+	batch [][2]uint64,
+	emptyMask []bool,
+	isEmpty func(a, b uint64) bool,
+	parallelism int,
+	budget time.Duration,
+) (int, int, time.Duration) {
+	if len(batch) == 0 {
+		return 0, 0, 0
+	}
+	fp := 0
+	totalQ := 0
+	start := time.Now()
+	for r := 0; r < maxQueryRepeats; r++ {
+		fp += singlePassFP(batch, emptyMask, isEmpty, parallelism)
+		totalQ += len(batch)
+		if budget == 0 || time.Since(start) >= budget {
+			return fp, totalQ, time.Since(start)
+		}
+	}
+	return fp, totalQ, time.Since(start)
+}
+
+// singlePassFP runs exactly one pass over batch, returning the FP count.
+// When emptyMask is nil every "not empty" answer is treated as a false
+// positive (legacy smart-mix semantics); otherwise FP is gated by the
+// mask. Parallelism > 1 splits the batch into P contiguous chunks; the
+// timing of this helper is what runQueriesTimed accumulates into its
+// wall-clock budget.
+func singlePassFP(
+	batch [][2]uint64,
+	emptyMask []bool,
+	isEmpty func(a, b uint64) bool,
+	parallelism int,
+) int {
+	if parallelism <= 1 {
+		fp := 0
+		for i, q := range batch {
+			if isEmpty(q[0], q[1]) {
+				continue
+			}
+			if emptyMask == nil || emptyMask[i] {
+				fp++
+			}
+		}
+		return fp
+	}
+	chunk := (len(batch) + parallelism - 1) / parallelism
+	fpCounts := make([]int, parallelism)
+	var wg sync.WaitGroup
+	for w := 0; w < parallelism; w++ {
+		lo := w * chunk
+		if lo >= len(batch) {
+			break
+		}
+		hi := lo + chunk
+		if hi > len(batch) {
+			hi = len(batch)
+		}
+		wg.Add(1)
+		go func(idx int, qs [][2]uint64, mask []bool) {
+			defer wg.Done()
+			c := 0
+			for i, q := range qs {
+				if isEmpty(q[0], q[1]) {
+					continue
+				}
+				if mask == nil || mask[i] {
+					c++
+				}
+			}
+			fpCounts[idx] = c
+		}(w, batch[lo:hi], sliceMask(emptyMask, lo, hi))
+	}
+	wg.Wait()
+	total := 0
+	for _, c := range fpCounts {
+		total += c
+	}
+	return total
+}
+
+func sliceMask(mask []bool, lo, hi int) []bool {
+	if mask == nil {
+		return nil
+	}
+	return mask[lo:hi]
+}
+
+// runQueriesBatchTimed is the buildBatch counterpart of runQueriesTimed.
+// Same semantics — emptyMask gates FP counting, budget drives the repeat
+// loop. CGo filters pay one CGo crossing per chunk per pass; under high
+// parallelism (P>1) each pass is split into P sub-batches.
+func runQueriesBatchTimed(
+	batch [][2]uint64,
+	emptyMask []bool,
+	queryBatch func([][2]uint64) []bool,
+	parallelism int,
+	budget time.Duration,
+) (int, int, time.Duration) {
+	if len(batch) == 0 {
+		return 0, 0, 0
+	}
+	fp := 0
+	totalQ := 0
+	start := time.Now()
+	for r := 0; r < maxQueryRepeats; r++ {
+		fp += singlePassBatchFP(batch, emptyMask, queryBatch, parallelism)
+		totalQ += len(batch)
+		if budget == 0 || time.Since(start) >= budget {
+			return fp, totalQ, time.Since(start)
+		}
+	}
+	return fp, totalQ, time.Since(start)
+}
+
+func singlePassBatchFP(
+	batch [][2]uint64,
+	emptyMask []bool,
+	queryBatch func([][2]uint64) []bool,
+	parallelism int,
+) int {
+	if parallelism <= 1 {
+		res := queryBatch(batch)
+		fp := 0
+		for i, r := range res {
+			if r {
+				continue
+			}
+			if emptyMask == nil || emptyMask[i] {
+				fp++
+			}
+		}
+		return fp
+	}
+	chunk := (len(batch) + parallelism - 1) / parallelism
+	fpCounts := make([]int, parallelism)
+	var wg sync.WaitGroup
+	for w := 0; w < parallelism; w++ {
+		lo := w * chunk
+		if lo >= len(batch) {
+			break
+		}
+		hi := lo + chunk
+		if hi > len(batch) {
+			hi = len(batch)
+		}
+		wg.Add(1)
+		go func(idx int, qs [][2]uint64, mask []bool) {
+			defer wg.Done()
+			res := queryBatch(qs)
+			c := 0
+			for i, r := range res {
+				if r {
+					continue
+				}
+				if mask == nil || mask[i] {
+					c++
+				}
+			}
+			fpCounts[idx] = c
+		}(w, batch[lo:hi], sliceMask(emptyMask, lo, hi))
+	}
+	wg.Wait()
+	total := 0
+	for _, c := range fpCounts {
+		total += c
+	}
+	return total
 }
 
 // runQueriesBatchParallel is the buildBatch counterpart of runQueriesParallel.

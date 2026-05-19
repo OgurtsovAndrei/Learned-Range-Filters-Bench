@@ -138,6 +138,106 @@ func randUint64Below(rng *rand.Rand, n uint64) uint64 {
 	return rng.Uint64() % n
 }
 
+// GenerateMixedQueriesWeighted generates a mix of empty and non-empty queries
+// for latency benchmarks. Unlike GenerateSmartQueriesWeighted, it does NOT
+// truncate near-key/uniform queries when a stored key falls inside the
+// interval — the resulting query keeps its full length [a, a+rangeLen-1]
+// and may contain one or more keys.
+//
+// The fraction of non-empty queries depends on weights and key density:
+//   - in-gap queries are still guaranteed empty by construction,
+//   - near-key queries with offset ∈ [-(rangeLen-1), 0] contain the
+//     reference key (≈ 10% of the near-key bucket at the default
+//     [-5L, 5L] offset spread, plus secondary hits from neighbours),
+//   - uniform queries contain a key with probability ≈ rangeLen·n/U.
+//
+// Use this generator for query-latency measurements that should reflect
+// realistic LSM read patterns (queries that hit existing keys are
+// answered correctly by the filter, not as false positives). The companion
+// GenerateSmartQueriesWeighted remains the right tool for FPR estimation
+// where every query must be guaranteed empty.
+func GenerateMixedQueriesWeighted(keys []uint64, count int, rangeLen uint64, w SmartMixWeights, rng *rand.Rand) [][2]uint64 {
+	n := len(keys)
+	if n < 2 {
+		return nil
+	}
+	minK, maxK := keys[0], keys[n-1]
+	span := maxK - minK
+	if span == 0 {
+		return nil
+	}
+
+	nNear := int(float64(count) * w.NearKey)
+	nGap := int(float64(count) * w.InGap)
+	nUnif := count - nNear - nGap
+
+	// Pre-compute gaps for gap-sampling (in-gap queries stay empty).
+	type gap struct{ lo, hi uint64 }
+	gaps := make([]gap, 0, n-1)
+	for i := 0; i < n-1; i++ {
+		if keys[i+1]-keys[i] > 1 {
+			gaps = append(gaps, gap{keys[i] + 1, keys[i+1] - 1})
+		}
+	}
+
+	queries := make([][2]uint64, 0, count)
+
+	// emit appends a query as-is, without truncating around stored keys.
+	// We only refuse degenerate intervals (a==0 && b==0 or b < a).
+	emit := func(a, b uint64) {
+		if b < a {
+			return
+		}
+		if a == 0 && b == 0 {
+			return
+		}
+		queries = append(queries, [2]uint64{a, b})
+	}
+
+	// Near-key queries: pick a random key, offset by [-5*rangeLen, +5*rangeLen].
+	// Without truncation, offsets ∈ [-(rangeLen-1), 0] yield queries that
+	// contain the reference key.
+	for i := 0; i < nNear*2 && len(queries) < nNear; i++ {
+		key := keys[rng.Intn(n)]
+		offset := rng.Int63n(int64(rangeLen) * 10)
+		offset -= int64(rangeLen) * 5
+		a := int64(key) + offset
+		if a < 0 {
+			a = 0
+		}
+		emit(uint64(a), uint64(a)+rangeLen-1)
+	}
+
+	// In-gap queries: pick a random gap, place query inside.
+	target := nNear + nGap
+	if len(gaps) > 0 {
+		for i := 0; i < nGap*2 && len(queries) < target; i++ {
+			g := gaps[rng.Intn(len(gaps))]
+			gapLen := g.hi - g.lo + 1
+			if gapLen == 0 {
+				continue
+			}
+			a := g.lo + randUint64Below(rng, gapLen)
+			b := a + rangeLen - 1
+			if b > g.hi {
+				b = g.hi
+			}
+			if b >= a {
+				queries = append(queries, [2]uint64{a, b}) // guaranteed empty (inside gap)
+			}
+		}
+	}
+
+	// Uniform queries: random start across span; query may contain keys.
+	target = count
+	for i := 0; i < nUnif*2 && len(queries) < target; i++ {
+		a := minK + randUint64Below(rng, span)
+		emit(a, a+rangeLen-1)
+	}
+
+	return queries
+}
+
 // GenerateSmartQueriesWeighted is the parametrized variant.
 func GenerateSmartQueriesWeighted(keys []uint64, count int, rangeLen uint64, w SmartMixWeights, rng *rand.Rand) [][2]uint64 {
 	n := len(keys)
