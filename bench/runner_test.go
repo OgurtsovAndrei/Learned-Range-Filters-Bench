@@ -274,6 +274,19 @@ var b6QueryMixes = map[string]b6QueryMix{
 		allowNonEmpty: true,
 		timeBudget:    2 * time.Second,
 	},
+	// smart_mix_mixed reuses the default 50/30/20 weighting but drops
+	// truncation around stored keys. The 50% near-key bucket pushes the
+	// non-empty fraction well above the gap-heavy variant: with offsets
+	// in [-5L, 5L) about 10% of near-key queries land on the reference
+	// key, before counting hits on adjacent keys. Use it as the headline
+	// realistic-workload latency benchmark.
+	"smart_mix_mixed": {
+		name:          "smart_mix_mixed",
+		queryStrategy: "smart_mix_mixed_no_truncation",
+		weights:       defaultSmartMix,
+		allowNonEmpty: true,
+		timeBudget:    2 * time.Second,
+	},
 }
 
 // maxQueryRepeats caps how many times the runner cycles through the
