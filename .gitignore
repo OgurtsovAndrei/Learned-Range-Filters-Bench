@@ -38,6 +38,7 @@ bench/synthetic_data/
 .DS_Store
 Thumbs.db
 bench_results_obsolete_pre_1d_opt/
+bench_results_17-05-2026-SNAPSHOT
 
 # Claude Code session data
 .claude/
