@@ -1,6 +1,6 @@
 module Thesis-bench-industry
 
-go 1.25
+go 1.25.0
 
 require (
 	Thesis v0.0.0
@@ -20,7 +20,7 @@ require (
 	github.com/parquet-go/jsonlite v1.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/twpayne/go-geom v1.6.1 // indirect
-	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
 
