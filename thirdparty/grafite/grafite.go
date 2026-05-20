@@ -2,7 +2,8 @@ package grafite
 
 /*
 #cgo CXXFLAGS: -std=c++17
-#cgo LDFLAGS: -L${SRCDIR}/build -lgrafite_wrapper -lstdc++ -lm
+#cgo linux LDFLAGS: -L${SRCDIR}/build -lgrafite_wrapper -lstdc++ -lm
+#cgo darwin LDFLAGS: -L${SRCDIR}/build -lgrafite_wrapper -lc++ -lm
 #include "wrapper.h"
 #include <stdlib.h>
 */
