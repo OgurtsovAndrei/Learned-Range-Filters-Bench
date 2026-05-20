@@ -45,3 +45,7 @@ bench_results_17-05-2026-SNAPSHOT
 
 # Worktrees for parallel feature branches
 .worktrees/
+
+# Local agents scratchpad
+tmp/
+

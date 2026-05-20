@@ -1,10 +1,19 @@
 #include "../wrapper.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
 #include <grafite/grafite.hpp>
+
+namespace {
+inline bool grafite_log_enabled() {
+    static const bool on = std::getenv("GRAFITE_MODE_LOG") != nullptr;
+    return on;
+}
+}  // namespace
 
 // Use the default RangeEmptinessDS (ef_sux_vector when SUCCINCT_LIB_SUX is defined)
 using GrafiteDefaultFilter = grafite::filter<>;
@@ -46,6 +55,14 @@ GrafiteHandle* build_lossless_fallback(std::vector<uint64_t> keys) {
     h->first    = keys.front();
     h->last     = keys.back();
     h->empty    = false;
+    if (grafite_log_enabled()) {
+        std::fprintf(stderr,
+                "[grafite] LOSSLESS n=%zu min=%llu max=%llu size_bits=%zu\n",
+                keys.size(),
+                (unsigned long long)h->first,
+                (unsigned long long)h->last,
+                (size_t)(h->lossless->size() * 8));
+    }
     return h;
 }
 
@@ -58,7 +75,18 @@ GrafiteHandle* build_approx(std::vector<uint64_t> vec, double bpk) {
     try {
         h->approx = new GrafiteDefaultFilter(vec.begin(), vec.end(), bpk);
         h->empty  = false;
-    } catch (const std::runtime_error&) {
+        if (grafite_log_enabled()) {
+            std::fprintf(stderr,
+                    "[grafite] APPROX-BPK n=%zu bpk_req=%.4f size_bits=%zu\n",
+                    vec.size(), bpk,
+                    (size_t)(h->approx->size() * 8));
+        }
+    } catch (const std::runtime_error& e) {
+        if (grafite_log_enabled()) {
+            std::fprintf(stderr,
+                    "[grafite] APPROX-BPK n=%zu bpk_req=%.4f THREW (%s) -> lossless\n",
+                    vec.size(), bpk, e.what());
+        }
         delete h;
         return build_lossless_fallback(std::move(vec));
     }
@@ -75,7 +103,18 @@ GrafiteHandle* build_approx_eps_l(std::vector<uint64_t> vec, double eps, uint64_
         h->approx = new GrafiteDefaultFilter(vec.begin(), vec.end(), eps,
                 static_cast<typename std::vector<uint64_t>::value_type>(L));
         h->empty  = false;
-    } catch (const std::runtime_error&) {
+        if (grafite_log_enabled()) {
+            std::fprintf(stderr,
+                    "[grafite] APPROX-EPS-L n=%zu eps=%.6g L=%llu size_bits=%zu\n",
+                    vec.size(), eps, (unsigned long long)L,
+                    (size_t)(h->approx->size() * 8));
+        }
+    } catch (const std::runtime_error& e) {
+        if (grafite_log_enabled()) {
+            std::fprintf(stderr,
+                    "[grafite] APPROX-EPS-L n=%zu eps=%.6g L=%llu THREW (%s) -> lossless\n",
+                    vec.size(), eps, (unsigned long long)L, e.what());
+        }
         delete h;
         return build_lossless_fallback(std::move(vec));
     }
