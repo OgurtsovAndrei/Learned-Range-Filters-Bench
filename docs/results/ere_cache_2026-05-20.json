@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "date": "2026-05-20",
+    "machine": "Linux 6.17, x86-64",
+    "queries": 100000,
+    "warmup": 10000,
+    "range_len": 4096,
+    "perf_mode": "user-space only (exclude_kernel, exclude_hv)",
+    "perf_event_paranoid": 2,
+    "note": "SOSD fb/wiki/books skipped at N=2^28 (capacity 200M < 268M)"
+  },
+  "rows": [
+    {"n": 1048576,   "n_exp": 20, "dataset": "uniform",   "filter": "ere",      "l1_loads": 392.2, "l1_misses": 8.93, "l1_miss_pct": 2.3,  "llc_loads": 1.07, "llc_misses": 0.52, "llc_miss_pct": 48.4, "instrs": 1462.1},
+    {"n": 1048576,   "n_exp": 20, "dataset": "uniform",   "filter": "ere_one_d","l1_loads": 113.4, "l1_misses": 4.97, "l1_miss_pct": 4.4,  "llc_loads": 1.00, "llc_misses": 0.37, "llc_miss_pct": 37.0, "instrs": 624.8},
+    {"n": 1048576,   "n_exp": 20, "dataset": "clustered", "filter": "ere",      "l1_loads": 1090.5,"l1_misses": 17.39,"l1_miss_pct": 1.6,  "llc_loads": 5.20, "llc_misses": 0.45, "llc_miss_pct": 8.7,  "instrs": 4494.5},
+    {"n": 1048576,   "n_exp": 20, "dataset": "clustered", "filter": "ere_one_d","l1_loads": 520.6, "l1_misses": 17.09,"l1_miss_pct": 3.3,  "llc_loads": 4.87, "llc_misses": 0.41, "llc_miss_pct": 8.4,  "instrs": 2488.3},
+    {"n": 1048576,   "n_exp": 20, "dataset": "sosd_osm",  "filter": "ere",      "l1_loads": 1014.4,"l1_misses": 16.44,"l1_miss_pct": 1.6,  "llc_loads": 5.89, "llc_misses": 0.62, "llc_miss_pct": 10.5, "instrs": 4226.1},
+    {"n": 1048576,   "n_exp": 20, "dataset": "sosd_osm",  "filter": "ere_one_d","l1_loads": 740.5, "l1_misses": 16.01,"l1_miss_pct": 2.2,  "llc_loads": 5.45, "llc_misses": 0.40, "llc_miss_pct": 7.3,  "instrs": 3090.8},
+
+    {"n": 16777216,  "n_exp": 24, "dataset": "uniform",   "filter": "ere",      "l1_loads": 392.0, "l1_misses": 14.06,"l1_miss_pct": 3.6,  "llc_loads": 7.09, "llc_misses": 2.06, "llc_miss_pct": 29.1, "instrs": 1460.4},
+    {"n": 16777216,  "n_exp": 24, "dataset": "uniform",   "filter": "ere_one_d","l1_loads": 113.2, "l1_misses": 9.39, "l1_miss_pct": 8.3,  "llc_loads": 4.07, "llc_misses": 1.47, "llc_miss_pct": 36.0, "instrs": 622.6},
+    {"n": 16777216,  "n_exp": 24, "dataset": "clustered", "filter": "ere",      "l1_loads": 953.0, "l1_misses": 36.53,"l1_miss_pct": 3.8,  "llc_loads": 20.05,"llc_misses": 9.08, "llc_miss_pct": 45.3, "instrs": 4025.4},
+    {"n": 16777216,  "n_exp": 24, "dataset": "clustered", "filter": "ere_one_d","l1_loads": 663.0, "l1_misses": 31.25,"l1_miss_pct": 4.7,  "llc_loads": 18.78,"llc_misses": 8.21, "llc_miss_pct": 43.7, "instrs": 3083.5},
+    {"n": 16777216,  "n_exp": 24, "dataset": "sosd_osm",  "filter": "ere",      "l1_loads": 1060.2,"l1_misses": 33.83,"l1_miss_pct": 3.2,  "llc_loads": 15.55,"llc_misses": 9.63, "llc_miss_pct": 61.9, "instrs": 4437.6},
+    {"n": 16777216,  "n_exp": 24, "dataset": "sosd_osm",  "filter": "ere_one_d","l1_loads": 723.3, "l1_misses": 29.90,"l1_miss_pct": 4.1,  "llc_loads": 14.81,"llc_misses": 8.55, "llc_miss_pct": 57.8, "instrs": 3023.4},
+
+    {"n": 268435456, "n_exp": 28, "dataset": "uniform",   "filter": "ere",      "l1_loads": 392.7, "l1_misses": 19.50,"l1_miss_pct": 5.0,  "llc_loads": 13.16,"llc_misses": 8.37, "llc_miss_pct": 63.6, "instrs": 1462.7},
+    {"n": 268435456, "n_exp": 28, "dataset": "uniform",   "filter": "ere_one_d","l1_loads": 113.3, "l1_misses": 12.12,"l1_miss_pct": 10.7, "llc_loads": 8.41, "llc_misses": 4.17, "llc_miss_pct": 49.5, "instrs": 622.9},
+    {"n": 268435456, "n_exp": 28, "dataset": "clustered", "filter": "ere",      "l1_loads": 1158.2,"l1_misses": 64.94,"l1_miss_pct": 5.6,  "llc_loads": 44.01,"llc_misses": 32.03,"llc_miss_pct": 72.8, "instrs": 5016.6},
+    {"n": 268435456, "n_exp": 28, "dataset": "clustered", "filter": "ere_one_d","l1_loads": 583.7, "l1_misses": 60.76,"l1_miss_pct": 10.4, "llc_loads": 40.93,"llc_misses": 29.10,"llc_miss_pct": 71.1, "instrs": 2941.4},
+    {"n": 268435456, "n_exp": 28, "dataset": "sosd_osm",  "filter": "ere",      "l1_loads": 1042.3,"l1_misses": 34.94,"l1_miss_pct": 3.4,  "llc_loads": 21.00,"llc_misses": 10.08,"llc_miss_pct": 48.0, "instrs": 4391.1},
+    {"n": 268435456, "n_exp": 28, "dataset": "sosd_osm",  "filter": "ere_one_d","l1_loads": 679.6, "l1_misses": 27.21,"l1_miss_pct": 4.0,  "llc_loads": 17.98,"llc_misses": 8.49, "llc_miss_pct": 47.2, "instrs": 2913.2}
+  ]
+}

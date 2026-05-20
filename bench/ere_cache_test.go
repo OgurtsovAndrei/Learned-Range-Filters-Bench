@@ -5,12 +5,17 @@ package bench_test
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"Thesis-bench-industry/bench/internal/perf"
+	"Thesis/testutils"
 )
+
+var ereCacheNValues = []int{1 << 20, 1 << 24, 1 << 28}
 
 const (
 	ereCacheQueryCount  = 100_000
@@ -26,6 +31,7 @@ var allPerfEvents = []perf.EventSpec{
 }
 
 type ereCacheRow struct {
+	n           int
 	dataset     string
 	filter      string
 	l1Loads     float64
@@ -35,6 +41,84 @@ type ereCacheRow struct {
 	llcMisses   float64
 	llcMissRate float64
 	instrs      float64
+}
+
+type ereCacheDataset struct {
+	name    string
+	keys    []uint64
+	queries []ereQuery
+}
+
+// generateUniformKeysForCache generates n sorted unique uint64 keys via sort+dedup.
+// Avoids map-based dedup to keep memory overhead low at large n.
+func generateUniformKeysForCache(n int, seed int64) []uint64 {
+	rng := rand.New(rand.NewSource(seed))
+	raw := make([]uint64, n+1024)
+	for i := range raw {
+		raw[i] = rng.Uint64()
+	}
+	sort.Slice(raw, func(i, j int) bool { return raw[i] < raw[j] })
+	out := raw[:1]
+	for _, k := range raw[1:] {
+		if k != out[len(out)-1] {
+			out = append(out, k)
+		}
+	}
+	if len(out) > n {
+		out = out[:n]
+	}
+	return out
+}
+
+func loadEreCacheDatasets(t *testing.T, n int) []ereCacheDataset {
+	t.Helper()
+
+	var datasets []ereCacheDataset
+
+	uniformKeys := generateUniformKeysForCache(n, 42)
+	if len(uniformKeys) >= n {
+		datasets = append(datasets, ereCacheDataset{
+			name:    "uniform",
+			keys:    uniformKeys,
+			queries: generateEREMixedQueries(uniformKeys, ereCacheQueryCount, ereCompareRangeLen, 12345),
+		})
+	}
+
+	rng := rand.New(rand.NewSource(42))
+	clusteredKeys, _ := testutils.GenerateClusterDistribution(n, 8, 0.10, rng)
+	if len(clusteredKeys) >= n {
+		datasets = append(datasets, ereCacheDataset{
+			name:    "clustered",
+			keys:    clusteredKeys,
+			queries: generateEREMixedQueries(clusteredKeys, ereCacheQueryCount, ereCompareRangeLen, 12345),
+		})
+	}
+
+	type sosdLoader struct {
+		name     string
+		capacity int
+		load     func(int) ([]uint64, error)
+	}
+	for _, l := range []sosdLoader{
+		{"sosd_fb", 200_000_000, loadFacebookKeys},
+		{"sosd_wiki", 200_000_000, loadWikiKeys},
+		{"sosd_osm", 800_000_000, loadOSMKeys},
+		{"sosd_books", 200_000_000, loadBooksKeys},
+	} {
+		if n > l.capacity {
+			continue
+		}
+		keys, err := l.load(n)
+		if err != nil || len(keys) < n {
+			continue
+		}
+		datasets = append(datasets, ereCacheDataset{
+			name:    l.name,
+			keys:    keys,
+			queries: generateEREMixedQueries(keys, ereCacheQueryCount, ereCompareRangeLen, 12345),
+		})
+	}
+	return datasets
 }
 
 func measureERECacheEvents(t *testing.T, filter ereExactFilter, queries []ereQuery) ereCacheRow {
@@ -70,12 +154,12 @@ func measureERECacheEvents(t *testing.T, filter ereExactFilter, queries []ereQue
 		t.Fatal("read:", err)
 	}
 
-	n := float64(ereCacheQueryCount)
-	l1Loads := float64(res.Values[0]) / n
-	l1Misses := float64(res.Values[1]) / n
-	llcLoads := float64(res.Values[2]) / n
-	llcMisses := float64(res.Values[3]) / n
-	instrs := float64(res.Values[4]) / n
+	nq := float64(ereCacheQueryCount)
+	l1Loads := float64(res.Values[0]) / nq
+	l1Misses := float64(res.Values[1]) / nq
+	llcLoads := float64(res.Values[2]) / nq
+	llcMisses := float64(res.Values[3]) / nq
+	instrs := float64(res.Values[4]) / nq
 
 	l1Rate := 0.0
 	if l1Loads > 0 {
@@ -100,40 +184,52 @@ func TestERECacheHitMiss(t *testing.T) {
 	}
 	probe.Close()
 
-	datasets := mustLoadEREDatasets(t)
-
 	var rows []ereCacheRow
 
-	for _, ds := range datasets {
-		ereFilter, err := buildEREFilter(ds.keys)
-		if err != nil {
-			t.Fatalf("%s: build ere: %v", ds.name, err)
-		}
-		oneDFilter, err := buildEREOneDFilter(ds.keys)
-		if err != nil {
-			t.Fatalf("%s: build ere_one_d: %v", ds.name, err)
+	for _, n := range ereCacheNValues {
+		t.Logf("=== N=2^%d (%d) ===", ilog2(uint64(n)), n)
+		datasets := loadEreCacheDatasets(t, n)
+		if len(datasets) == 0 {
+			t.Logf("N=2^%d: no datasets, skip", ilog2(uint64(n)))
+			continue
 		}
 
-		r1 := measureERECacheEvents(t, ereFilter, ds.queries)
-		r1.dataset = ds.name
-		r1.filter = "ere"
+		for _, ds := range datasets {
+			ereFilter, err := buildEREFilter(ds.keys)
+			if err != nil {
+				t.Fatalf("N=2^%d %s: build ere: %v", ilog2(uint64(n)), ds.name, err)
+			}
+			oneDFilter, err := buildEREOneDFilter(ds.keys)
+			if err != nil {
+				t.Fatalf("N=2^%d %s: build ere_one_d: %v", ilog2(uint64(n)), ds.name, err)
+			}
 
-		r2 := measureERECacheEvents(t, oneDFilter, ds.queries)
-		r2.dataset = ds.name
-		r2.filter = "ere_one_d"
+			r1 := measureERECacheEvents(t, ereFilter, ds.queries)
+			r1.n = n
+			r1.dataset = ds.name
+			r1.filter = "ere"
 
-		rows = append(rows, r1, r2)
+			r2 := measureERECacheEvents(t, oneDFilter, ds.queries)
+			r2.n = n
+			r2.dataset = ds.name
+			r2.filter = "ere_one_d"
+
+			rows = append(rows, r1, r2)
+			t.Logf("  %s/ere       LLC-miss/q=%.2f  instrs/q=%.0f", ds.name, r1.llcMisses, r1.instrs)
+			t.Logf("  %s/ere_one_d LLC-miss/q=%.2f  instrs/q=%.0f", ds.name, r2.llcMisses, r2.instrs)
+		}
 	}
 
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "# ERE vs ERE One-D — Cache Events per Query\n\n")
-	fmt.Fprintf(&buf, "n=%d, queries=%d (warmup=%d)\n\n",
-		ereCompareN, ereCacheQueryCount, ereCacheWarmupCount)
-	fmt.Fprintf(&buf, "| Dataset | Filter | L1-loads/q | L1-misses/q | L1-miss%% | LLC-loads/q | LLC-misses/q | LLC-miss%% | Instrs/q |\n")
-	fmt.Fprintf(&buf, "|---|---|---:|---:|---:|---:|---:|---:|---:|\n")
+	fmt.Fprintf(&buf, "# ERE vs ERE One-D — Cache Events per Query (N sweep)\n\n")
+	fmt.Fprintf(&buf, "queries=%d (warmup=%d), rangeLen=%d\n\n",
+		ereCacheQueryCount, ereCacheWarmupCount, ereCompareRangeLen)
+	fmt.Fprintf(&buf, "Machine: Linux 6.17, x86-64. User-space events only (exclude_kernel).\n\n")
+	fmt.Fprintf(&buf, "| N | Dataset | Filter | L1-loads/q | L1-misses/q | L1-miss%% | LLC-loads/q | LLC-misses/q | LLC-miss%% | Instrs/q |\n")
+	fmt.Fprintf(&buf, "|---|---|---|---:|---:|---:|---:|---:|---:|---:|\n")
 	for _, r := range rows {
-		fmt.Fprintf(&buf, "| %s | %s | %.1f | %.2f | %.1f%% | %.2f | %.2f | %.1f%% | %.1f |\n",
-			r.dataset, r.filter,
+		fmt.Fprintf(&buf, "| 2^%d | %s | %s | %.1f | %.2f | %.1f%% | %.2f | %.2f | %.1f%% | %.1f |\n",
+			ilog2(uint64(r.n)), r.dataset, r.filter,
 			r.l1Loads, r.l1Misses, r.l1MissRate,
 			r.llcLoads, r.llcMisses, r.llcMissRate,
 			r.instrs)
@@ -143,7 +239,8 @@ func TestERECacheHitMiss(t *testing.T) {
 	reportPath := filepath.Join("..", "bench_results", "ere_cache_report.md")
 	if err := os.MkdirAll(filepath.Dir(reportPath), 0755); err == nil {
 		if err := os.WriteFile(reportPath, buf.Bytes(), 0644); err != nil {
-			t.Logf("warning: could not write report to %s: %v", reportPath, err)
+			t.Logf("warning: could not write report: %v", err)
 		}
 	}
 }
+
