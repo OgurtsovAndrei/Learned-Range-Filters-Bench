@@ -2,7 +2,7 @@ package surf
 
 /*
 #cgo CXXFLAGS: -std=c++17
-#cgo LDFLAGS: -L${SRCDIR}/build -lsurf_wrapper -lc++ -lm
+#cgo LDFLAGS: -L${SRCDIR}/build -lsurf_wrapper -lstdc++ -lm
 #include "wrapper.h"
 #include <stdlib.h>
 */

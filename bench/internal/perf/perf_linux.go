@@ -87,7 +87,7 @@ func OpenGroup(events []EventSpec) (*Group, error) {
 		attr := unix.PerfEventAttr{
 			Type:   e.Type,
 			Config: e.Config,
-			Bits:   unix.PerfBitDisabled,
+			Bits:   unix.PerfBitDisabled | unix.PerfBitExcludeKernel | unix.PerfBitExcludeHv,
 		}
 		attr.Size = uint32(unsafe.Sizeof(attr))
 		groupFd := -1

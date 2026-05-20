@@ -2,7 +2,7 @@ package rosetta
 
 /*
 #cgo CXXFLAGS: -std=c++17
-#cgo LDFLAGS: -L${SRCDIR}/build -lrosetta_wrapper -lc++ -lm
+#cgo LDFLAGS: -L${SRCDIR}/build -lrosetta_wrapper -lstdc++ -lm
 #include "wrapper.h"
 #include <stdlib.h>
 */
