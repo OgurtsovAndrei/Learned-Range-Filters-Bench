@@ -109,7 +109,7 @@ func loadEreCacheDatasets(t *testing.T, n int) []ereCacheDataset {
 			continue
 		}
 		keys, err := l.load(n)
-		if err != nil || len(keys) < n {
+		if err != nil || len(keys) == 0 {
 			continue
 		}
 		datasets = append(datasets, ereCacheDataset{
