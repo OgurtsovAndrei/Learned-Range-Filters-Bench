@@ -155,11 +155,14 @@ func (g *Group) Read() (GroupResult, error) {
 		return GroupResult{}, fmt.Errorf("perf: short read %d/%d bytes", n, len(buf))
 	}
 	nr := binary.LittleEndian.Uint64(buf[0:8])
+	if nr != uint64(g.n) {
+		return GroupResult{}, fmt.Errorf("perf: read: kernel returned nr=%d, expected %d", nr, g.n)
+	}
 	te := binary.LittleEndian.Uint64(buf[8:16])
 	tr := binary.LittleEndian.Uint64(buf[16:24])
 	values := make([]uint64, nr)
 	for i := range values {
-		values[i] = binary.LittleEndian.Uint64(buf[24+i*8:])
+		values[i] = binary.LittleEndian.Uint64(buf[24+i*8 : 32+i*8])
 	}
 	return GroupResult{Values: values, TimeEnabled: te, TimeRunning: tr}, nil
 }
