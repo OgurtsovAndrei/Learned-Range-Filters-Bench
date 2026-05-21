@@ -2,6 +2,7 @@ package ere_test
 
 import (
 	"Thesis/emptiness/approx/are_soda_hash"
+	"Thesis/emptiness/exact"
 	"Thesis/testutils"
 	"fmt"
 	"math/rand"
@@ -88,7 +89,7 @@ func TestEREBucketSecondMoment_SodaARE(t *testing.T) {
 		for _, L := range rangeLens {
 			name := fmt.Sprintf("%s/L=%d", ds.name, L)
 			t.Run(name, func(t *testing.T) {
-				are, err := are_soda_hash.NewSodaARE(keys, L, epsilon)
+				are, err := are_soda_hash.NewSodaAREWithBackend(keys, L, epsilon, exact.VariantOneD)
 				if err != nil {
 					t.Fatalf("build failed: %v", err)
 				}

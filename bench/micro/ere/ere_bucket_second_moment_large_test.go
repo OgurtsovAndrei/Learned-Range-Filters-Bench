@@ -1,3 +1,5 @@
+//go:build heavy
+
 package ere_test
 
 import (

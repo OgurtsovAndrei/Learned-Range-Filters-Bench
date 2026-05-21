@@ -71,7 +71,7 @@ func BenchmarkAllAREDirect(b *testing.B) {
 	}
 	{
 		ks := append([]uint64(nil), keys...)
-		f, err := are_hybrid_scan.NewHybridScanARE(ks, keyBits, are_hybrid_scan.Config{K: 18})
+		f, err := are_dbscan.NewHybridScanARE(ks, keyBits, are_dbscan.Config{K: 18})
 		if err != nil {
 			b.Fatalf("Scan-ARE: %v", err)
 		}
@@ -79,7 +79,7 @@ func BenchmarkAllAREDirect(b *testing.B) {
 	}
 	{
 		ks := append([]uint64(nil), keys...)
-		f, err := are_greedy_scan.NewGreedyScanARE(ks, keyBits, are_greedy_scan.Config{K: 18})
+		f, err := are_greedy.NewGreedyScanARE(ks, keyBits, are_greedy.Config{K: 18})
 		if err != nil {
 			b.Fatalf("Greedy: %v", err)
 		}

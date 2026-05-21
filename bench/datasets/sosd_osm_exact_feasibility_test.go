@@ -1,3 +1,5 @@
+//go:build heavy
+
 package datasets_test
 
 import (

@@ -1,3 +1,5 @@
+//go:build heavy
+
 // bisect_runner_test.go — fast operating-point finder via binary search.
 //
 // TestB6IndustryLatency above does a full linear sweep over each filter's

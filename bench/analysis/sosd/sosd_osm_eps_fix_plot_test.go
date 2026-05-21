@@ -1,3 +1,5 @@
+//go:build heavy
+
 package sosd_test
 
 import (

@@ -1,3 +1,5 @@
+//go:build heavy
+
 package bench_test
 
 import (

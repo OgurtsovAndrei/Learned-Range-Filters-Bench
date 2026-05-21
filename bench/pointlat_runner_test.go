@@ -1,3 +1,5 @@
+//go:build heavy
+
 // pointlat_runner_test.go — single-point latency at a source-mix operating
 // point, measured under any other workload (typically smart_mix_mixed).
 //

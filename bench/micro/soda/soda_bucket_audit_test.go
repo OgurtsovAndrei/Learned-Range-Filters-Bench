@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"Thesis/emptiness/approx/are_soda_hash"
+	"Thesis/emptiness/exact"
 )
 
 
@@ -40,7 +41,7 @@ func TestSodaBucketAudit(t *testing.T) {
 				keys[len(keys)-1]-keys[0],
 				logf(float64(keys[len(keys)-1]-keys[0])))
 			ks := append([]uint64(nil), keys...)
-			soda, err := are_soda_hash.NewSodaARE(ks, s.L, eps)
+			soda, err := are_soda_hash.NewSodaAREWithBackend(ks, s.L, eps, exact.VariantOneD)
 			if err != nil {
 				t.Fatalf("NewSodaARE: %v", err)
 			}

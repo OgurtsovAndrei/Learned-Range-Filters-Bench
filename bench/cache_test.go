@@ -1,3 +1,5 @@
+//go:build heavy
+
 // b6_cache_test.go — caching layer for B6 sweep results.
 //
 // Each (n, queryCount, eps) run owns a directory

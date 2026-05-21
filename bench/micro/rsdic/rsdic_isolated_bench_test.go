@@ -3,6 +3,7 @@ package rsdic_test
 import (
 	"Thesis-bench-industry/bench/internal/keygen"
 	"Thesis/emptiness/approx/are_soda_hash"
+	"Thesis/emptiness/exact"
 	"Thesis/succinct_bit_vector/rsdic"
 	"fmt"
 	"math/rand"
@@ -38,7 +39,7 @@ func dumpSodaRSDic(tb testing.TB, distName string, keys []uint64, L uint64, eps 
 		tb.Fatalf("mkdir cache: %v", err)
 	}
 	keysCopy := append([]uint64(nil), keys...)
-	soda, err := are_soda_hash.NewSodaARE(keysCopy, L, eps)
+	soda, err := are_soda_hash.NewSodaAREWithBackend(keysCopy, L, eps, exact.VariantOneD)
 	if err != nil {
 		tb.Fatalf("NewSodaARE(%s, n=%d, L=%d): %v", distName, len(keys), L, err)
 	}
