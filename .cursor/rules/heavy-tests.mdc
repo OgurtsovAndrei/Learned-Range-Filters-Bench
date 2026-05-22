@@ -1,0 +1,41 @@
+---
+description: Rules for writing, running, and analyzing heavy benchmark, tradeoff, and latency tests.
+globs: "bench/**/*_test.go"
+---
+
+# Heavy Tests, Benchmark Sweeps & Plotting Guidelines
+
+Tests and benchmarks inside the `bench/` directory measure critical algorithmic trade-offs, wall-clock latencies, and scalability. Follow these rules strictly:
+
+## 1. Test Segregation (`//go:build heavy`)
+- **Fast vs Heavy**: Heavy dataset sweeps, cache performance tests, and tradeoff curves take a long time to run. They **MUST** start with the `//go:build heavy` build tag on line 1.
+- **Makefile Targets**:
+  - Run fast unit tests with: `make test`
+  - Run all heavy sweeps with: `make test-all`
+- **Default Exclusion**: Never let heavy sweeps run during a plain `go test ./...` without tags, as it stalls development.
+
+## 2. Accurate Wall-Clock Benchmarking
+- **No Background Workloads**: Wall-clock latency (nanoseconds per query) and build throughput are highly sensitive. Shut down any heavy applications.
+- **CPU Pinning (Core Isolation)**: To ensure consistent, noise-free, and reproducible results, always pin benchmarks to a single fixed CPU core:
+  - *Linux*: Run using `taskset -c 0 make test-all` (or raw `taskset -c 0 go test -tags=heavy ...`).
+- **Single-Threaded Execution**: Do not run latency benchmarks in parallel. Keep `B6_PARALLELISM=1` for latency measurements.
+
+## 3. Results Caching & Plot-Only Mode
+- Results are saved to `bench_results/data/L<rangeLen>.json`.
+- **Fast Visualizations**: If you only need to re-generate or adjust SVG plots using previously gathered data, set the `PLOT_ONLY=1` environment variable. This skips the long execution phase and immediately draws plots from the JSON cache:
+  `PLOT_ONLY=1 go test -tags=heavy -run TestComparison ./bench/...`
+
+## 4. The Fast `bisect` Runner
+- For finding operating points (the exact BPK needed to hit a target False Positive Rate $\epsilon$), use the binary search finder in [bench/bisect_runner_test.go](file:///Users/andrei.ogurtsov/Thesis-Bench-industry/bench/bisect_runner_test.go).
+- It runs **~3× faster** than full grid sweeps by utilizing numerical binary search.
+- Configure via environment variables:
+  - `B6_BISECT_EPS` (target FPR, e.g. `0.001`)
+  - `B6_BISECT_ITERS` (search iterations, default `8`)
+  - `B6_BISECT_TOL` (numerical tolerance, default `0.5`)
+
+## 5. Visual Standards (SVG Plotter)
+Plotting is handled by [Thesis/testutils/plot.go](file:///Users/andrei.ogurtsov/Thesis-Bench-industry/Thesis/testutils/plot.go). All charts must satisfy:
+- **Scalable Vector Graphics (SVG)** format only.
+- **Logarithmic Y scale** with Unicode superscript decade formatting (e.g. `10⁻⁷` instead of overlapping wide ASCII symbols).
+- **Observation Floor Line**: Draw the dashed floor line at the sample size limit representing 0 observed false positives.
+- **Threshold BPK sub-chart**: Make sure the sub-chart panel displays the exact BPK operating points crossing $10^{-2}$ and $10^{-3}$ FPR.

@@ -1,0 +1,20 @@
+---
+description: General Go coding standards, dependency management, and submodule git conventions.
+globs: "**/*.go"
+---
+
+# General Go & Workspace Rules
+
+This workspace consists of a root Go module and a git submodule (`Thesis/`). Follow these strict workflow rules:
+
+## 1. Syntax, Formatting & Quality Assurance
+- **Vetting**: Always run `make vet` before committing any code. All code must compile and pass analysis cleanly.
+- **Tidying**: Run `make tidy` after adding or changing dependencies. Do not commit messy `go.mod` or `go.sum` files.
+- **Error Handling**: Follow idiomatic Go error handling. Never discard errors with `_` unless absolutely safe and explicitly documented.
+
+## 2. Git Submodule Conventions
+- **Avoid Automatic Submodule Commits**: Do not stage or commit the `Thesis/` submodule pointer unless explicitly necessary.
+- **Log Age Rule**: Before committing changes inside `Thesis/`, check when the root repository last updated the submodule pointer:
+  `git log -1 --format=%ci -- Thesis`
+  Only stage and commit the updated pointer (`git add Thesis && git commit`) if more than **24 hours** have passed since that commit. Otherwise, leave it for batch updates.
+- **Conventional Commits**: Commit messages must use clear conventional tags (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `bench:`).

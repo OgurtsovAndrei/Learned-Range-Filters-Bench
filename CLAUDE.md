@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. For comprehensive multi-agent details, see [AGENTS.md](file:///Users/andrei.ogurtsov/Thesis-Bench-industry/AGENTS.md) and Cursor rules under `.cursor/rules/`.
 
 ## Git & Submodule Rules
 
@@ -13,7 +13,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a **two-module Go workspace** for benchmarking range emptiness filter structures:
 
 - **`Thesis/`** — Git submodule (`module Thesis`). Contains all filter implementations, unit tests, and shared utilities. This is the research code.
-- **Root** (`module Thesis-bench-industry`) — Benchmark harness comparing Thesis filters against industry baselines (Grafite, SNARF, SuRF) via CGo wrappers.
+  - **Dissertation Text**: Located in [Thesis/text/](file:///Users/andrei.ogurtsov/Thesis-Bench-industry/Thesis/text/).
+- **Root** (`module Thesis-bench-industry`) — Benchmark harness comparing Thesis filters against industry baselines (Grafite, SNARF, SuRF, Rosetta) via CGo wrappers.
 
 The root module depends on Thesis via `replace Thesis => ./Thesis` in go.mod.
 
@@ -35,28 +36,29 @@ SOSD datasets (for real-world benchmarks): `bash bench/sosd_data/download.sh`
 
 ### Running tests
 
+Always prefer the **unified Makefile targets** in the project root:
+
 ```bash
-# Thesis submodule unit tests (no CGo needed)
-cd Thesis && go test ./...
+# Run fast unit tests (both root and submodule, completes in < 1s)
+make test
 
-# Single package
-cd Thesis && go test -v ./emptiness/are_hybrid/
+# Run all tests, including heavy benchmarks and large dataset sweeps
+make test-all
 
-# Single test
-cd Thesis && go test -v -run TestHybridARE_NoFN_Clustered ./emptiness/are_hybrid/
+# Vet and lint syntax across root and submodule
+make vet
 
-# Industry benchmarks (requires CGo builds)
-go test -v -run TestBuildThroughput -timeout 60m ./bench/
-
-# Vet both modules
-go vet ./bench/ && cd Thesis && go vet ./...
+# Tidy dependencies in both modules
+make tidy
 ```
 
-### Benchmark execution rules
+### Benchmark execution & Consistency rules
 
-- Run benchmark tests **one at a time**, never in parallel — they measure wall-clock performance.
-- FPR/BPK tradeoff tests can parallelize internally; query-time and build-time benchmarks must not.
-- Many benchmarks have long timeouts (30-60m). Use `-timeout` flag.
+- **Exclusion Tag**: Heavy performance tests, tradeoff sweeps, and cache sweeps MUST start with the `//go:build heavy` build tag on line 1 so they are excluded from the fast default `make test` run.
+- **CPU Pinning**: Pin benchmarks to a single fixed core (`taskset -c 0`) to achieve consistent, reproducible latency and throughput figures.
+- **Results Caching**: Results are stored under `bench_results/data/`.
+- **Plot-Only Mode**: Set `PLOT_ONLY=1` to skip running benchmarks and instantly redraw plots from cached JSON files.
+- **Fast Operating Point Finder (`bisect` runner)**: Use [bench/bisect_runner_test.go](file:///Users/andrei.ogurtsov/Thesis-Bench-industry/bench/bisect_runner_test.go) (`TestB6BisectOperatingPoint`) to run a binary search for the exact BPK needed to achieve a target FPR $\epsilon$ (runs ~3× faster than full grid sweeps).
 
 ## Architecture
 
@@ -90,30 +92,9 @@ The ARE/ERE filters are built on these lower-level structures:
 
 Each wraps a C++ range filter library. ~50-200ns overhead per CGo call.
 
-**Key Bit-Width Logic:**
-- **Native Data**: SOSD and NYC Taxi datasets are used in their native bit-width (up to 64-bit). No masking is applied by default to avoid artificial collisions and dataset shrinkage.
-- **Synthetic Data**: Generators (`uniform`, `zipfian`, etc.) produce 60-bit keys by default to provide a consistent "universe" for comparison and ensure out-of-the-box compatibility with all filters.
-- **Filter-Specific Limits**: SNARF internally masks to 60 bits as it cannot handle wider keys. Other filters (SODA, Rosetta, Grafite, SuRF) operate on the full bits provided.
+### Visualizations (`plotter`)
 
-### Shared Utilities (Thesis/testutils/)
-
-- `distribution.go` — Key generators: `GenerateClusterDistribution`, uniform, spread, zipfian
-- `plot.go` — SVG chart generation (`GeneratePerformanceSVG`, `GenerateTradeoffSVG`)
-- `keys.go` — Cached benchmark key sets (`GetBenchKeys`)
-- `metrics.go` — FPR/BPK measurement helpers
-- `convert.go` — `TrieBS(uint64)` converts uint64 to BitString (trie-ready binary representation)
-
-### Benchmark Tests (bench/)
-
-- `comparison_test.go` — FPR vs BPK tradeoff for synthetic + SOSD distributions
-- `throughput_test.go` — Build throughput (M keys/sec) across N sizes, with synthetic key generation
-- `performance_test.go` — Build time per key, query time vs range length, scalability
-- `sosd_test.go` — SOSD real-dataset benchmarks (Facebook, Wiki, OSM)
-- `sosd_fb_dist_test.go` — Distribution histograms
-
-Synthetic keys are pre-generated in SOSD binary format (`[uint64 count LE][count × uint64 keys LE]`) and saved to `bench/synthetic_data/`.
-
-All plots are **SVG format**. Use log scales for asymptotic analysis (key counts on X, time/throughput on Y).
+Centralized in [Thesis/testutils/plot.go](file:///Users/andrei.ogurtsov/Thesis-Bench-industry/Thesis/testutils/plot.go). Generates scalability and tradeoff curves in **SVG format only**. Uses logarithmic scaling with Unicode superscript decade ticks (e.g. `10⁻⁷`), a dashed observation limit line (representing 0 FP observed), and a secondary threshold sub-chart indicating operating BPK points for $10^{-2}$ and $10^{-3}$ FPR.
 
 ## Known Issues
 
