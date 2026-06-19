@@ -49,3 +49,6 @@ bench_results_17-05-2026-SNAPSHOT
 # Local agents scratchpad
 tmp/
 
+# Antigravity CLI
+.antigravitycli/
+
