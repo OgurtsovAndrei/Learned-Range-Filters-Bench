@@ -1,0 +1,91 @@
+### WPS Query Latency Benchmark Run — 2026-05-03
+### Machine: Apple M4 Max, darwin/arm64
+### Go: see below
+### Benchmarks: BenchmarkLocalExactRangeLocatorQueryFast,
+###             BenchmarkLocalExactRangeLocatorQueryCompact,
+###             BenchmarkLeMonLocalExactRangeLocator_Query
+### Settings: -benchtime=2s, sequential, one benchmark at a time
+
+--- BenchmarkLocalExactRangeLocatorQueryFast ---
+goos: darwin
+goarch: arm64
+pkg: Thesis/research/wps/locators/lerloc
+cpu: Apple M4 Max
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=64/Keys=1024-16         	 8054877	       307.3 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=64/Keys=8192-16         	 4674757	       514.5 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=64/Keys=32768-16        	 4517019	       556.6 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=64/Keys=262144-16       	 4212481	       580.4 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=64/Keys=1048576-16      	 3767618	       574.5 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=128/Keys=1024-16        	 7507995	       322.1 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=128/Keys=8192-16        	 4460106	       539.5 ns/op	      16 B/op	       2 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=128/Keys=32768-16       	 3990313	       613.7 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=128/Keys=262144-16      	 3457129	       673.2 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=128/Keys=1048576-16     	 3620240	       748.9 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=256/Keys=1024-16        	 7018984	       341.1 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=256/Keys=8192-16        	 4132636	       584.5 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=256/Keys=32768-16       	 3624824	       636.6 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=256/Keys=262144-16      	 3588547	       675.8 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=256/Keys=1048576-16     	 2904195	       750.0 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=512/Keys=1024-16        	 6317290	       372.9 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=512/Keys=8192-16        	 4104806	       602.8 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=512/Keys=32768-16       	 3589698	       680.8 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=512/Keys=262144-16      	 3184352	       800.7 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryFast/KeySize=512/Keys=1048576-16     	 2875264	       810.2 ns/op	      15 B/op	       1 allocs/op
+PASS
+ok  	Thesis/research/wps/locators/lerloc	393.851s
+
+--- BenchmarkLocalExactRangeLocatorQueryCompact ---
+goos: darwin
+goarch: arm64
+pkg: Thesis/research/wps/locators/lerloc
+cpu: Apple M4 Max
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=64/Keys=1024-16         	 4894668	       489.8 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=64/Keys=8192-16         	 3458451	       681.0 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=64/Keys=32768-16        	 3464023	       712.1 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=64/Keys=262144-16       	 3130033	       750.8 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=64/Keys=1048576-16      	 2930362	       812.2 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=128/Keys=1024-16        	 4354520	       567.5 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=128/Keys=8192-16        	 3207147	       756.3 ns/op	      16 B/op	       2 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=128/Keys=32768-16       	 2873514	       835.9 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=128/Keys=262144-16      	 2279065	      1038 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=128/Keys=1048576-16     	 2425158	      1060 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=256/Keys=1024-16        	 3503846	       668.8 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=256/Keys=8192-16        	 2856528	       863.7 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=256/Keys=32768-16       	 2548498	       951.7 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=256/Keys=262144-16      	 2106619	      1153 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=256/Keys=1048576-16     	 2080207	      1293 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=512/Keys=1024-16        	 3015181	       803.5 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=512/Keys=8192-16        	 2360560	      1043 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=512/Keys=32768-16       	 1992733	      1196 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=512/Keys=262144-16      	 1692093	      1389 ns/op	      15 B/op	       1 allocs/op
+BenchmarkLocalExactRangeLocatorQueryCompact/KeySize=512/Keys=1048576-16     	 1498885	      1606 ns/op	      15 B/op	       1 allocs/op
+PASS
+ok  	Thesis/research/wps/locators/lerloc	416.151s
+
+--- BenchmarkLeMonLocalExactRangeLocator_Query ---
+goos: darwin
+goarch: arm64
+pkg: Thesis/research/wps/locators/lemon_lerloc
+cpu: Apple M4 Max
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=64/Keys=1024-16         	 4227757	       544.3 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=64/Keys=8192-16         	 3661782	       683.2 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=64/Keys=32768-16        	 3230824	       757.5 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=64/Keys=262144-16       	 2909769	       786.7 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=64/Keys=1048576-16      	 2760844	       889.4 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=128/Keys=1024-16        	 3874548	       617.6 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=128/Keys=8192-16        	 3276402	       742.3 ns/op	      80 B/op	       4 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=128/Keys=32768-16       	 2893542	       806.4 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=128/Keys=262144-16      	 2207320	      1099 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=128/Keys=1048576-16     	 1946697	      1181 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=256/Keys=1024-16        	 3204399	       750.7 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=256/Keys=8192-16        	 2604562	       890.1 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=256/Keys=32768-16       	 2364247	       984.9 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=256/Keys=262144-16      	 2024389	      1191 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=256/Keys=1048576-16     	 1763875	      1190 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=512/Keys=1024-16        	 2900940	       819.9 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=512/Keys=8192-16        	 2315476	       994.9 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=512/Keys=32768-16       	 2032125	      1196 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=512/Keys=262144-16      	 1717237	      1426 ns/op	      79 B/op	       3 allocs/op
+BenchmarkLeMonLocalExactRangeLocator_Query/KeySize=512/Keys=1048576-16     	 1364566	      1632 ns/op	      79 B/op	       3 allocs/op
+PASS
+ok  	Thesis/research/wps/locators/lemon_lerloc	258.603s

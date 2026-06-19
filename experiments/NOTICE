@@ -1,0 +1,44 @@
+thesis-experiments — research-stage code (WPS locators/tries/MMPH, exact range
+emptiness baselines, and competitor wrappers) split out of the main `Thesis`
+product so the product stays a clean, permissively-licensed pure-Go module.
+
+The original code in this repository is licensed under the MIT License (see
+LICENSE), EXCEPT for the components noted below.
+
+================================================================================
+GPLv3 boundary — LeMonHash wrapper
+================================================================================
+
+The following Go packages are cgo wrappers that link against LeMonHash, which is
+licensed under the GNU General Public License v3.0:
+
+  - locators/lemonhash
+  - locators/lemon_rloc
+  - locators/lemon_lerloc
+
+LeMonHash is included as a git submodule at:
+
+  locators/lemonhash/ext/LeMonHash
+
+The submodule must point to a fork of https://github.com/ByteHamster/LeMonHash
+that carries the local adaptations required by the cgo wrapper (static sdsl
+linking, Apple-Silicon portability, std::string_view query API, debug output to
+stderr). Those adaptations are recorded as a single commit on top of upstream
+commit 20d8864; the same diff is archived at:
+
+  locators/lemonhash/patches/0001-go-cgo-wrapper-adaptations.patch
+
+Any binary produced by building or testing the packages listed above is a
+combined work with LeMonHash and is therefore subject to the GPLv3. These
+packages are NOT imported by the `Thesis` product, which remains GPL-free.
+
+================================================================================
+Third-party Go code (inlined forks, MIT)
+================================================================================
+
+  - mmph/rbtz_mmph        fork of github.com/SaveTheRbtz/mph (MIT);
+                          original (c) 2016 Caleb Spare, (c) 2022 Alexey Ivanov.
+  - mmph/go-boomphf-bs    fork of github.com/dgryski/go-boomphf (MIT);
+                          original (c) 2017,2019 Damian Gryski.
+
+Each retains its upstream LICENSE file in-tree.

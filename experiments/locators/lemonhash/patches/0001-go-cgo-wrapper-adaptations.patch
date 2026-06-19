@@ -1,0 +1,190 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 04dc9c5..39e896d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -30,7 +30,7 @@ target_include_directories(ds2i SYSTEM INTERFACE extlib/ds2i)
+ 
+ # Only parts of sdsl to avoid using old cmake dependencies
+ set(sdsl_dir ${CMAKE_CURRENT_SOURCE_DIR}/extlib/sdsl-lite/lib)
+-add_library(sdsl SHARED ${sdsl_dir}/bits.cpp ${sdsl_dir}/memory_management.cpp ${sdsl_dir}/util.cpp ${sdsl_dir}/ram_fs.cpp)
++add_library(sdsl STATIC ${sdsl_dir}/bits.cpp ${sdsl_dir}/memory_management.cpp ${sdsl_dir}/util.cpp ${sdsl_dir}/ram_fs.cpp)
+ target_include_directories(sdsl SYSTEM PUBLIC extlib/sdsl-lite/include)
+ 
+ add_library(LeMonHash INTERFACE)
+diff --git a/include/LeMonHash.hpp b/include/LeMonHash.hpp
+index 1469e64..fb93fe4 100644
+--- a/include/LeMonHash.hpp
++++ b/include/LeMonHash.hpp
+@@ -85,9 +85,9 @@ class LeMonHash {
+ 
+         size_t spaceBits(bool print = true) {
+             if (print) {
+-                std::cout << "Retrieval:      " << (double(retrievalDataStructure.spaceBits(0)) / N) << std::endl;
+-                std::cout << "Bucket mapper:  " << (8.0 * bucketMapper.space() / N) << " (" << bucketMapper.info() << ")" << std::endl;
+-                std::cout << "Bucket offsets: " << (8.0 * bucketOffsets.space() / N) << std::endl;
++                std::cerr << "Retrieval:      " << (double(retrievalDataStructure.spaceBits(0)) / N) << std::endl;
++                std::cerr << "Bucket mapper:  " << (8.0 * bucketMapper.space() / N) << " (" << bucketMapper.info() << ")" << std::endl;
++                std::cerr << "Bucket offsets: " << (8.0 * bucketOffsets.space() / N) << std::endl;
+             }
+             size_t bytes = bucketMapper.space() + sizeof(*this) + bucketOffsets.space();
+             return 8 * bytes + retrievalDataStructure.spaceBits(0);
+diff --git a/include/LeMonHashHeuristic.hpp b/include/LeMonHashHeuristic.hpp
+index 4e82659..5642651 100644
+--- a/include/LeMonHashHeuristic.hpp
++++ b/include/LeMonHashHeuristic.hpp
+@@ -112,9 +112,9 @@ class LeMonHashHeuristic {
+ 
+         size_t spaceBits(bool print = true) {
+             if (print) {
+-                std::cout << "Retrieval:      " << (double(retrievalDataStructure.spaceBits(0)) / N) << std::endl;
+-                std::cout << "Segments:       " << (8.0 * eliasFano.space() / N) << std::endl;
+-                std::cout << "Bucket offsets: " << (8.0 * bucketOffsets.space() / N) << std::endl;
++                std::cerr << "Retrieval:      " << (double(retrievalDataStructure.spaceBits(0)) / N) << std::endl;
++                std::cerr << "Segments:       " << (8.0 * eliasFano.space() / N) << std::endl;
++                std::cerr << "Bucket offsets: " << (8.0 * bucketOffsets.space() / N) << std::endl;
+             }
+             size_t bytes = eliasFano.space() + sizeof(*this) + bucketOffsets.space();
+             return 8 * bytes + retrievalDataStructure.spaceBits(0);
+diff --git a/include/LeMonHashVL.hpp b/include/LeMonHashVL.hpp
+index edf178c..013e900 100644
+--- a/include/LeMonHashVL.hpp
++++ b/include/LeMonHashVL.hpp
+@@ -3,6 +3,7 @@
+ #include <vector>
+ #include <cstdint>
+ #include <string>
++#include <string_view>
+ #include <unordered_set>
+ #include <algorithm>
+ #include <fstream>
+@@ -279,11 +280,11 @@ class LeMonHashVL {
+             return minLCP;
+         }
+ 
+-        uint64_t extractChunk(const std::string &s, const TreeNode &treeNode) {
++        uint64_t extractChunk(std::string_view s, const TreeNode &treeNode) {
+             if constexpr (ALPHABET_MAPPING) {
+-                return alphabetMaps.readChunk(treeNode.alphabetMapIndex, s.c_str() + treeNode.minLCP, s.length() - treeNode.minLCP);
++                return alphabetMaps.readChunk(treeNode.alphabetMapIndex, s.data() + treeNode.minLCP, s.length() - treeNode.minLCP);
+             } else {
+-                const char *str = s.c_str() + treeNode.minLCP;
++                const char *str = s.data() + treeNode.minLCP;
+                 size_t length = s.size() - treeNode.minLCP;
+                 if (length >= 8)
+                     return __builtin_bswap64(*((uint64_t*) str));
+@@ -357,18 +358,18 @@ class LeMonHashVL {
+         }
+ 
+         size_t spaceBits() {
+-            std::cout<<"Retrieval:           "<<1.0*retrieval.spaceBits()/N<<std::endl;
+-            std::cout<<"Bucket mapper:       "<<8.0*std::accumulate(treeNodes.begin(), treeNodes.end(), 0,
++            std::cerr<<"Retrieval:           "<<1.0*retrieval.spaceBits()/N<<std::endl;
++            std::cerr<<"Bucket mapper:       "<<8.0*std::accumulate(treeNodes.begin(), treeNodes.end(), 0,
+                                                                     [] (size_t size, auto &node) { return size + node.space(); }) / N<<std::endl;
+-            std::cout<<"Bucket offsets:      "<<1.0 * std::accumulate(bucketOffsets.begin(), bucketOffsets.end(), 0,
++            std::cerr<<"Bucket offsets:      "<<1.0 * std::accumulate(bucketOffsets.begin(), bucketOffsets.end(), 0,
+                                                                       [] (size_t size, auto &fano) { return size + fano.bit_size(); }) / N<<std::endl;
+-            std::cout<<"Tree node data:      "<<(8.0 * (treeNodes.size() * sizeof(TreeNode) + sizeof(Mphf))
++            std::cerr<<"Tree node data:      "<<(8.0 * (treeNodes.size() * sizeof(TreeNode) + sizeof(Mphf))
+                                                     + treeNodesMphf.num_bits())/N<<std::endl;
+-            std::cout<<"Alphabet maps:       "<<8.0 * alphabetMaps.sizeInBytes() / N<<std::endl;
+-            std::cout<<"7-bit alphabets:     "<<alphabetMaps.size().first<<std::endl;
+-            std::cout<<"8-bit alphabets:     "<<alphabetMaps.size().second<<std::endl;
+-            std::cout<<"Height:              "<<bucketOffsets.size()<<std::endl;
+-            std::cout<<"Nodes:               "<<treeNodes.size()<<std::endl;
++            std::cerr<<"Alphabet maps:       "<<8.0 * alphabetMaps.sizeInBytes() / N<<std::endl;
++            std::cerr<<"7-bit alphabets:     "<<alphabetMaps.size().first<<std::endl;
++            std::cerr<<"8-bit alphabets:     "<<alphabetMaps.size().second<<std::endl;
++            std::cerr<<"Height:              "<<bucketOffsets.size()<<std::endl;
++            std::cerr<<"Nodes:               "<<treeNodes.size()<<std::endl;
+ 
+             return retrieval.spaceBits()
+                         + 8 * (sizeof(*this)
+@@ -420,7 +421,7 @@ class LeMonHashVL {
+             }
+         }
+ 
+-        uint64_t operator ()(const std::string &string) {
++        uint64_t operator ()(std::string_view string) {
+             TreePath path;
+             TreeNode *node = &treeNodes.at(treeNodes.size() == 1 ? 0 : treeNodesMphf(path.currentNodeHash()));
+             size_t layer = 0;
+@@ -443,7 +444,7 @@ class LeMonHashVL {
+                     if (bucketSize == 1) {
+                         return bucketOffset;
+                     } else {
+-                        return bucketOffset + retrieval.query(bucketSize, bytehamster::util::MurmurHash64(string));
++                        return bucketOffset + retrieval.query(bucketSize, bytehamster::util::MurmurHash64(string.data(), string.size()));
+                     }
+                 } else {
+                     layer++;
+diff --git a/include/LeMonHashVLIndexed.hpp b/include/LeMonHashVLIndexed.hpp
+index b7f7456..84f14f9 100644
+--- a/include/LeMonHashVLIndexed.hpp
++++ b/include/LeMonHashVLIndexed.hpp
+@@ -330,18 +330,18 @@ class LeMonHashVLIndexed {
+         }
+ 
+         size_t spaceBits() {
+-            std::cout<<"Retrieval:           "<<1.0*retrieval.spaceBits()/N<<std::endl;
+-            std::cout<<"Bucket mapper:       "<<8.0*std::accumulate(treeNodes.begin(), treeNodes.end(), 0,
++            std::cerr<<"Retrieval:           "<<1.0*retrieval.spaceBits()/N<<std::endl;
++            std::cerr<<"Bucket mapper:       "<<8.0*std::accumulate(treeNodes.begin(), treeNodes.end(), 0,
+                                                                     [] (size_t size, auto &node) { return size + node.space(); }) / N<<std::endl;
+-            std::cout<<"Bucket offsets:      "<<1.0 * std::accumulate(bucketOffsets.begin(), bucketOffsets.end(), 0,
++            std::cerr<<"Bucket offsets:      "<<1.0 * std::accumulate(bucketOffsets.begin(), bucketOffsets.end(), 0,
+                                                                       [] (size_t size, auto &fano) { return size + fano.bit_size(); }) / N<<std::endl;
+-            std::cout<<"Tree node data:      "<<(8.0 * (treeNodes.size() * sizeof(TreeNode) + sizeof(Mphf))
++            std::cerr<<"Tree node data:      "<<(8.0 * (treeNodes.size() * sizeof(TreeNode) + sizeof(Mphf))
+                                                 + treeNodesMphf.num_bits())/N<<std::endl;
+-            std::cout<<"Alphabet maps:       "<<8.0 * alphabetMaps.sizeInBytes() / N<<std::endl;
+-            std::cout<<"7-bit alphabets:     "<<alphabetMaps.size().first<<std::endl;
+-            std::cout<<"8-bit alphabets:     "<<alphabetMaps.size().second<<std::endl;
+-            std::cout<<"Height:              "<<bucketOffsets.size()<<std::endl;
+-            std::cout<<"Nodes:               "<<treeNodes.size()<<std::endl;
++            std::cerr<<"Alphabet maps:       "<<8.0 * alphabetMaps.sizeInBytes() / N<<std::endl;
++            std::cerr<<"7-bit alphabets:     "<<alphabetMaps.size().first<<std::endl;
++            std::cerr<<"8-bit alphabets:     "<<alphabetMaps.size().second<<std::endl;
++            std::cerr<<"Height:              "<<bucketOffsets.size()<<std::endl;
++            std::cerr<<"Nodes:               "<<treeNodes.size()<<std::endl;
+ 
+             return retrieval.spaceBits()
+                         + 8 * (sizeof(*this)
+diff --git a/include/bucket_mapping/LinearBucketMapper.hpp b/include/bucket_mapping/LinearBucketMapper.hpp
+index 30caba5..73eed83 100644
+--- a/include/bucket_mapping/LinearBucketMapper.hpp
++++ b/include/bucket_mapping/LinearBucketMapper.hpp
+@@ -18,7 +18,7 @@ struct LinearBucketMapper {
+     }
+ 
+     [[nodiscard]] size_t bucketOf(uint64_t key) const {
+-        return std::min(numBuckets_ - 1, key / divisor);
++        return std::min<size_t>(numBuckets_ - 1, key / divisor);
+     }
+ 
+     template<typename Iterator, typename Func>
+diff --git a/include/support/TreePath.hpp b/include/support/TreePath.hpp
+index a43f5c9..271c567 100644
+--- a/include/support/TreePath.hpp
++++ b/include/support/TreePath.hpp
+@@ -1,6 +1,7 @@
+ #pragma once
+ 
+ #include <cstdint>
++#include <bytehamster/util/Function.h>
+ 
+ namespace lemonhash {
+ class TreePath {
+diff --git a/include/support/util.h b/include/support/util.h
+index 1133c76..40030dd 100644
+--- a/include/support/util.h
++++ b/include/support/util.h
+@@ -8,7 +8,7 @@
+ #include <bit>
+ #include <sdsl/bits.hpp>
+ #include <set>
+-#include <immintrin.h>
++
+ 
+ namespace lemonhash {
+ struct LcpDetails {

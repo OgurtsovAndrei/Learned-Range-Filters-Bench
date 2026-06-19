@@ -10,3 +10,7 @@
 [submodule "Thesis"]
 	path = Thesis
 	url = https://github.com/OgurtsovAndrei/Thesis.git
+[submodule "experiments/locators/lemonhash/ext/LeMonHash"]
+	path = experiments/locators/lemonhash/ext/LeMonHash
+	url = git@github.com:OgurtsovAndrei/LeMonHash.git
+	branch = go-cgo-adaptations
