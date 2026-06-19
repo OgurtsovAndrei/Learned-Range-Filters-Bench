@@ -1,12 +1,14 @@
 [submodule "grafite/ext/grafite"]
 	path = thirdparty/grafite/ext/grafite
-	url = https://github.com/marcocosta97/grafite
+	url = git@github.com:OgurtsovAndrei/grafite.git
+	branch = bench-patches
 [submodule "snarf/ext/SNARF"]
 	path = thirdparty/snarf/ext/SNARF
 	url = https://github.com/kapilvaidya24/SNARF
 [submodule "surf/ext/SuRF"]
 	path = thirdparty/surf/ext/SuRF
-	url = https://github.com/efficient/SuRF
+	url = git@github.com:OgurtsovAndrei/SuRF.git
+	branch = bench-patches
 [submodule "Thesis"]
 	path = Thesis
 	url = https://github.com/OgurtsovAndrei/Thesis.git
